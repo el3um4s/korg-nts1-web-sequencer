@@ -118,298 +118,357 @@
         </div>
     </header>
 
+    <!-- Global Layout Management Bar -->
+    <div class="max-w-7xl mx-auto w-full flex items-center justify-between gap-2 px-1 text-xs text-zinc-400">
+        <span class="text-[11px] font-medium text-zinc-500">
+            <i class="fa-solid fa-arrows-up-down mr-1"></i>Spazio di Lavoro Personalizzato
+        </span>
+        <div class="flex items-center gap-2">
+            <button id="expandAllSectionsBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[11px] text-zinc-300 transition flex items-center gap-1">
+                <i class="fa-solid fa-folder-open text-orange-400 text-[10px]"></i> Espandi tutto
+            </button>
+            <button id="collapseAllSectionsBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[11px] text-zinc-300 transition flex items-center gap-1">
+                <i class="fa-solid fa-folder-minus text-zinc-400 text-[10px]"></i> Riduci tutto
+            </button>
+        </div>
+    </div>
+
     <main class="max-w-7xl mx-auto w-full flex flex-col gap-4 flex-grow">
         
-        <!-- Hardware Settings & Internal Synth Quickbar -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 bg-zinc-900/90 border border-zinc-800 p-3.5 rounded-xl shadow-lg">
-            
-            <div class="lg:col-span-3 flex flex-col gap-1">
-                <label for="midiOutputSelect" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
-                    <span><i class="fa-solid fa-plug mr-1.5 text-orange-400"></i>Porta MIDI</span>
-                    <button id="refreshMidiBtn" class="text-[11px] text-orange-400 hover:text-orange-300 flex items-center gap-1 transition">
-                        <i class="fa-solid fa-rotate-right"></i> Ricarica
+        <!-- Section 1: Hardware Settings & MIDI Connection -->
+        <section class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-lg overflow-hidden transition-all duration-200">
+            <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyMidiSection">
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-md bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-plug"></i>
+                    </span>
+                    <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Connessione MIDI & Hardware</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono-code hidden sm:inline-block">I/O PORT</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
-                </label>
-                <div class="relative">
-                    <select id="midiOutputSelect" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-orange-500 transition appearance-none cursor-pointer">
-                        <option value="">Rilevamento dispositivi...</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-400">
-                        <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                </div>
+            </div>
+
+            <div id="bodyMidiSection" class="section-body p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                <div class="lg:col-span-5 flex flex-col gap-1">
+                    <label for="midiOutputSelect" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
+                        <span><i class="fa-solid fa-plug mr-1.5 text-orange-400"></i>Porta MIDI</span>
+                        <button id="refreshMidiBtn" class="text-[11px] text-orange-400 hover:text-orange-300 flex items-center gap-1 transition">
+                            <i class="fa-solid fa-rotate-right"></i> Ricarica
+                        </button>
+                    </label>
+                    <div class="relative">
+                        <select id="midiOutputSelect" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-orange-500 transition appearance-none cursor-pointer">
+                            <option value="">Rilevamento dispositivi...</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-400">
+                            <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="lg:col-span-2 flex flex-col gap-1">
-                <label for="midiChannelSelect" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                    <i class="fa-solid fa-hashtag mr-1 text-zinc-400"></i>Canale MIDI
-                </label>
-                <select id="midiChannelSelect" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-orange-500 transition cursor-pointer font-mono-code">
-                </select>
-            </div>
-
-            <!-- Built-in Synth Waveform & Filter Controls -->
-            <div class="lg:col-span-2 flex flex-col gap-1">
-                <label for="synthWaveform" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                    <i class="fa-solid fa-wave-square mr-1 text-cyan-400"></i>Onda Synth
-                </label>
-                <select id="synthWaveform" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-500 transition cursor-pointer">
-                    <option value="sawtooth" selected>Sawtooth (NTS-1 Style)</option>
-                    <option value="square">Square / Pulse</option>
-                    <option value="triangle">Triangle</option>
-                    <option value="sine">Sine</option>
-                </select>
-            </div>
-
-            <div class="lg:col-span-2 flex flex-col gap-1">
-                <div class="flex items-center justify-between">
-                    <label for="synthCutoff" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                        <i class="fa-solid fa-sliders mr-1 text-cyan-400"></i>Filtro Cutoff
+                <div class="lg:col-span-3 flex flex-col gap-1">
+                    <label for="midiChannelSelect" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                        <i class="fa-solid fa-hashtag mr-1 text-zinc-400"></i>Canale MIDI
                     </label>
-                    <span id="cutoffVal" class="text-xs font-mono-code text-cyan-400">4200Hz</span>
+                    <select id="midiChannelSelect" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-orange-500 transition cursor-pointer font-mono-code">
+                    </select>
                 </div>
-                <input id="synthCutoff" type="range" min="200" max="10000" step="100" value="4200" class="w-full accent-cyan-500 bg-zinc-800 rounded-lg cursor-pointer h-2 mt-1">
-            </div>
 
-            <div class="lg:col-span-3 flex items-center gap-2 justify-end pt-1 sm:pt-4">
-                <button id="panicBtn" class="w-full px-3 py-1.5 bg-red-950/50 hover:bg-red-900/70 active:bg-red-800 text-red-300 border border-red-800/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
-                    <i class="fa-solid fa-triangle-exclamation text-red-400"></i> PANIC (All Off)
-                </button>
+                <div class="lg:col-span-4 flex items-center justify-end pt-1 sm:pt-4">
+                    <button id="panicBtn" class="w-full px-3 py-1.5 bg-red-950/50 hover:bg-red-900/70 active:bg-red-800 text-red-300 border border-red-800/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-triangle-exclamation text-red-400"></i> PANIC (All Notes Off)
+                    </button>
+                </div>
             </div>
         </section>
 
-        <!-- NTS-1 Complete Hardware Synthesis & FX Rack with Physical Mappings & Presets -->
-        <section class="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl flex flex-col gap-3">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2.5">
+        <!-- Section 2: NTS-1 Synthesis & FX Engine (Simple vs Complete Mode) -->
+        <section class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+            <div class="section-header p-3.5 flex flex-wrap items-center justify-between gap-2 cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodySynthSection">
                 <div class="flex items-center gap-2">
                     <span class="w-7 h-7 rounded-lg bg-orange-500/20 text-orange-400 border border-orange-500/40 flex items-center justify-center text-xs">
                         <i class="fa-solid fa-microchip"></i>
                     </span>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h2 class="text-xs sm:text-sm font-bold text-zinc-100 uppercase tracking-wider">Simulatore Hardware Korg NTS-1 (DSP & CC Engine)</h2>
-                            <span class="text-[9px] px-2 py-0.5 rounded bg-orange-950/80 text-orange-300 font-mono-code border border-orange-800/50">LIVE MIDI CC TRANSMITTER</span>
+                            <h2 class="text-xs sm:text-sm font-bold text-zinc-100 uppercase tracking-wider">Sintetizzatore Korg NTS-1 (DSP & CC)</h2>
+                            <span id="activeSynthModeBadge" class="text-[9px] px-2 py-0.5 rounded bg-orange-950/80 text-orange-300 font-mono-code border border-orange-800/50">VISTA COMPLETA</span>
                         </div>
-                        <p class="text-[10px] text-zinc-400">Modifica parametri, ascolta la simulazione audio e vedi esattamente come impostarli fisicamente sull'NTS-1</p>
+                        <p class="text-[10px] text-zinc-400">Simulazione audio Web Audio + invio MIDI CC al Korg reale</p>
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 text-xs">
-                    <!-- Factory Sound Presets -->
-                    <select id="hardwarePresetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer">
-                        <option value="preset_init">⚙️ Iniziale / Default</option>
-                        <option value="preset_bladerunner" selected>🌆 Blade Runner CS-80 Lead</option>
-                        <option value="preset_acid303">🧪 Acid 303 Resonance Bass</option>
-                        <option value="preset_ambientcloud">🌌 Dreamy Ambient Cloud (Huge Reverb)</option>
-                        <option value="preset_chiptune">👾 8-Bit Chiptune Arp Pluck</option>
-                        <option value="preset_spacedrone">🛸 Sci-Fi Phaser Space Drone</option>
-                    </select>
+                <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                    <!-- Mode Switch: Semplice vs Completa -->
+                    <div class="flex items-center bg-zinc-950 p-0.5 rounded-lg border border-zinc-800 text-[11px]">
+                        <button id="modeSimpleBtn" class="px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 font-semibold transition">
+                            <i class="fa-solid fa-sliders mr-1 text-cyan-400"></i>Semplice
+                        </button>
+                        <button id="modeCompleteBtn" class="px-2.5 py-1 rounded bg-orange-600/30 text-orange-300 border border-orange-500/40 font-semibold transition">
+                            <i class="fa-solid fa-cubes mr-1 text-orange-400"></i>Completa
+                        </button>
+                    </div>
 
-                    <button id="saveHwPresetBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded flex items-center gap-1 transition">
-                        <i class="fa-solid fa-floppy-disk text-orange-400"></i> Salva (.json)
-                    </button>
-                    <button id="loadHwPresetBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded flex items-center gap-1 transition">
-                        <i class="fa-solid fa-folder-open text-orange-400"></i> Carica (.json)
-                    </button>
-                    <input type="file" id="hwPresetFileInput" accept=".json" class="hidden">
-                    
-                    <button id="toggleHwGuideBtn" class="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-300 border border-zinc-700 rounded flex items-center gap-1 transition" title="Mostra/Nascondi Guida Manopole Fisiche">
-                        <i class="fa-solid fa-circle-question"></i> <span id="hwGuideLabel">Guida Fisico</span>
+                    <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded ml-1">
+                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Interactive Hardware Modules Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 pt-1">
+            <div id="bodySynthSection" class="section-body p-4 flex flex-col gap-3">
                 
-                <!-- 1. OSC Module -->
-                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
-                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
-                        <span class="text-xs font-bold text-orange-400 uppercase flex items-center gap-1">
-                            <i class="fa-solid fa-wave-square"></i> 1. OSC
-                        </span>
-                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code" title="Premi tasto [OSC] sul Korg">[OSC] + TYPE</span>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-zinc-400 flex justify-between">
-                            <span>Tipo Onda</span>
-                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 53</span>
+                <!-- Quick Controls Bar (shown when Simple View is selected) -->
+                <div id="simpleSynthControls" class="hidden bg-zinc-950/90 border border-zinc-800 p-3 rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <label for="simpleOscShapeType" class="text-xs font-bold text-zinc-300 flex justify-between">
+                            <span><i class="fa-solid fa-wave-square text-orange-400 mr-1.5"></i>Forma d'Onda (OSC)</span>
+                            <span class="text-[10px] text-zinc-500 font-mono-code">Korg: [OSC] + TYPE</span>
                         </label>
-                        <select id="oscShapeType" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-orange-500">
-                            <option value="sawtooth" selected>Sawtooth (Lead/Bass)</option>
-                            <option value="square">Square (Chiptune/Hollow)</option>
-                            <option value="triangle">Triangle (Soft Warm)</option>
-                            <option value="sine">Sine (Pure Sub)</option>
+                        <select id="simpleOscShapeType" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs text-zinc-200 focus:outline-none focus:border-orange-500">
+                            <option value="sawtooth" selected>Sawtooth (Dente di sega - Lead/Bassi NTS-1)</option>
+                            <option value="square">Square / Pulse (Onda Quadra - Chiptune)</option>
+                            <option value="triangle">Triangle (Triangolare - Morbido)</option>
+                            <option value="sine">Sine (Sinusoidale - Sub pulito)</option>
                         </select>
                     </div>
 
-                    <div class="flex flex-col gap-1">
-                        <div class="flex justify-between text-[10px]">
-                            <span class="text-zinc-400">Knob A (Shape)</span>
-                            <span id="oscShapeVal" class="text-orange-400 font-mono-code">64</span>
+                    <div class="flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between text-xs font-bold text-zinc-300">
+                            <span><i class="fa-solid fa-filter text-emerald-400 mr-1.5"></i>Filtro Cutoff (Frequenza di Taglio)</span>
+                            <span id="simpleCutoffVal" class="text-emerald-400 font-mono-code">3600 Hz</span>
                         </div>
-                        <input id="oscShapeSlider" type="range" min="0" max="127" value="64" class="w-full accent-orange-500 bg-zinc-800 rounded h-1 cursor-pointer">
-                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
-                            <span>Korg: Knob A</span>
-                            <span>CC 54</span>
-                        </span>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <div class="flex justify-between text-[10px]">
-                            <span class="text-zinc-400">Knob B (Alt / Sub)</span>
-                            <span id="oscAltVal" class="text-orange-400 font-mono-code">32</span>
-                        </div>
-                        <input id="oscAltSlider" type="range" min="0" max="127" value="32" class="w-full accent-orange-500 bg-zinc-800 rounded h-1 cursor-pointer">
-                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
-                            <span>Korg: Knob B</span>
-                            <span>CC 55</span>
-                        </span>
-                    </div>
-                </div>
-
-                <!-- 2. FILTER Module -->
-                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
-                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
-                        <span class="text-xs font-bold text-emerald-400 uppercase flex items-center gap-1">
-                            <i class="fa-solid fa-filter"></i> 2. FILTER
-                        </span>
-                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code" title="Premi tasto [FILTER] sul Korg">[FILTER]</span>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-zinc-400 flex justify-between">
-                            <span>Tipo Filtro</span>
-                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 42</span>
-                        </label>
-                        <select id="filterTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500">
-                            <option value="lowpass" selected>LPF 2-Pole (12dB Warm)</option>
-                            <option value="lowpass4">LPF 4-Pole (24dB Steep)</option>
-                            <option value="highpass">HPF (Taglia Bassi)</option>
-                            <option value="bandpass">BPF (Passa Banda)</option>
-                        </select>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <div class="flex justify-between text-[10px]">
-                            <span class="text-zinc-400">Knob A (Cutoff)</span>
-                            <span id="filterCutoffHwVal" class="text-emerald-400 font-mono-code">3600 Hz</span>
-                        </div>
-                        <input id="filterCutoffHwSlider" type="range" min="100" max="10000" step="50" value="3600" class="w-full accent-emerald-500 bg-zinc-800 rounded h-1 cursor-pointer">
-                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
-                            <span>Korg: Knob A</span>
+                        <input id="simpleCutoffSlider" type="range" min="100" max="10000" step="50" value="3600" class="w-full accent-emerald-500 bg-zinc-800 rounded-lg cursor-pointer h-2 mt-1.5">
+                        <div class="flex justify-between text-[10px] text-zinc-500 font-mono-code">
+                            <span>Korg: [FILTER] + Knob A</span>
                             <span>CC 43</span>
-                        </span>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <div class="flex justify-between text-[10px]">
-                            <span class="text-zinc-400">Knob B (Resonance)</span>
-                            <span id="filterResoHwVal" class="text-emerald-400 font-mono-code">3.5</span>
                         </div>
-                        <input id="filterResoHwSlider" type="range" min="0.5" max="15" step="0.5" value="3.5" class="w-full accent-emerald-500 bg-zinc-800 rounded h-1 cursor-pointer">
-                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
-                            <span>Korg: Knob B</span>
-                            <span>CC 44</span>
-                        </span>
                     </div>
                 </div>
 
-                <!-- 3. EG (Envelope Generator) Module -->
-                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
-                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
-                        <span class="text-xs font-bold text-yellow-400 uppercase flex items-center gap-1">
-                            <i class="fa-solid fa-chart-line"></i> 3. EG (Inviluppo)
-                        </span>
-                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[EG]</span>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-zinc-400 flex justify-between">
-                            <span>Tipo EG</span>
-                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 14</span>
-                        </label>
-                        <select id="egTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-yellow-500">
-                            <option value="adsr" selected>ADSR (Standard Synth)</option>
-                            <option value="ahr">AHR (Attack-Hold-Release)</option>
-                            <option value="ar">AR (Pluck / Percussivo)</option>
-                            <option value="open">Open (Drone continuo)</option>
+                <!-- Complete Preset & Hardware Bar -->
+                <div id="completeTopBar" class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <label for="hardwarePresetSelect" class="text-[11px] font-semibold text-zinc-400">Preset Patch:</label>
+                        <select id="hardwarePresetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer">
+                            <option value="preset_init">⚙️ Iniziale / Default</option>
+                            <option value="preset_bladerunner" selected>🌆 Blade Runner CS-80 Lead</option>
+                            <option value="preset_acid303">🧪 Acid 303 Resonance Bass</option>
+                            <option value="preset_ambientcloud">🌌 Dreamy Ambient Cloud (Huge Reverb)</option>
+                            <option value="preset_chiptune">👾 8-Bit Chiptune Arp Pluck</option>
+                            <option value="preset_spacedrone">🛸 Sci-Fi Phaser Space Drone</option>
                         </select>
                     </div>
 
-                    <div class="flex flex-col gap-1">
-                        <div class="flex justify-between text-[10px]">
-                            <span class="text-zinc-400">Knob A (Attack)</span>
-                            <span id="egAttackVal" class="text-yellow-400 font-mono-code">0.03s</span>
-                        </div>
-                        <input id="egAttackSlider" type="range" min="0.005" max="2.0" step="0.01" value="0.03" class="w-full accent-yellow-500 bg-zinc-800 rounded h-1 cursor-pointer">
-                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
-                            <span>Korg: Knob A</span>
-                            <span>CC 16</span>
-                        </span>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <div class="flex justify-between text-[10px]">
-                            <span class="text-zinc-400">Knob B (Release/Decay)</span>
-                            <span id="egReleaseVal" class="text-yellow-400 font-mono-code">0.25s</span>
-                        </div>
-                        <input id="egReleaseSlider" type="range" min="0.03" max="3.5" step="0.02" value="0.25" class="w-full accent-yellow-500 bg-zinc-800 rounded h-1 cursor-pointer">
-                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
-                            <span>Korg: Knob B</span>
-                            <span>CC 19</span>
-                        </span>
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <button id="saveHwPresetBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded flex items-center gap-1 transition">
+                            <i class="fa-solid fa-floppy-disk text-orange-400"></i> Salva (.json)
+                        </button>
+                        <button id="loadHwPresetBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded flex items-center gap-1 transition">
+                            <i class="fa-solid fa-folder-open text-orange-400"></i> Carica (.json)
+                        </button>
+                        <input type="file" id="hwPresetFileInput" accept=".json" class="hidden">
+                        
+                        <button id="toggleHwGuideBtn" class="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-300 border border-zinc-700 rounded flex items-center gap-1 transition" title="Mostra/Nascondi Guida Manopole Fisiche">
+                            <i class="fa-solid fa-circle-question"></i> <span id="hwGuideLabel">Guida Fisico</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- 4. MOD FX Module -->
-                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
-                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
-                        <span class="text-xs font-bold text-purple-400 uppercase flex items-center gap-1">
-                            <i class="fa-solid fa-clone"></i> 4. MOD FX
-                        </span>
-                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[MOD] + TYPE</span>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-zinc-400 flex justify-between">
-                            <span>Tipo Modulazione</span>
-                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 88</span>
-                        </label>
-                        <select id="modTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-purple-500">
-                            <option value="off">Spento (Dry)</option>
-                            <option value="chorus" selected>Chorus (Ampiezza stereo)</option>
-                            <option value="ensemble">Ensemble (Polifonico)</option>
-                            <option value="flanger">Flanger (Jet Sweep)</option>
-                            <option value="phaser">Phaser (Rotativo cosmico)</option>
-                        </select>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <div class="flex justify-between text-[10px]">
-                            <span class="text-zinc-400">Knob A (Speed/Rate)</span>
-                            <span id="modSpeedVal" class="text-purple-400 font-mono-code">1.5 Hz</span>
+                <!-- Complete 6 Modules Grid -->
+                <div id="completeRackModulesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 pt-1">
+                    
+                    <!-- 1. OSC Module -->
+                    <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                        <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                            <span class="text-xs font-bold text-orange-400 uppercase flex items-center gap-1">
+                                <i class="fa-solid fa-wave-square"></i> 1. OSC
+                            </span>
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[OSC]</span>
                         </div>
-                        <input id="modSpeedSlider" type="range" min="0.1" max="8.0" step="0.1" value="1.5" class="w-full accent-purple-500 bg-zinc-800 rounded h-1 cursor-pointer">
-                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
-                            <span>Korg: Knob A</span>
-                            <span>CC 28</span>
-                        </span>
+
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] text-zinc-400 flex justify-between">
+                                <span>Forma d'Onda</span>
+                                <span class="text-[9px] text-zinc-500 font-mono-code">CC 53</span>
+                            </label>
+                            <select id="oscShapeType" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-orange-500">
+                                <option value="sawtooth" selected>Sawtooth (Lead)</option>
+                                <option value="square">Square (8-Bit/Pulse)</option>
+                                <option value="triangle">Triangle (Morbido)</option>
+                                <option value="sine">Sine (Sub)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-zinc-400">Knob A (Shape)</span>
+                                <span id="oscShapeVal" class="text-orange-400 font-mono-code">64</span>
+                            </div>
+                            <input id="oscShapeSlider" type="range" min="0" max="127" value="64" class="w-full accent-orange-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                            <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                                <span>Korg: Knob A</span>
+                                <span>CC 54</span>
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-zinc-400">Knob B (Alt)</span>
+                                <span id="oscAltVal" class="text-orange-400 font-mono-code">32</span>
+                            </div>
+                            <input id="oscAltSlider" type="range" min="0" max="127" value="32" class="w-full accent-orange-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                            <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                                <span>Korg: Knob B</span>
+                                <span>CC 55</span>
+                            </span>
+                        </div>
                     </div>
 
-                    <div class="flex flex-col gap-1">
-                        <div class="flex justify-between text-[10px]">
-                            <span class="text-zinc-400">Knob B (Depth)</span>
-                            <span id="modDepthVal" class="text-purple-400 font-mono-code">45%</span>
+                    <!-- 2. FILTER Module -->
+                    <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                        <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                            <span class="text-xs font-bold text-emerald-400 uppercase flex items-center gap-1">
+                                <i class="fa-solid fa-filter"></i> 2. FILTER
+                            </span>
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[FILTER]</span>
                         </div>
-                        <input id="modDepthSlider" type="range" min="0" max="100" value="45" class="w-full accent-purple-500 bg-zinc-800 rounded h-1 cursor-pointer">
-                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
-                            <span>Korg: Knob B</span>
-                            <span>CC 29</span>
-                        </span>
+
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] text-zinc-400 flex justify-between">
+                                <span>Tipo Filtro</span>
+                                <span class="text-[9px] text-zinc-500 font-mono-code">CC 42</span>
+                            </label>
+                            <select id="filterTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500">
+                                <option value="lowpass" selected>LPF 2-Pole (12dB Warm)</option>
+                                <option value="lowpass4">LPF 4-Pole (24dB Steep)</option>
+                                <option value="highpass">HPF (Taglia Bassi)</option>
+                                <option value="bandpass">BPF (Passa Banda)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-zinc-400">Knob A (Cutoff)</span>
+                                <span id="filterCutoffHwVal" class="text-emerald-400 font-mono-code">3600 Hz</span>
+                            </div>
+                            <input id="filterCutoffHwSlider" type="range" min="100" max="10000" step="50" value="3600" class="w-full accent-emerald-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                            <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                                <span>Korg: Knob A</span>
+                                <span>CC 43</span>
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-zinc-400">Knob B (Resonance)</span>
+                                <span id="filterResoHwVal" class="text-emerald-400 font-mono-code">3.5</span>
+                            </div>
+                            <input id="filterResoHwSlider" type="range" min="0.5" max="15" step="0.5" value="3.5" class="w-full accent-emerald-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                            <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                                <span>Korg: Knob B</span>
+                                <span>CC 44</span>
+                            </span>
+                        </div>
                     </div>
-                </div>
+
+                    <!-- 3. EG (Envelope Generator) Module -->
+                    <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                        <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                            <span class="text-xs font-bold text-yellow-400 uppercase flex items-center gap-1">
+                                <i class="fa-solid fa-bolt"></i> 3. EG (ENV)
+                            </span>
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[EG]</span>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] text-zinc-400 flex justify-between">
+                                <span>Tipo Inviluppo</span>
+                                <span class="text-[9px] text-zinc-500 font-mono-code">CC 14</span>
+                            </label>
+                            <select id="egTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-yellow-500">
+                                <option value="adsr" selected>ADSR (Generale)</option>
+                                <option value="ahr">AHR (Attacco/Hold)</option>
+                                <option value="ar">AR (Attacco/Release)</option>
+                                <option value="open">Open (Organo/Drone)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-zinc-400">Knob A (Attack)</span>
+                                <span id="egAttackVal" class="text-yellow-400 font-mono-code">0.03s</span>
+                            </div>
+                            <input id="egAttackSlider" type="range" min="0.005" max="2.0" step="0.01" value="0.03" class="w-full accent-yellow-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                            <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                                <span>Korg: Knob A</span>
+                                <span>CC 16</span>
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-zinc-400">Knob B (Release)</span>
+                                <span id="egReleaseVal" class="text-yellow-400 font-mono-code">0.25s</span>
+                            </div>
+                            <input id="egReleaseSlider" type="range" min="0.03" max="3.5" step="0.02" value="0.25" class="w-full accent-yellow-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                            <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                                <span>Korg: Knob B</span>
+                                <span>CC 19</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 4. MOD FX Module -->
+                    <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                        <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                            <span class="text-xs font-bold text-purple-400 uppercase flex items-center gap-1">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> 4. MOD FX
+                            </span>
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[MOD] + TYPE</span>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] text-zinc-400 flex justify-between">
+                                <span>Tipo Modulazione</span>
+                                <span class="text-[9px] text-zinc-500 font-mono-code">CC 88</span>
+                            </label>
+                            <select id="modTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-purple-500">
+                                <option value="off">Spento (Dry)</option>
+                                <option value="chorus" selected>Chorus (Ampiezza stereo)</option>
+                                <option value="ensemble">Ensemble (Polifonico)</option>
+                                <option value="flanger">Flanger (Jet Sweep)</option>
+                                <option value="phaser">Phaser (Rotativo cosmico)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-zinc-400">Knob A (Speed/Rate)</span>
+                                <span id="modSpeedVal" class="text-purple-400 font-mono-code">1.5 Hz</span>
+                            </div>
+                            <input id="modSpeedSlider" type="range" min="0.1" max="8.0" step="0.1" value="1.5" class="w-full accent-purple-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                            <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                                <span>Korg: Knob A</span>
+                                <span>CC 28</span>
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-zinc-400">Knob B (Depth)</span>
+                                <span id="modDepthVal" class="text-purple-400 font-mono-code">45%</span>
+                            </div>
+                            <input id="modDepthSlider" type="range" min="0" max="100" value="45" class="w-full accent-purple-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                            <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                                <span>Korg: Knob B</span>
+                                <span>CC 29</span>
+                            </span>
+                        </div>
+                    </div>
 
                 <!-- 5. DELAY Module -->
                 <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
@@ -537,13 +596,14 @@
             </div>
         </section>
 
+        <!-- Section 3: Notation Editor & Playback Grid -->
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
             
             <!-- Text Notation Editor Column -->
             <div class="lg:col-span-7 flex flex-col gap-2.5 bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl">
                 <!-- Poetic Text-to-Music (Linguo-Music) Generator Section -->
-                <div class="bg-gradient-to-br from-purple-950/40 via-zinc-950/80 to-zinc-900 border border-purple-500/30 rounded-xl p-3 shadow-md flex flex-col gap-2.5">
-                    <div class="flex items-center justify-between border-b border-purple-500/20 pb-2">
+                <div class="collapsible-section bg-gradient-to-br from-purple-950/40 via-zinc-950/80 to-zinc-900 border border-purple-500/30 rounded-xl p-3 shadow-md flex flex-col gap-2.5">
+                    <div class="section-header flex items-center justify-between border-b border-purple-500/20 pb-2 cursor-pointer select-none" data-target="textGenBody">
                         <div class="flex items-center gap-2">
                             <span class="w-6 h-6 rounded-md bg-purple-600/30 text-purple-300 border border-purple-500/40 flex items-center justify-center text-xs">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -553,12 +613,12 @@
                                 <p class="text-[10px] text-zinc-400">Analizza fonemi e punteggiatura per creare melodie armoniche per il Korg NTS-1</p>
                             </div>
                         </div>
-                        <button id="toggleTextGenBtn" class="text-xs text-purple-300 hover:text-purple-200 bg-purple-950/60 border border-purple-700/50 px-2 py-1 rounded transition flex items-center gap-1">
+                        <button id="toggleTextGenBtn" class="toggle-btn text-xs text-purple-300 hover:text-purple-200 bg-purple-950/60 border border-purple-700/50 px-2 py-1 rounded transition flex items-center gap-1">
                             <i class="fa-solid fa-chevron-down text-[10px]" id="textGenIcon"></i> <span id="textGenBtnLabel">Chiudi</span>
                         </button>
                     </div>
 
-                    <div id="textGenBody" class="flex flex-col gap-2.5">
+                    <div id="textGenBody" class="section-body flex flex-col gap-2.5">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <!-- Literary & Lyric Sample Presets -->
                             <div class="flex items-center gap-1.5 text-xs">
@@ -642,216 +702,249 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2.5">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-file-code text-orange-400 text-sm"></i>
-                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Editor Notazione Sequenza</span>
-                    </div>
+                <!-- Sequence Notation Editor Container (Collapsible) -->
+                <div class="collapsible-section flex flex-col gap-2.5">
+                    <div class="section-header flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2.5 cursor-pointer select-none" data-target="bodyNotationEditor">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-file-code text-orange-400 text-sm"></i>
+                            <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Editor Notazione Sequenza</span>
+                        </div>
 
-                    <!-- Preset Selector -->
-                    <div class="flex items-center gap-2">
-                        <label for="presetSelect" class="text-[11px] font-medium text-zinc-400">Preset:</label>
-                        <select id="presetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-orange-500 cursor-pointer">
-                            <option value="preset_synthwave">🎸 Synthwave Bassline (NTS-1)</option>
-                            <option value="preset_arpeggio">⚡ Arpeggio Elettronico (MML)</option>
-                            <option value="preset_techno">🕹️ Acid Rave Sequence</option>
-                            <option value="preset_abc_melody">🎼 Melodia ABC Standard</option>
-                            <option value="preset_ambient">🌌 Ambient Chords & Lead</option>
-                            <option value="preset_blank">📝 Vuoto (Scrivi o Registra)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Recording & Notation Toolstrip -->
-                <div class="flex flex-wrap items-center justify-between gap-2 bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-800">
-                    <div class="flex items-center gap-2">
-                        <button id="recBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-2 border border-zinc-700 transition">
-                            <span id="recIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-500"></span>
-                            <span id="recLabel">REC OFF</span>
-                        </button>
-
-                        <div class="flex items-center gap-1.5 text-xs">
-                            <label for="recordStepLength" class="text-zinc-400 text-[11px] font-semibold">Passo:</label>
-                            <select id="recordStepLength" class="bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs rounded px-2 py-1 focus:outline-none focus:border-orange-500">
-                                <option value="16">1/16</option>
-                                <option value="8" selected>1/8</option>
-                                <option value="4">1/4</option>
-                                <option value="2">1/2</option>
+                        <!-- Preset Selector -->
+                        <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                            <label for="presetSelect" class="text-[11px] font-medium text-zinc-400">Preset:</label>
+                            <select id="presetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-orange-500 cursor-pointer">
+                                <option value="preset_synthwave">🎸 Synthwave Bassline (NTS-1)</option>
+                                <option value="preset_arpeggio">⚡ Arpeggio Elettronico (MML)</option>
+                                <option value="preset_techno">🕹️ Acid Rave Sequence</option>
+                                <option value="preset_abc_melody">🎼 Melodia ABC Standard</option>
+                                <option value="preset_ambient">🌌 Ambient Chords & Lead</option>
+                                <option value="preset_blank">📝 Vuoto (Scrivi o Registra)</option>
                             </select>
+                            <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded ml-1">
+                                <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                            </button>
                         </div>
-
-                        <button id="insertRestBtn" title="Inserisci una Pausa (oppure premi SPAZIO con REC attivo)" class="text-xs px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 text-orange-300 border border-zinc-700 rounded flex items-center gap-1 transition">
-                            <i class="fa-solid fa-moon text-xs"></i> Pausa [Space]
-                        </button>
-                        <button id="clearEditorBtn" title="Svuota il testo nell'editor" class="text-xs px-2 py-1 text-zinc-400 hover:text-red-400 hover:bg-zinc-900 rounded transition">
-                            <i class="fa-solid fa-eraser"></i>
-                        </button>
                     </div>
 
-                    <div class="flex items-center gap-2 text-xs">
-                        <div class="flex items-center gap-2 border-r border-zinc-800 pr-2">
-                            <label class="inline-flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="syntaxMode" value="abc" checked class="accent-orange-500">
-                                <span class="text-zinc-300 text-xs font-mono-code font-bold">ABC</span>
-                            </label>
-                            <label class="inline-flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="syntaxMode" value="mml" class="accent-orange-500">
-                                <span class="text-zinc-300 text-xs font-mono-code font-bold">MML</span>
-                            </label>
+                    <div id="bodyNotationEditor" class="section-body flex flex-col gap-2.5">
+                        <!-- Recording & Notation Toolstrip -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-800">
+                            <!-- Left: Rec & Syntax Mode -->
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button id="recBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-2 border border-zinc-700 transition">
+                                    <span id="recIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-500"></span>
+                                    <span id="recLabel">REC OFF</span>
+                                </button>
+
+                                <div class="flex items-center gap-1.5 bg-zinc-900 px-2 py-1 rounded border border-zinc-800 text-xs">
+                                    <label class="inline-flex items-center gap-1 cursor-pointer">
+                                        <input type="radio" name="syntaxMode" value="abc" checked class="accent-orange-500">
+                                        <span class="text-zinc-300 text-[11px]">ABC</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1 cursor-pointer ml-1">
+                                        <input type="radio" name="syntaxMode" value="mml" class="accent-orange-500">
+                                        <span class="text-zinc-300 text-[11px]">MML</span>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center gap-1.5 text-xs">
+                                    <label for="recordStepLength" class="text-zinc-400 text-[11px] font-semibold">Passo:</label>
+                                    <select id="recordStepLength" class="bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs rounded px-2 py-1 focus:outline-none focus:border-orange-500">
+                                        <option value="16">1/16</option>
+                                        <option value="8" selected>1/8</option>
+                                        <option value="4">1/4</option>
+                                        <option value="2">1/2</option>
+                                    </select>
+                                </div>
+
+                                <button id="insertRestBtn" title="Inserisci una Pausa (oppure premi SPAZIO con REC attivo)" class="text-xs px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 text-orange-300 border border-zinc-700 rounded flex items-center gap-1 transition">
+                                    <i class="fa-solid fa-moon text-xs"></i> Pausa [Space]
+                                </button>
+                                <button id="clearEditorBtn" title="Svuota il testo nell'editor" class="text-xs px-2 py-1 text-zinc-400 hover:text-red-400 hover:bg-zinc-900 rounded transition">
+                                    <i class="fa-solid fa-eraser"></i>
+                                </button>
+                            </div>
+
+                            <!-- Right: Import / Export Files -->
+                            <div class="flex items-center gap-1.5">
+                                <button id="importBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 rounded text-xs flex items-center gap-1 transition" title="Carica file .abc o .txt">
+                                    <i class="fa-solid fa-upload text-[10px] text-orange-400"></i> Importa
+                                </button>
+                                <button id="exportBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 rounded text-xs flex items-center gap-1 transition" title="Scarica sequenza (.abc)">
+                                    <i class="fa-solid fa-download text-[10px] text-orange-400"></i> .ABC
+                                </button>
+                                <button id="exportMidiBtn" class="px-2.5 py-1 bg-orange-700/50 hover:bg-orange-600 text-white font-semibold border border-orange-500/60 rounded text-xs flex items-center gap-1 shadow-md transition" title="Genera e scarica file MIDI standard (.mid)">
+                                    <i class="fa-solid fa-file-audio text-[10px] text-yellow-300"></i> Scarica .MID
+                                </button>
+                                <input type="file" id="fileInput" accept=".abc,.txt,.mml" class="hidden">
+                            </div>
                         </div>
 
-                        <button id="importBtn" class="text-[11px] text-zinc-400 hover:text-zinc-200 px-2 py-1 bg-zinc-900 rounded border border-zinc-800 flex items-center gap-1">
-                            <i class="fa-solid fa-file-import text-orange-400"></i> Import
-                        </button>
-                        <button id="exportBtn" class="text-[11px] text-zinc-400 hover:text-zinc-200 px-2 py-1 bg-zinc-900 rounded border border-zinc-800 flex items-center gap-1">
-                            <i class="fa-solid fa-file-lines text-orange-400"></i> .ABC
-                        </button>
-                        <button id="exportMidiBtn" class="text-[11px] text-emerald-300 font-semibold hover:text-emerald-200 px-2.5 py-1 bg-emerald-950/60 hover:bg-emerald-900/80 rounded border border-emerald-700/60 flex items-center gap-1.5 shadow-sm transition">
-                            <i class="fa-solid fa-file-audio text-emerald-400"></i> Scarica .MID
-                        </button>
-                        <input type="file" id="fileInput" accept=".abc,.txt,.mml" class="hidden">
+                        <!-- Textarea Editor -->
+                        <div class="relative w-full">
+                            <textarea id="sequenceEditor" rows="9" spellcheck="false" class="w-full bg-zinc-950 font-mono-code text-xs text-orange-100 border border-zinc-800 rounded-lg p-3 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 leading-relaxed custom-scrollbar resize-y shadow-inner" placeholder="Inserisci o registra qui le note musicali..."></textarea>
+                        </div>
+
+                        <!-- Live Visual Step Tracker -->
+                        <div class="flex flex-col gap-1.5 bg-zinc-950/70 border border-zinc-800 p-2.5 rounded-lg">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-zinc-400 font-medium flex items-center gap-1.5">
+                                    <i class="fa-solid fa-bars-staggered text-orange-400"></i> Tracker Note Live:
+                                </span>
+                                <span id="stepCounter" class="font-mono-code text-zinc-400">Passo: 0 / 0</span>
+                            </div>
+                            <div id="tokenVisualizer" class="h-12 overflow-x-auto overflow-y-hidden whitespace-nowrap flex items-center gap-1.5 px-2 bg-zinc-950 border border-zinc-800/80 rounded font-mono-code text-xs text-zinc-400 custom-scrollbar">
+                                <span class="text-zinc-600 italic">Premi Play per visualizzare i passi del sequencer...</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Help Accordion -->
+                        <details class="bg-zinc-950/50 border border-zinc-800/60 rounded-lg text-xs text-zinc-400 p-2.5">
+                            <summary class="font-semibold text-zinc-300 cursor-pointer flex items-center justify-between">
+                                <span><i class="fa-solid fa-book-open text-orange-400 mr-1.5"></i> Guida rapida tastiera e Web Audio</span>
+                                <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500"></i>
+                            </summary>
+                            <div class="mt-2.5 grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-mono-code text-zinc-300 border-t border-zinc-800/60 pt-2">
+                                <div>
+                                    <p class="font-bold text-orange-400 mb-0.5">Tastiera PC (QWERTY):</p>
+                                    <p>• Riga Bassa: <code>Z X C V B N M</code> (C..B), <code>S D G H J</code> (Diesis #)</p>
+                                    <p>• Riga Alta: <code>Q W E R T Y U</code> (C..B), <code>2 3 5 6 7</code> (Diesis #)</p>
+                                    <p>• Con <strong>REC attivo</strong>, suonare i tasti aggiunge le note nel testo.</p>
+                                    <p>• Premi <strong>Spazio</strong> con REC attivo per inserire una pausa.</p>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-cyan-400 mb-0.5">Ascolto senza MIDI:</p>
+                                    <p>• Seleziona <strong>"Solo Casse PC / Mobile"</strong> in alto per comporre in cuffia o sul telefono ovunque ti trovi.</p>
+                                    <p>• Puoi modificare l'onda e il filtro in cima alla pagina per testare il timbro desiderato.</p>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                 </div>
-
-                <!-- Textarea Editor -->
-                <div class="relative w-full">
-                    <textarea id="sequenceEditor" rows="9" spellcheck="false" class="w-full bg-zinc-950 font-mono-code text-xs text-orange-100 border border-zinc-800 rounded-lg p-3 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 leading-relaxed custom-scrollbar resize-y shadow-inner" placeholder="Inserisci o registra qui le note musicali..."></textarea>
-                </div>
-
-                <!-- Live Visual Step Tracker -->
-                <div class="flex flex-col gap-1.5 bg-zinc-950/70 border border-zinc-800 p-2.5 rounded-lg">
-                    <div class="flex items-center justify-between text-[11px]">
-                        <span class="text-zinc-400 font-medium flex items-center gap-1.5">
-                            <i class="fa-solid fa-bars-staggered text-orange-400"></i> Tracker Note Live:
-                        </span>
-                        <span id="stepCounter" class="font-mono-code text-zinc-400">Passo: 0 / 0</span>
-                    </div>
-                    <div id="tokenVisualizer" class="h-12 overflow-x-auto overflow-y-hidden whitespace-nowrap flex items-center gap-1.5 px-2 bg-zinc-950 border border-zinc-800/80 rounded font-mono-code text-xs text-zinc-400 custom-scrollbar">
-                        <span class="text-zinc-600 italic">Premi Play per visualizzare i passi del sequencer...</span>
-                    </div>
-                </div>
-
-                <!-- Quick Help Accordion -->
-                <details class="bg-zinc-950/50 border border-zinc-800/60 rounded-lg text-xs text-zinc-400 p-2.5">
-                    <summary class="font-semibold text-zinc-300 cursor-pointer flex items-center justify-between">
-                        <span><i class="fa-solid fa-book-open text-orange-400 mr-1.5"></i> Guida rapida tastiera e Web Audio</span>
-                        <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500"></i>
-                    </summary>
-                    <div class="mt-2.5 grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-mono-code text-zinc-300 border-t border-zinc-800/60 pt-2">
-                        <div>
-                            <p class="font-bold text-orange-400 mb-0.5">Tastiera PC (QWERTY):</p>
-                            <p>• Riga Bassa: <code>Z X C V B N M</code> (C..B), <code>S D G H J</code> (Diesis #)</p>
-                            <p>• Riga Alta: <code>Q W E R T Y U</code> (C..B), <code>2 3 5 6 7</code> (Diesis #)</p>
-                            <p>• Con <strong>REC attivo</strong>, suonare i tasti aggiunge le note nel testo.</p>
-                            <p>• Premi <strong>Spazio</strong> con REC attivo per inserire una pausa.</p>
-                        </div>
-                        <div>
-                            <p class="font-bold text-cyan-400 mb-0.5">Ascolto senza MIDI:</p>
-                            <p>• Seleziona <strong>"Solo Casse PC / Mobile"</strong> in alto per comporre in cuffia o sul telefono ovunque ti trovi.</p>
-                            <p>• Puoi modificare l'onda e il filtro in cima alla pagina per testare il timbro desiderato.</p>
-                        </div>
-                    </div>
-                </details>
 
             </div>
 
+            <!-- Playback and Keyboard Column -->
             <div class="lg:col-span-5 flex flex-col gap-3">
                 
-                <!-- Playback & Transport Controls -->
-                <div class="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl flex flex-col gap-3">
-                    <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
-                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-                            <i class="fa-solid fa-play mr-1.5 text-emerald-400"></i>Controlli Playback
+                <!-- Playback & Transport Controls (Collapsible) -->
+                <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                    <div class="section-header p-3.5 flex items-center justify-between border-b border-zinc-800 cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850" data-target="bodyTransportSection">
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-play text-emerald-400"></i>Controlli Playback & Tempo
                         </span>
-                        <div class="flex items-center gap-1.5">
-                            <span id="playbackLed" class="w-2 h-2 rounded-full bg-zinc-600"></span>
-                            <span id="playbackStatusLabel" class="text-xs text-zinc-400 font-medium">Fermo</span>
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1.5 mr-1">
+                                <span id="playbackLed" class="w-2 h-2 rounded-full bg-zinc-600"></span>
+                                <span id="playbackStatusLabel" class="text-xs text-zinc-400 font-medium">Fermo</span>
+                            </div>
+                            <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                                <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Transport Buttons -->
-                    <div class="grid grid-cols-4 gap-2">
-                        <button id="playBtn" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 shadow-lg transition">
-                            <i class="fa-solid fa-play text-sm"></i>
-                            <span>PLAY</span>
-                        </button>
-                        <button id="pauseBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 border border-zinc-700 transition">
-                            <i class="fa-solid fa-pause text-sm"></i>
-                            <span>PAUSA</span>
-                        </button>
-                        <button id="stopBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 border border-zinc-700 transition">
-                            <i class="fa-solid fa-stop text-sm"></i>
-                            <span>STOP</span>
-                        </button>
-                        <button id="loopToggleBtn" class="py-2.5 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/50 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition">
-                            <i class="fa-solid fa-repeat text-sm"></i>
-                            <span id="loopLabel">LOOP ON</span>
-                        </button>
-                    </div>
-
-                    <!-- BPM and Gate Sliders -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div class="flex flex-col gap-1 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-zinc-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1 text-orange-400"></i>Tempo (BPM)</span>
-                                <span id="bpmValue" class="font-mono-code font-bold text-orange-400">128</span>
-                            </div>
-                            <input id="bpmSlider" type="range" min="40" max="240" value="128" class="w-full accent-orange-500 bg-zinc-800 rounded h-1.5 cursor-pointer mt-1">
+                    <div id="bodyTransportSection" class="section-body p-4 flex flex-col gap-3">
+                        <!-- Transport Buttons -->
+                        <div class="grid grid-cols-4 gap-2">
+                            <button id="playBtn" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 shadow-lg transition">
+                                <i class="fa-solid fa-play text-sm"></i>
+                                <span>PLAY</span>
+                            </button>
+                            <button id="pauseBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 border border-zinc-700 transition">
+                                <i class="fa-solid fa-pause text-sm"></i>
+                                <span>PAUSA</span>
+                            </button>
+                            <button id="stopBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 border border-zinc-700 transition">
+                                <i class="fa-solid fa-stop text-sm"></i>
+                                <span>STOP</span>
+                            </button>
+                            <button id="loopToggleBtn" class="py-2.5 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/50 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition">
+                                <i class="fa-solid fa-repeat text-sm"></i>
+                                <span id="loopLabel">LOOP ON</span>
+                            </button>
                         </div>
 
-                        <div class="flex flex-col gap-1 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-zinc-400 font-semibold"><i class="fa-solid fa-wave-square mr-1 text-cyan-400"></i>Gate (Durata %)</span>
-                                <span id="gateValue" class="font-mono-code font-bold text-cyan-400">80%</span>
+                        <!-- BPM and Gate Sliders -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div class="flex flex-col gap-1 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-zinc-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1 text-orange-400"></i>Tempo (BPM)</span>
+                                    <span id="bpmValue" class="font-mono-code font-bold text-orange-400">128</span>
+                                </div>
+                                <input id="bpmSlider" type="range" min="40" max="240" value="128" class="w-full accent-orange-500 bg-zinc-800 rounded h-1.5 cursor-pointer mt-1">
                             </div>
-                            <input id="gateSlider" type="range" min="10" max="100" value="80" class="w-full accent-cyan-500 bg-zinc-800 rounded h-1.5 cursor-pointer mt-1">
+
+                            <div class="flex flex-col gap-1 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-zinc-400 font-semibold"><i class="fa-solid fa-wave-square mr-1 text-cyan-400"></i>Gate (Durata %)</span>
+                                    <span id="gateValue" class="font-mono-code font-bold text-cyan-400">80%</span>
+                                </div>
+                                <input id="gateSlider" type="range" min="10" max="100" value="80" class="w-full accent-cyan-500 bg-zinc-800 rounded h-1.5 cursor-pointer mt-1">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Interactive Mini Keyboard -->
-                <div class="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl flex flex-col gap-2">
-                    <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
-                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-                            <i class="fa-solid fa-keyboard mr-1.5 text-orange-400"></i>Tastiera (2 Ottave + PC QWERTY)
+                <!-- Interactive Mini Keyboard (Collapsible) -->
+                <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                    <div class="section-header p-3.5 flex items-center justify-between border-b border-zinc-800 cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850" data-target="bodyKeyboardSection">
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-keyboard text-orange-400"></i>Tastiera (2 Ottave + PC QWERTY)
                         </span>
-                        <div class="flex items-center gap-1.5">
-                            <button id="octaveMinusBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-xs rounded border border-zinc-700 font-bold">-</button>
-                            <span id="octaveDisplay" class="text-xs font-mono-code text-orange-400 font-bold px-1.5">C3-B4</span>
-                            <button id="octavePlusBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-xs rounded border border-zinc-700 font-bold">+</button>
+                        <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                            <div class="flex items-center gap-1.5">
+                                <button id="octaveMinusBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-xs rounded border border-zinc-700 font-bold">-</button>
+                                <span id="octaveDisplay" class="text-xs font-mono-code text-orange-400 font-bold px-1.5">C3-B4</span>
+                                <button id="octavePlusBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-xs rounded border border-zinc-700 font-bold">+</button>
+                            </div>
+                            <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded ml-1">
+                                <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Visual Keyboard -->
-                    <div class="relative w-full overflow-x-auto py-1">
-                        <div id="pianoContainer" class="relative flex min-w-[340px] h-36 rounded-lg overflow-hidden bg-zinc-950 p-1 border border-zinc-800 shadow-inner">
-                            <!-- Injected dynamically -->
+                    <div id="bodyKeyboardSection" class="section-body p-4 flex flex-col gap-2">
+                        <!-- Visual Keyboard -->
+                        <div class="relative w-full overflow-x-auto py-1">
+                            <div id="pianoContainer" class="relative flex min-w-[340px] h-36 rounded-lg overflow-hidden bg-zinc-950 p-1 border border-zinc-800 shadow-inner">
+                                <!-- Injected dynamically -->
+                            </div>
                         </div>
+                        <p class="text-[10px] text-zinc-400 text-center flex items-center justify-center gap-2">
+                            <span><kbd class="px-1 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 font-mono-code">Z-M</kbd> Bassa</span>
+                            <span>•</span>
+                            <span><kbd class="px-1 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 font-mono-code">Q-U</kbd> Alta</span>
+                        </p>
                     </div>
-                    <p class="text-[10px] text-zinc-400 text-center flex items-center justify-center gap-2">
-                        <span><kbd class="px-1 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 font-mono-code">Z-M</kbd> Bassa</span>
-                        <span>•</span>
-                        <span><kbd class="px-1 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 font-mono-code">Q-U</kbd> Alta</span>
-                    </p>
                 </div>
 
             </div>
 
         </section>
 
-        <section class="bg-zinc-900/80 border border-zinc-800 rounded-xl p-3.5 flex flex-col gap-2 shadow-lg">
-            <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+        <!-- Section 4: Event Log (Collapsible) -->
+        <section class="collapsible-section bg-zinc-900/80 border border-zinc-800 rounded-xl shadow-lg overflow-hidden transition-all duration-200">
+            <div class="section-header p-3 flex items-center justify-between border-b border-zinc-800/80 cursor-pointer select-none bg-zinc-900/70 hover:bg-zinc-850" data-target="bodyLogSection">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-terminal text-xs text-cyan-400"></i>
                     <span class="text-xs font-bold text-zinc-300 uppercase tracking-wider">Monitor Eventi Audio & MIDI</span>
                     <span id="logCounter" class="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded font-mono-code">0 eventi</span>
                 </div>
-                <button id="clearLogBtn" class="text-xs text-zinc-400 hover:text-zinc-200 transition">
-                    <i class="fa-solid fa-trash-can mr-1"></i>Pulisci Log
-                </button>
+                <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                    <button id="clearLogBtn" class="text-xs text-zinc-400 hover:text-zinc-200 transition px-2 py-1 bg-zinc-800 rounded border border-zinc-700 text-[11px]">
+                        <i class="fa-solid fa-trash-can mr-1"></i>Pulisci Log
+                    </button>
+                    <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded ml-1">
+                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                    </button>
+                </div>
             </div>
-            <div id="midiLogContainer" class="h-28 bg-zinc-950 border border-zinc-800/80 rounded-lg p-2.5 font-mono-code text-xs overflow-y-auto custom-scrollbar flex flex-col gap-1 text-zinc-300">
-                <div class="text-zinc-500 italic">In attesa di eventi... Premi PLAY, tocca i tasti o attiva REC.</div>
+            <div id="bodyLogSection" class="section-body p-3 flex flex-col gap-2">
+                <div id="midiLogContainer" class="h-28 bg-zinc-950 border border-zinc-800/80 rounded-lg p-2.5 font-mono-code text-xs overflow-y-auto custom-scrollbar flex flex-col gap-1 text-zinc-300">
+                    <div class="text-zinc-500 italic">In attesa di eventi... Premi PLAY, tocca i tasti o attiva REC.</div>
+                </div>
             </div>
         </section>
 
@@ -1227,8 +1320,6 @@ lost into the cathode light.`,
         const midiOutputSelect = document.getElementById('midiOutputSelect');
         const midiChannelSelect = document.getElementById('midiChannelSelect');
         const soundTargetSelect = document.getElementById('soundTargetSelect');
-        const synthCutoff = document.getElementById('synthCutoff');
-        const cutoffVal = document.getElementById('cutoffVal');
         const refreshMidiBtn = document.getElementById('refreshMidiBtn');
         const statusIndicator = document.getElementById('statusIndicator');
         const statusText = document.getElementById('statusText');
@@ -1289,12 +1380,82 @@ lost into the cathode light.`,
         const toggleHwGuideBtn = document.getElementById('toggleHwGuideBtn');
         const hwGuideSection = document.getElementById('hwGuideSection');
 
+        // Simple vs Complete Synth View Mode elements
+        const modeSimpleBtn = document.getElementById('modeSimpleBtn');
+        const modeCompleteBtn = document.getElementById('modeCompleteBtn');
+        const simpleSynthControls = document.getElementById('simpleSynthControls');
+        const completeTopBar = document.getElementById('completeTopBar');
+        const completeRackModulesGrid = document.getElementById('completeRackModulesGrid');
+        const activeSynthModeBadge = document.getElementById('activeSynthModeBadge');
+        const simpleOscShapeType = document.getElementById('simpleOscShapeType');
+        const simpleCutoffSlider = document.getElementById('simpleCutoffSlider');
+        const simpleCutoffVal = document.getElementById('simpleCutoffVal');
+
+        let isSimpleSynthMode = false;
+
+        function setSynthViewMode(simple) {
+            isSimpleSynthMode = simple;
+            if (simple) {
+                simpleSynthControls.classList.remove('hidden');
+                completeTopBar.classList.add('hidden');
+                completeRackModulesGrid.classList.add('hidden');
+                hwGuideSection.classList.add('hidden');
+
+                modeSimpleBtn.className = 'px-2.5 py-1 rounded bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 font-semibold transition';
+                modeCompleteBtn.className = 'px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 font-semibold transition';
+                activeSynthModeBadge.textContent = 'VISTA SEMPLICE';
+                activeSynthModeBadge.className = 'text-[9px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 font-mono-code border border-cyan-800/50';
+
+                // Sync simple controls from full controls
+                simpleOscShapeType.value = oscShapeType.value;
+                simpleCutoffSlider.value = filterCutoffHwSlider.value;
+                simpleCutoffVal.textContent = `${simpleCutoffSlider.value} Hz`;
+            } else {
+                simpleSynthControls.classList.add('hidden');
+                completeTopBar.classList.remove('hidden');
+                completeRackModulesGrid.classList.remove('hidden');
+
+                modeCompleteBtn.className = 'px-2.5 py-1 rounded bg-orange-600/30 text-orange-300 border border-orange-500/40 font-semibold transition';
+                modeSimpleBtn.className = 'px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 font-semibold transition';
+                activeSynthModeBadge.textContent = 'VISTA COMPLETA';
+                activeSynthModeBadge.className = 'text-[9px] px-2 py-0.5 rounded bg-orange-950/80 text-orange-300 font-mono-code border border-orange-800/50';
+
+                // Sync full controls from simple controls
+                oscShapeType.value = simpleOscShapeType.value;
+                filterCutoffHwSlider.value = simpleCutoffSlider.value;
+                filterCutoffHwVal.textContent = `${simpleCutoffSlider.value} Hz`;
+            }
+        }
+
+        modeSimpleBtn.addEventListener('click', () => setSynthViewMode(true));
+        modeCompleteBtn.addEventListener('click', () => setSynthViewMode(false));
+
+        simpleOscShapeType.addEventListener('change', (e) => {
+            oscShapeType.value = e.target.value;
+            const mapCC = { 'sawtooth': 0, 'square': 32, 'triangle': 64, 'sine': 96 };
+            sendMidiCC(53, mapCC[e.target.value] || 0);
+            addLog('Korg OSC', `Tipo onda impostato: ${e.target.value} (CC 53)`, 'text-orange-400');
+        });
+
+        simpleCutoffSlider.addEventListener('input', (e) => {
+            const freq = parseInt(e.target.value, 10);
+            simpleCutoffVal.textContent = `${freq} Hz`;
+            filterCutoffHwSlider.value = freq;
+            filterCutoffHwVal.textContent = `${freq} Hz`;
+            const ccVal = Math.round((freq / 10000) * 127);
+            sendMidiCC(43, ccVal);
+            for (let v of activeVoices.values()) {
+                if (v.filterNode) v.filterNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            }
+        });
+
         toggleHwGuideBtn.addEventListener('click', () => {
             hwGuideSection.classList.toggle('hidden');
         });
 
         // Event listeners with dual action: update DSP & send NTS-1 MIDI CC
         oscShapeType.addEventListener('change', (e) => {
+            simpleOscShapeType.value = e.target.value;
             const mapCC = { 'sawtooth': 0, 'square': 32, 'triangle': 64, 'sine': 96 };
             sendMidiCC(53, mapCC[e.target.value] || 0);
             addLog('Korg OSC', `Tipo onda impostato: ${e.target.value} (CC 53)`, 'text-orange-400');
@@ -1321,8 +1482,8 @@ lost into the cathode light.`,
         filterCutoffHwSlider.addEventListener('input', (e) => {
             const freq = parseInt(e.target.value, 10);
             filterCutoffHwVal.textContent = `${freq} Hz`;
-            synthCutoff.value = freq;
-            cutoffVal.textContent = `${freq}Hz`;
+            simpleCutoffSlider.value = freq;
+            simpleCutoffVal.textContent = `${freq} Hz`;
             const ccVal = Math.round((freq / 10000) * 127);
             sendMidiCC(43, ccVal);
             for (let v of activeVoices.values()) {
@@ -1502,8 +1663,8 @@ lost into the cathode light.`,
                 filterCutoffHwVal.textContent = `${filterCutoffHwSlider.value} Hz`;
                 filterResoHwSlider.value = p.filter.resonance || 3.5;
                 filterResoHwVal.textContent = parseFloat(filterResoHwSlider.value).toFixed(1);
-                synthCutoff.value = filterCutoffHwSlider.value;
-                cutoffVal.textContent = `${filterCutoffHwSlider.value}Hz`;
+                simpleCutoffSlider.value = filterCutoffHwSlider.value;
+                simpleCutoffVal.textContent = `${filterCutoffHwSlider.value} Hz`;
                 sendMidiCC(42, (p.filter.type === 'lowpass4' ? 32 : p.filter.type === 'highpass' ? 64 : 0));
                 sendMidiCC(43, Math.round((filterCutoffHwSlider.value / 10000) * 127));
                 sendMidiCC(44, Math.round((filterResoHwSlider.value / 15) * 127));
@@ -1686,9 +1847,58 @@ lost into the cathode light.`,
             midiChannelSelect.appendChild(opt);
         }
 
-        synthCutoff.addEventListener('input', (e) => {
-            cutoffVal.textContent = `${e.target.value}Hz`;
-        });
+        // Collapsible sections initialization and master toggles
+        function setupCollapsibleSections() {
+            document.querySelectorAll('.collapsible-section .section-header').forEach(header => {
+                header.addEventListener('click', (e) => {
+                    const targetId = header.dataset.target;
+                    const body = document.getElementById(targetId);
+                    if (!body) return;
+
+                    const isCurrentlyHidden = body.classList.contains('hidden');
+                    const chevron = header.querySelector('.toggle-btn i') || header.querySelector('i.fa-chevron-down, i.fa-chevron-right');
+
+                    if (isCurrentlyHidden) {
+                        body.classList.remove('hidden');
+                        if (chevron) {
+                            chevron.className = 'fa-solid fa-chevron-down text-xs transition-transform duration-200';
+                        }
+                    } else {
+                        body.classList.add('hidden');
+                        if (chevron) {
+                            chevron.className = 'fa-solid fa-chevron-right text-xs transition-transform duration-200';
+                        }
+                    }
+                });
+            });
+
+            const expandAllBtn = document.getElementById('expandAllSectionsBtn');
+            const collapseAllBtn = document.getElementById('collapseAllSectionsBtn');
+
+            if (expandAllBtn) {
+                expandAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.collapsible-section .section-body').forEach(body => {
+                        body.classList.remove('hidden');
+                    });
+                    document.querySelectorAll('.collapsible-section .section-header').forEach(header => {
+                        const chevron = header.querySelector('.toggle-btn i') || header.querySelector('i.fa-chevron-down, i.fa-chevron-right');
+                        if (chevron) chevron.className = 'fa-solid fa-chevron-down text-xs transition-transform duration-200';
+                    });
+                });
+            }
+
+            if (collapseAllBtn) {
+                collapseAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.collapsible-section .section-body').forEach(body => {
+                        body.classList.add('hidden');
+                    });
+                    document.querySelectorAll('.collapsible-section .section-header').forEach(header => {
+                        const chevron = header.querySelector('.toggle-btn i') || header.querySelector('i.fa-chevron-down, i.fa-chevron-right');
+                        if (chevron) chevron.className = 'fa-solid fa-chevron-right text-xs transition-transform duration-200';
+                    });
+                });
+            }
+        }
 
         async function initWebMIDI() {
             if (!navigator.requestMIDIAccess) {
@@ -1879,8 +2089,9 @@ lost into the cathode light.`,
         function recordNoteToText(midiNote) {
             if (!isRecording) return;
 
-            const mode = document.querySelector('input[name="syntaxMode"]:checked').value;
-            const stepLen = recordStepLength.value;
+            const modeInput = document.querySelector('input[name="syntaxMode"]:checked');
+            const mode = modeInput ? modeInput.value : 'abc';
+            const stepLen = recordStepLength ? recordStepLength.value : '8';
             let token = (mode === 'mml') ? midiNoteToMML(midiNote, stepLen) : midiNoteToABC(midiNote, stepLen);
 
             appendTokenToEditor(token);
@@ -1888,15 +2099,17 @@ lost into the cathode light.`,
 
         function recordRestToText() {
             if (!isRecording) return;
-            const mode = document.querySelector('input[name="syntaxMode"]:checked').value;
-            const stepLen = recordStepLength.value;
+            const modeInput = document.querySelector('input[name="syntaxMode"]:checked');
+            const mode = modeInput ? modeInput.value : 'abc';
+            const stepLen = recordStepLength ? recordStepLength.value : '8';
             let token = (mode === 'mml') ? `r${stepLen}` : (stepLen === '4') ? 'z2' : (stepLen === '2') ? 'z4' : (stepLen === '16') ? 'z/2' : 'z';
 
             appendTokenToEditor(token);
             addLog('REC', `Inserita Pausa: ${token}`, 'text-orange-300');
         }
 
-        insertRestBtn.addEventListener('click', recordRestToText);
+        if (insertRestBtn) insertRestBtn.addEventListener('click', recordRestToText);
+        if (recBtn) recBtn.addEventListener('click', toggleRecording);
 
         function appendTokenToEditor(token) {
             let currentText = sequenceEditor.value;
@@ -2154,7 +2367,8 @@ lost into the cathode light.`,
             }
 
             const cleanText = cleanLines.join(' ');
-            const selectedMode = document.querySelector('input[name="syntaxMode"]:checked').value;
+            const selectedModeInput = document.querySelector('input[name="syntaxMode"]:checked');
+            const selectedMode = selectedModeInput ? selectedModeInput.value : 'abc';
             const useMml = selectedMode === 'mml' || (!isAbcHeaderPresent && (cleanText.includes('o') || cleanText.includes('t') || cleanText.includes('l') || cleanText.includes('>')));
 
             return useMml ? parseMML(cleanText, bpmFromHeader) : parseABC(cleanText, unitLength, bpmFromHeader);
@@ -2420,26 +2634,28 @@ lost into the cathode light.`,
             return fullBytes;
         }
 
-        exportMidiBtn.addEventListener('click', () => {
-            const parsed = parseNotationText(sequenceEditor.value);
-            if (!parsed.events || parsed.events.length === 0) {
-                addLog('Export', 'Nessuna nota trovata per esportare il file MIDI', 'text-yellow-400');
-                return;
-            }
+        if (exportMidiBtn) {
+            exportMidiBtn.addEventListener('click', () => {
+                const parsed = parseNotationText(sequenceEditor.value);
+                if (!parsed.events || parsed.events.length === 0) {
+                    addLog('Export', 'Nessuna nota trovata per esportare il file MIDI', 'text-yellow-400');
+                    return;
+                }
 
-            const targetTempo = parsed.initialBpm || bpm;
-            const midiBytes = createStandardMidiFile(parsed.events, targetTempo, midiChannel);
-            const blob = new Blob([midiBytes], { type: 'audio/midi' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'korg_nts1_sequence.mid';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            addLog('Export MIDI', `File MIDI scaricato con successo (korg_nts1_sequence.mid, ${parsed.events.length} passi @ ${targetTempo} BPM)`, 'text-emerald-400 font-bold');
-        });
+                const targetTempo = parsed.initialBpm || bpm;
+                const midiBytes = createStandardMidiFile(parsed.events, targetTempo, midiChannel);
+                const blob = new Blob([midiBytes], { type: 'audio/midi' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'korg_nts1_sequence.mid';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                addLog('Export MIDI', `File MIDI scaricato con successo (korg_nts1_sequence.mid, ${parsed.events.length} passi @ ${targetTempo} BPM)`, 'text-emerald-400 font-bold');
+            });
+        }
 
         function renderVisualizerTokens(events) {
             tokenVisualizer.innerHTML = '';
@@ -2659,7 +2875,7 @@ lost into the cathode light.`,
                 stopPlayback();
                 const parsed = parseNotationText(sequenceEditor.value);
                 renderVisualizerTokens(parsed.events);
-                addLog('Preset', `Caricato preset: ${e.target.options[e.target.selectedIndex].text}`, 'text-orange-400');
+                addLog('Preset', `Caricato preset: ${key}`, 'text-orange-400');
             }
         });
 
@@ -2670,36 +2886,40 @@ lost into the cathode light.`,
             }
         });
 
-        importBtn.addEventListener('click', () => fileInput.click());
+        if (importBtn && fileInput) {
+            importBtn.addEventListener('click', () => fileInput.click());
 
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                sequenceEditor.value = ev.target.result;
-                stopPlayback();
-                const parsed = parseNotationText(sequenceEditor.value);
-                renderVisualizerTokens(parsed.events);
-                addLog('File', `Caricato file: ${file.name}`, 'text-emerald-400');
-            };
-            reader.readAsText(file);
-        });
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    sequenceEditor.value = ev.target.result;
+                    stopPlayback();
+                    const parsed = parseNotationText(sequenceEditor.value);
+                    renderVisualizerTokens(parsed.events);
+                    addLog('File', `Caricato file: ${file.name}`, 'text-emerald-400');
+                };
+                reader.readAsText(file);
+            });
+        }
 
-        exportBtn.addEventListener('click', () => {
-            const content = sequenceEditor.value;
-            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'nts1_sequence.abc';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            addLog('File', 'Sequenza esportata in nts1_sequence.abc', 'text-cyan-400');
-        });
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                const content = sequenceEditor.value;
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'nts1_sequence.abc';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                addLog('File', 'Sequenza esportata in nts1_sequence.abc', 'text-cyan-400');
+            });
+        }
 
         function renderPianoKeyboard() {
             pianoContainer.innerHTML = '';
@@ -2891,6 +3111,7 @@ lost into the cathode light.`,
         window.addEventListener('DOMContentLoaded', () => {
             poetrySourceText.value = POETRY_SAMPLES.dante;
             sequenceEditor.value = PRESETS.preset_synthwave;
+            setupCollapsibleSections();
             renderPianoKeyboard();
             const parsed = parseNotationText(sequenceEditor.value);
             renderVisualizerTokens(parsed.events);
