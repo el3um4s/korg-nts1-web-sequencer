@@ -48,9 +48,9 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">ABC SONG ARRANGER</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">STUDIO PRO v1.8.1</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">STUDIO PRO v1.8</span>
                 </div>
-                <p class="text-xs text-zinc-400">Generatore ABC Reattivo con Fonemi Multilingua (IT/EN/TP) & Stato Auto-Match Trasparente</p>
+                <p class="text-xs text-zinc-400">Generatore ABC Reattivo con Fonemi Multilingua (IT / EN / Toki Pona) & Live Auto-Update</p>
             </div>
         </div>
 
@@ -172,17 +172,15 @@
                 <div id="bodyHarmonySection" class="section-body p-3.5 flex flex-col gap-3">
                     <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
                         <span class="text-[11px] text-zinc-400 font-medium">Scelta scale e target timbrici Korg:</span>
-                        <!-- Toggle Chiaro Auto-Match -->
-                        <button id="autoMatchToggleBtn" class="px-2.5 py-1 bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 rounded text-[11px] font-bold transition flex items-center gap-1.5" title="Attiva/Disattiva l'impostazione automatica per genere/mood">
-                            <span id="autoMatchLed" class="w-2 h-2 rounded-full bg-emerald-500 led-active"></span>
-                            <span id="autoMatchLabel">Auto-Match: ATTIVO</span>
+                        <button id="autoMatchBtn" class="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded text-[10px] font-bold transition flex items-center gap-1.5" title="Imposta automaticamente l'oscillatore e la tonica ideale per genere e mood">
+                            <i class="fa-solid fa-wand-sparkles text-amber-400"></i> Auto-Match Consigliato
                         </button>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div class="flex flex-col gap-1">
                             <label for="genreStyleSelect" class="text-[11px] font-semibold text-zinc-400">Stile / Genere:</label>
-                            <select id="genreStyleSelect" class="auto-trigger bg-zinc-950 border border-zinc-700 text-purple-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-purple-500 cursor-pointer font-medium">
+                            <select id="genreStyleSelect" class="auto-trigger bg-zinc-950 border border-zinc-700 text-purple-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-purple-500 cursor-pointer">
                                 <option value="synthwave">⚡ Synthwave / Retrowave</option>
                                 <option value="modal_jazz">🎷 Modal Jazz & Soul</option>
                                 <option value="lofi_study">☕ Chill Lo-Fi Study</option>
@@ -199,7 +197,7 @@
 
                         <div class="flex flex-col gap-1">
                             <label for="moodSelect" class="text-[11px] font-semibold text-zinc-400">Mood / Tonalità Emotiva:</label>
-                            <select id="moodSelect" class="auto-trigger bg-zinc-950 border border-zinc-700 text-amber-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer font-medium">
+                            <select id="moodSelect" class="auto-trigger bg-zinc-950 border border-zinc-700 text-amber-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer">
                                 <option value="cheerful">☀️ Allegro & Vivace (Maggiore)</option>
                                 <option value="melancholic" selected>🍂 Malinconico & Intimo (Minore/Dorico)</option>
                                 <option value="dark">🌑 Triste, Cupo & Freddo (Eolio/Locrio)</option>
@@ -210,11 +208,8 @@
                         </div>
 
                         <div class="flex flex-col gap-1">
-                            <label for="oscTargetSelect" class="text-[11px] font-semibold text-zinc-400 flex items-center justify-between">
-                                <span>Oscillatore Strofa (Main):</span>
-                                <span class="text-[9px] text-zinc-500 font-mono-code">CC 53</span>
-                            </label>
-                            <select id="oscTargetSelect" class="auto-trigger manual-override-trigger bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-orange-500 cursor-pointer font-mono-code">
+                            <label for="oscTargetSelect" class="text-[11px] font-semibold text-zinc-400">Oscillatore Strofa (Main):</label>
+                            <select id="oscTargetSelect" class="auto-trigger bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-orange-500 cursor-pointer font-mono-code">
                                 <option value="0">SAW (Sawtooth - CC 53: 0)</option>
                                 <option value="16">TRI (Triangle - CC 53: 16)</option>
                                 <option value="32">SQR (Square - CC 53: 32)</option>
@@ -229,7 +224,7 @@
 
                         <div class="flex flex-col gap-1">
                             <label for="rootNoteSelect" class="text-[11px] font-semibold text-zinc-400">Tonica di Base:</label>
-                            <select id="rootNoteSelect" class="auto-trigger manual-override-trigger bg-zinc-950 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-purple-500 cursor-pointer font-mono-code">
+                            <select id="rootNoteSelect" class="auto-trigger bg-zinc-950 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-purple-500 cursor-pointer font-mono-code">
                                 <option value="C3" selected>C3 (Do 3 - Centrale Standard)</option>
                                 <option value="A2">A2 (La 2 - Basso Incisivo)</option>
                                 <option value="D3">D3 (Re 3 - Dorico)</option>
@@ -276,7 +271,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div class="flex flex-col gap-1">
                             <label for="rhythmModeSelect" class="text-[11px] font-semibold text-zinc-400">Metrica & Ritmo Versi:</label>
-                            <select id="rhythmModeSelect" class="auto-trigger manual-override-trigger bg-zinc-950 border border-zinc-700 text-purple-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-purple-500 cursor-pointer">
+                            <select id="rhythmModeSelect" class="auto-trigger bg-zinc-950 border border-zinc-700 text-purple-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-purple-500 cursor-pointer">
                                 <option value="free" selected>🌊 Libero / Organico (Punteggiatura)</option>
                                 <option value="syllabic_4">📐 Sillabico 4 Battiti (Filastrocca)</option>
                                 <option value="syllabic_8">📜 Sillabico 8 Battiti (Ballata)</option>
@@ -353,7 +348,7 @@
                         </div>
                         <div class="flex flex-col justify-center">
                             <span id="languageRuleDescription" class="text-[10px] text-zinc-400 leading-snug">
-                                Regola: Vocali pure U-O-A-E-I pesate sul trapezio vocale italiano.
+                                Regola: Vocali pure U-O-A-E-I pesate sulla scala armonica.
                             </span>
                         </div>
                     </div>
@@ -371,11 +366,7 @@
                                 <option value="toki_pona_sample">TP: Toki Pona - O Sona E Kalama</option>
                             </select>
                         </div>
-                        <textarea id="poetrySourceText" rows="3" class="auto-trigger w-full bg-zinc-950 font-sans text-xs text-zinc-200 border border-zinc-700/80 rounded-lg p-2.5 focus:outline-none focus:border-purple-500 leading-relaxed custom-scrollbar resize-y placeholder-zinc-600 shadow-inner" placeholder="Inserisci il testo qui. Ogni parola e vocale guiderà melodicamente e ritmicamente la composizione..."></textarea>
-                        <div class="flex items-center justify-between text-[10px] text-zinc-500 font-mono-code px-1">
-                            <span id="verseTextStats">0 parole • 0 fonemi/note estratti</span>
-                            <span class="text-purple-400">Generazione melodica diretta</span>
-                        </div>
+                        <textarea id="poetrySourceText" rows="2" class="auto-trigger w-full bg-zinc-950 font-sans text-xs text-zinc-200 border border-zinc-700/80 rounded-lg p-2.5 focus:outline-none focus:border-purple-500 leading-relaxed custom-scrollbar resize-y placeholder-zinc-600 shadow-inner" placeholder="Inserisci il testo della strofa. I versi determineranno l'altezza e il ritmo..."></textarea>
                     </div>
 
                     <div class="bg-zinc-950/80 border border-purple-500/40 rounded-lg p-2.5 flex flex-col gap-2 text-xs">
@@ -385,7 +376,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div class="flex flex-col gap-1">
                                 <label for="chorusOscSelect" class="text-[10px] text-zinc-400">Oscillatore Ritornello:</label>
-                                <select id="chorusOscSelect" class="auto-trigger manual-override-trigger bg-zinc-900 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-mono-code">
+                                <select id="chorusOscSelect" class="auto-trigger bg-zinc-900 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-mono-code">
                                     <option value="112" selected>J6 (Juno-6 - CC 53: 112)</option>
                                     <option value="88">Chords (chord-osc - CC 53: 88)</option>
                                     <option value="76">Volca Bass (CC 53: 76)</option>
@@ -395,7 +386,7 @@
                             </div>
                             <div class="flex flex-col gap-1">
                                 <label for="chorusTextSource" class="text-[10px] text-zinc-400">Testo Ritornello (Opzionale):</label>
-                                <input type="text" id="chorusTextSource" class="auto-trigger bg-zinc-900 border border-zinc-700 text-xs text-zinc-200 rounded px-2 py-1 focus:outline-none focus:border-purple-500 placeholder-zinc-600" placeholder="Lascia vuoto per melodia polifonica predefinita">
+                                <input type="text" id="chorusTextSource" class="auto-trigger bg-zinc-900 border border-zinc-700 text-xs text-zinc-200 rounded px-2 py-1 focus:outline-none focus:border-purple-500 placeholder-zinc-600" placeholder="Lascia vuoto per melodia auto-generata">
                             </div>
                         </div>
                     </div>
@@ -441,6 +432,7 @@
                             <i class="fa-solid fa-code"></i>
                         </span>
                         <span class="text-xs font-bold text-orange-400 uppercase tracking-wider">5. Editor Partitura ABC</span>
+                        <!-- Visual Feedback Live Badge -->
                         <span id="liveSyncBadge" class="opacity-0 transition-opacity duration-300 text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-600 text-emerald-300 font-mono-code font-bold flex items-center gap-1">
                             <i class="fa-solid fa-arrows-rotate fa-spin text-[9px]"></i> ABC Aggiornato
                         </span>
@@ -562,7 +554,7 @@
 
     <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p>Korg NTS-1 Suite • ABC Song Arranger & Generator Studio</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.8.1</span>
+        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.8.0</span>
     </footer>
 
     <!-- Application Script Logic -->
@@ -601,8 +593,6 @@
             synth_poetry: `Neon reflections in the midnight rain,\nelectric pulse across the wire,\nsilicon dreams that never die,\nawake the phantom in the choir.`,
             toki_pona_sample: `sina lukin e suno lon sewi,\nkalama musi li pona tawa kute,\njan ale li wile e olin mute.`
         };
-
-        let isAutoMatchEnabled = true;
 
         // --- COLLAPSIBLE SECTION CONTROLLER ---
         function updateSectionHeaderChevron(header, isOpen) {
@@ -835,27 +825,8 @@
             }
         }
 
-        // --- SMART AUTO-MATCH LOGIC CON STATO ESPLICITO ---
-        function setAutoMatchState(enabled) {
-            isAutoMatchEnabled = enabled;
-            const btn = document.getElementById('autoMatchToggleBtn');
-            const led = document.getElementById('autoMatchLed');
-            const label = document.getElementById('autoMatchLabel');
-
-            if (isAutoMatchEnabled) {
-                btn.className = 'px-2.5 py-1 bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 rounded text-[11px] font-bold transition flex items-center gap-1.5';
-                led.className = 'w-2 h-2 rounded-full bg-emerald-500 led-active';
-                label.textContent = 'Auto-Match: ATTIVO';
-            } else {
-                btn.className = 'px-2.5 py-1 bg-zinc-900 text-zinc-400 border border-zinc-700 rounded text-[11px] font-bold transition flex items-center gap-1.5';
-                led.className = 'w-2 h-2 rounded-full bg-yellow-500 led-orange';
-                label.textContent = 'Auto-Match: MANUALE';
-            }
-        }
-
-        function applyAutoMatch(force = false) {
-            if (!isAutoMatchEnabled && !force) return;
-
+        // --- SMART AUTO-MATCH LOGIC ---
+        function applyAutoMatch() {
             const genre = document.getElementById('genreStyleSelect').value;
             const mood = document.getElementById('moodSelect').value;
             const match = BEST_MATCHES[genre] || BEST_MATCHES.synthwave;
@@ -880,7 +851,7 @@
             const results = [];
 
             if (lang === 'it') {
-                // Trapezio vocalico italiano: U(0), O(1), A(2), E(3), I(4)
+                // Trapezio vocalico standard: U(0), O(1), A(2), E(3), I(4)
                 const itVowels = { 'u': 0, 'o': 1, 'ò': 1, 'ó': 1, 'a': 2, 'à': 2, 'e': 3, 'è': 3, 'é': 3, 'i': 4, 'ì': 4, 'í': 4, 'y': 4 };
                 for (let ch of clean) {
                     if (itVowels[ch] !== undefined) {
@@ -891,8 +862,8 @@
                 // Riconoscimento dittonghi e pesi vocalici inglesi
                 let i = 0;
                 while (i < clean.length) {
-                    const sub3 = clean.substring(i, i + 3);
                     const sub2 = clean.substring(i, i + 2);
+                    const sub3 = clean.substring(i, i + 3);
 
                     if (sub3 === 'igh') {
                         results.push({ weight: 4, durationMul: 1.5 });
@@ -914,13 +885,13 @@
                         if (ch === 'u') results.push({ weight: 0, durationMul: 0.9 });
                         else if (ch === 'o') results.push({ weight: 1, durationMul: 1.0 });
                         else if (ch === 'a') results.push({ weight: 2, durationMul: 1.0 });
-                        else if (ch === 'e') results.push({ weight: 3, durationMul: 0.85 });
+                        else if (ch === 'e') results.push({ weight: 3, durationMul: 0.85 }); // spesso schwa breve
                         else if (ch === 'i' || ch === 'y') results.push({ weight: 4, durationMul: 1.0 });
                         i++;
                     }
                 }
             } else if (lang === 'tokipona') {
-                // Toki Pona: 5 vocali regolari (a, e, i, o, u) e metrica bilanciata
+                // Toki Pona: 5 vocali regolari pure (a, e, i, o, u) e metrica sillabica bilanciata
                 const tpVowels = { 'u': 0, 'o': 1, 'a': 2, 'e': 3, 'i': 4 };
                 for (let ch of clean) {
                     if (tpVowels[ch] !== undefined) {
@@ -931,19 +902,6 @@
 
             if (results.length === 0) results.push({ weight: 2, durationMul: 1.0 });
             return results;
-        }
-
-        function updateLyricStats(text, lang) {
-            if (!text || text.trim().length === 0) {
-                document.getElementById('verseTextStats').textContent = '0 parole • 0 fonemi/note estratti';
-                return;
-            }
-            const tokens = text.match(/[a-zA-ZàèéìòùÀÈÉÌÒÙ']+/g) || [];
-            let totalPhonemes = 0;
-            tokens.forEach(t => {
-                totalPhonemes += extractLanguagePhonemes(t, lang).length;
-            });
-            document.getElementById('verseTextStats').textContent = `${tokens.length} parole • ${totalPhonemes} sillabe/fonemi analizzati`;
         }
 
         // --- DURATION LIMITER (ANTI-DRONE) ---
@@ -1089,7 +1047,7 @@
 
             if (editor) {
                 editor.classList.remove('flash-update');
-                void editor.offsetWidth; // Trigger CSS Reflow
+                void editor.offsetWidth; // Force CSS Reflow
                 editor.classList.add('flash-update');
             }
         }
@@ -1114,8 +1072,6 @@
             const chorusText = document.getElementById('chorusTextSource').value.trim();
             const autoMorph = document.getElementById('autoMorphPatchCheck').checked;
             const currentLang = document.getElementById('textLanguageSelect').value;
-
-            updateLyricStats(verseText, currentLang);
 
             const baseMidi = ROOT_NOTES[rootKey] || 48;
 
@@ -1233,8 +1189,7 @@
             const sec = (chosenDuration % 60).toString().padStart(2, '0');
             document.getElementById('targetDurationDisplay').textContent = `~${m}:${sec}`;
 
-            setAutoMatchState(true);
-            applyAutoMatch(true);
+            applyAutoMatch();
             document.getElementById('metaTitle').value = `Random ${chosenGenre.toUpperCase()} (${chosenMood})`;
             generateABCComposition();
         }
@@ -1259,15 +1214,14 @@
             document.getElementById('targetDurationDisplay').textContent = '~01:00';
             document.getElementById('structureHelpBadge').textContent = 'Pop / Rock Standard';
             document.getElementById('textLanguageSelect').value = 'it';
-            document.getElementById('languageRuleDescription').textContent = 'Regola: Vocali pure U-O-A-E-I pesate sul trapezio vocale italiano.';
+            document.getElementById('languageRuleDescription').textContent = 'Regola: Vocali pure U-O-A-E-I pesate sulla scala armonica.';
 
             document.getElementById('poetrySourceText').value = '';
             document.getElementById('chorusTextSource').value = '';
             document.getElementById('sampleTextSelect').value = '';
             document.getElementById('autoMorphPatchCheck').checked = true;
 
-            setAutoMatchState(true);
-            applyAutoMatch(true);
+            applyAutoMatch();
             generateABCComposition();
         }
 
@@ -1413,7 +1367,6 @@
                 }
             }
 
-            setAutoMatchState(false);
             document.getElementById('abcEditor').value = abcContent;
             updateParsedTokens();
             triggerVisualUpdateFeedback();
@@ -1501,7 +1454,7 @@
         function audioBufferToWav(buffer) {
             const numChannels = buffer.numberOfChannels;
             const sampleRate = buffer.sampleRate;
-            const format = 1;
+            const format = 1; // PCM
             const bitDepth = 16;
             const bytesPerSample = bitDepth / 8;
             const blockAlign = numChannels * bytesPerSample;
@@ -1518,12 +1471,12 @@
                 }
             }
 
-            // RIFF Chunk
+            // RIFF Chunk Descriptor
             writeString(0, 'RIFF');
             view.setUint32(4, totalSize - 8, true);
             writeString(8, 'WAVE');
 
-            // "fmt " Chunk
+            // "fmt " Sub-Chunk
             writeString(12, 'fmt ');
             view.setUint32(16, 16, true);
             view.setUint16(20, format, true);
@@ -1533,7 +1486,7 @@
             view.setUint16(32, blockAlign, true);
             view.setUint16(34, bitDepth, true);
 
-            // "data" Chunk
+            // "data" Sub-Chunk
             writeString(36, 'data');
             view.setUint32(40, dataSize, true);
 
@@ -1779,34 +1732,13 @@
         }
 
         function setupReactiveListeners() {
-            // Selettori Genre / Mood applicano AutoMatch se attivo
-            document.getElementById('genreStyleSelect').addEventListener('change', () => {
-                if (isAutoMatchEnabled) applyAutoMatch(false);
-                triggerAutoRegeneration();
-            });
-
-            document.getElementById('moodSelect').addEventListener('change', () => {
-                if (isAutoMatchEnabled) applyAutoMatch(false);
-                triggerAutoRegeneration();
-            });
-
-            // Se l'utente tocca parametri manuali, l'AutoMatch passa in MANUALE
-            document.querySelectorAll('.manual-override-trigger').forEach(el => {
-                el.addEventListener('change', () => {
-                    setAutoMatchState(false);
-                });
-            });
-
             document.querySelectorAll('.auto-trigger').forEach(el => {
-                if (el.id !== 'genreStyleSelect' && el.id !== 'moodSelect') {
-                    el.addEventListener('input', triggerAutoRegeneration);
-                    el.addEventListener('change', triggerAutoRegeneration);
-                }
+                el.addEventListener('input', triggerAutoRegeneration);
+                el.addEventListener('change', triggerAutoRegeneration);
             });
 
             document.getElementById('bpmSlider').addEventListener('input', (e) => {
                 document.getElementById('bpmValue').textContent = e.target.value;
-                setAutoMatchState(false);
                 triggerAutoRegeneration();
             });
 
@@ -1823,15 +1755,6 @@
                 } else if (e.target.value === 'tokipona') {
                     desc.textContent = 'Regola: Struttura pura a 5 vocali (a, e, i, o, u) e metrica sillabica uniforme.';
                 }
-                updateLyricStats(document.getElementById('poetrySourceText').value, e.target.value);
-            });
-
-            document.getElementById('autoMatchToggleBtn').addEventListener('click', () => {
-                setAutoMatchState(!isAutoMatchEnabled);
-                if (isAutoMatchEnabled) {
-                    applyAutoMatch(true);
-                    triggerAutoRegeneration();
-                }
             });
         }
 
@@ -1839,6 +1762,10 @@
         document.getElementById('generateAbcBtn').addEventListener('click', () => generateABCComposition());
         document.getElementById('randomGenerateBtn').addEventListener('click', () => generateRandomComposition());
         document.getElementById('resetSessionBtn').addEventListener('click', () => resetEntireSession());
+        document.getElementById('autoMatchBtn').addEventListener('click', () => {
+            applyAutoMatch();
+            generateABCComposition();
+        });
 
         document.getElementById('generateAndPlayBtn').addEventListener('click', () => {
             generateABCComposition();
@@ -1959,7 +1886,6 @@
                     if (data.rootNote) document.getElementById('rootNoteSelect').value = data.rootNote;
                     if (data.abcCode) document.getElementById('abcEditor').value = data.abcCode;
 
-                    setAutoMatchState(false);
                     stopPlayback();
                     updateParsedTokens();
                     triggerVisualUpdateFeedback();
@@ -2033,7 +1959,7 @@
             const cleanFilename = title.toLowerCase().replace(/[^a-z0-9_-]/gi, '_');
             const bundle = {
                 generator: "Korg NTS-1 Suite - ABC Arranger",
-                version: "1.8.1",
+                version: "1.8.0",
                 timestamp: new Date().toISOString(),
                 metadata: {
                     title: document.getElementById('metaTitle').value,
@@ -2067,8 +1993,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             setupCollapsibleSections();
             setupReactiveListeners();
-            setAutoMatchState(true);
-            applyAutoMatch(true);
+            applyAutoMatch();
             generateABCComposition(true);
             initWebMIDI();
         });
