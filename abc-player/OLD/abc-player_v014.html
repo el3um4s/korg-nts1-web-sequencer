@@ -1,0 +1,2348 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Korg NTS-1 - ABC Player & Infinite Radio Generative</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; touch-action: manipulation; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #09090b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        .led-active { box-shadow: 0 0 8px #22c55e, inset 0 0 4px #4ade80; }
+        .led-cyan { box-shadow: 0 0 8px #06b6d4, inset 0 0 4px #22d3ee; }
+        .led-orange { box-shadow: 0 0 8px #f97316, inset 0 0 4px #fb923c; }
+        .radio-pulse { animation: radioGlow 2s infinite ease-in-out; }
+        @keyframes radioGlow {
+            0%, 100% { border-color: #f97316; box-shadow: 0 0 10px rgba(249, 115, 22, 0.4); }
+            50% { border-color: #a855f7; box-shadow: 0 0 15px rgba(168, 85, 247, 0.6); }
+        }
+        .tag-pill-active { background-color: rgba(168, 85, 247, 0.25) !important; border-color: #c084fc !important; color: #f3e8ff !important; font-weight: 600; }
+        .tag-mood-active { background-color: rgba(245, 158, 11, 0.25) !important; border-color: #fbbf24 !important; color: #fef3c7 !important; font-weight: 600; }
+        .tag-struct-active { background-color: rgba(6, 182, 212, 0.25) !important; border-color: #22d3ee !important; color: #cffafe !important; font-weight: 600; }
+        .tag-algo-active { background-color: rgba(16, 185, 129, 0.25) !important; border-color: #34d399 !important; color: #d1fae5 !important; font-weight: 600; }
+        .timer-btn-active { background-color: rgba(245, 158, 11, 0.25) !important; border-color: #f59e0b !important; color: #fbbf24 !important; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-3 md:p-5 select-none overflow-x-hidden">
+
+    <!-- Header & Hardware Routing -->
+    <header class="max-w-7xl mx-auto w-full mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-500 shadow-lg">
+                <i class="fa-solid fa-tower-broadcast text-xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">ABC PLAYER & RADIO</h1>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 2 v1.4</span>
+                </div>
+                <p class="text-xs text-zinc-400">Player Standalone, Radio Generativa, Pad Matrix & Auto-Export (.JSON / .ABC / .WAV)</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap justify-end">
+            <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-xl text-xs">
+                <label for="soundTargetSelect" class="text-zinc-400 font-semibold flex items-center gap-1 text-[11px]">
+                    <i class="fa-solid fa-volume-high text-orange-400"></i> Uscita:
+                </label>
+                <select id="soundTargetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-medium">
+                    <option value="both">Entrambi (MIDI + Casse)</option>
+                    <option value="internal">Solo Casse PC / Mobile</option>
+                    <option value="midi">Solo Korg NTS-1 (MIDI)</option>
+                </select>
+            </div>
+
+            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium">
+                <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"></span>
+                <span id="statusText" class="text-zinc-300">Inizializzazione MIDI...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Global Collapse / Expand Toolbar -->
+    <div class="max-w-7xl mx-auto w-full flex items-center justify-between gap-2 px-1 mb-3 text-xs text-zinc-400">
+        <span class="text-[11px] font-medium text-zinc-500">
+            <i class="fa-solid fa-arrows-up-down mr-1"></i>Spazio di Lavoro Modulare
+        </span>
+        <div class="flex items-center gap-2">
+            <button id="expandAllSectionsBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[11px] text-zinc-300 transition flex items-center gap-1">
+                <i class="fa-solid fa-folder-open text-orange-400 text-[10px]"></i> Espandi tutto
+            </button>
+            <button id="collapseAllSectionsBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[11px] text-zinc-300 transition flex items-center gap-1">
+                <i class="fa-solid fa-folder-minus text-zinc-400 text-[10px]"></i> Riduci tutto
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow items-start">
+        
+        <!-- Left Column: Source Mode, File Player & Infinite Radio Engine -->
+        <section class="lg:col-span-5 flex flex-col gap-3">
+            
+            <!-- Section 1: Modalità & Configurazione Radio -->
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodySourceSection">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-orange-600/20 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-sliders"></i>
+                        </span>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">1. Sorgente & Filtri Radio</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bodySourceSection" class="section-body p-3.5 flex flex-col gap-3">
+                    
+                    <!-- Mode Selector Pills -->
+                    <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                        <button id="modeFileBtn" class="py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-zinc-800 text-orange-400 border border-orange-500/40">
+                            <i class="fa-solid fa-file-audio"></i> Player File (.ABC/.JSON)
+                        </button>
+                        <button id="modeRadioBtn" class="py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-zinc-400 hover:text-zinc-200">
+                            <i class="fa-solid fa-radio text-purple-400"></i> Radio Infinita Generativa
+                        </button>
+                    </div>
+
+                    <!-- Panel A: File Upload Zone -->
+                    <div id="fileUploadContainer" class="flex flex-col gap-2.5">
+                        <div id="dropZone" class="border-2 border-dashed border-zinc-800 hover:border-orange-500/60 bg-zinc-950/60 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all">
+                            <i class="fa-solid fa-cloud-arrow-up text-orange-400 text-xl"></i>
+                            <p class="text-xs font-semibold text-zinc-200">Trascina qui un file <span class="text-orange-400 font-mono-code">.abc</span> o <span class="text-indigo-400 font-mono-code">.json</span></p>
+                            <p class="text-[10px] text-zinc-500">oppure clicca per selezionarlo</p>
+                            <input type="file" id="fileInput" accept=".abc,.json,.txt" class="hidden">
+                        </div>
+                    </div>
+
+                    <!-- Panel B: Infinite Radio Settings & Multi-Selection Tags -->
+                    <div id="radioSettingsContainer" class="hidden flex flex-col gap-3 bg-zinc-950/80 border border-purple-500/30 rounded-xl p-3 radio-pulse">
+                        
+                        <!-- Multiselezione Algoritmi Melodici -->
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-bold text-emerald-300"><i class="fa-solid fa-brain text-emerald-400 mr-1"></i>Algoritmi Melodici:</span>
+                                <button id="selectAllAlgosBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Tutti</button>
+                            </div>
+                            <div id="algosTagContainer" class="flex flex-wrap gap-1 p-1 bg-zinc-900/60 rounded border border-zinc-800"></div>
+                        </div>
+
+                        <!-- Multiselezione Strutture Canzone -->
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-bold text-cyan-300"><i class="fa-solid fa-cubes text-cyan-400 mr-1"></i>Strutture Formali:</span>
+                                <button id="selectAllStructsBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Tutti</button>
+                            </div>
+                            <div id="structsTagContainer" class="flex flex-wrap gap-1 max-h-24 overflow-y-auto custom-scrollbar p-1 bg-zinc-900/60 rounded border border-zinc-800"></div>
+                        </div>
+
+                        <!-- Range Durata Minima / Massima Canzone -->
+                        <div class="grid grid-cols-2 gap-2 bg-zinc-900/90 p-2 rounded-lg border border-zinc-800">
+                            <div class="flex flex-col gap-1">
+                                <label for="minDurationSelect" class="text-[10px] font-semibold text-zinc-400">Durata Minima Brano:</label>
+                                <select id="minDurationSelect" class="bg-zinc-950 border border-zinc-700 text-amber-300 rounded px-1.5 py-1 text-xs font-mono-code focus:outline-none focus:border-amber-500 cursor-pointer">
+                                    <option value="60">1 Minuto (60s)</option>
+                                    <option value="90">1.5 Minuti (90s)</option>
+                                    <option value="120" selected>2 Minuti (120s)</option>
+                                    <option value="180">3 Minuti (180s)</option>
+                                    <option value="300">5 Minuti (300s)</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label for="maxDurationSelect" class="text-[10px] font-semibold text-zinc-400">Durata Massima Brano:</label>
+                                <select id="maxDurationSelect" class="bg-zinc-950 border border-zinc-700 text-indigo-300 rounded px-1.5 py-1 text-xs font-mono-code focus:outline-none focus:border-indigo-500 cursor-pointer">
+                                    <option value="120">2 Minuti (120s)</option>
+                                    <option value="180">3 Minuti (180s)</option>
+                                    <option value="240" selected>4 Minuti (240s)</option>
+                                    <option value="360">6 Minuti (360s)</option>
+                                    <option value="600">10 Minuti (600s)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Multiselezione Generi -->
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-bold text-purple-300"><i class="fa-solid fa-layer-group text-purple-400 mr-1"></i>Generi Inclusi:</span>
+                                <div class="flex items-center gap-1">
+                                    <button id="selectAllGenresBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Tutti</button>
+                                    <span class="text-zinc-600">•</span>
+                                    <button id="clearAllGenresBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Nessuno</button>
+                                </div>
+                            </div>
+                            <div id="genresTagContainer" class="flex flex-wrap gap-1 max-h-24 overflow-y-auto custom-scrollbar p-1 bg-zinc-900/60 rounded border border-zinc-800"></div>
+                        </div>
+
+                        <!-- Multiselezione Mood -->
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-bold text-amber-300"><i class="fa-solid fa-masks-theater text-amber-400 mr-1"></i>Mood / Tonalità:</span>
+                                <div class="flex items-center gap-1">
+                                    <button id="selectAllMoodsBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Tutti</button>
+                                    <span class="text-zinc-600">•</span>
+                                    <button id="clearAllMoodsBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Nessuno</button>
+                                </div>
+                            </div>
+                            <div id="moodsTagContainer" class="flex flex-wrap gap-1 p-1 bg-zinc-900/60 rounded border border-zinc-800"></div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Section 2: Transport Dock & Monitor Brano -->
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyPlayerSection">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-play"></i>
+                        </span>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">2. Transport & Monitor Brano</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="playerLed" class="w-2 h-2 rounded-full bg-zinc-600"></span>
+                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bodyPlayerSection" class="section-body p-3.5 flex flex-col gap-3">
+                    
+                    <!-- Dettagli Brano Estesi -->
+                    <div class="flex flex-col gap-1 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+                        <h2 id="nowPlayingTitle" class="text-base sm:text-lg font-black text-zinc-100 truncate">Radio: Chill Lo-Fi Study</h2>
+                        <div class="flex items-center gap-2 text-xs font-mono-code flex-wrap">
+                            <span id="nowPlayingGenre" class="text-purple-400 font-semibold">Spaziale, Sognante & Fluttuante</span>
+                            <span class="text-zinc-600">•</span>
+                            <span id="nowPlayingBpm" class="text-orange-400 font-bold">78 BPM</span>
+                            <span class="text-zinc-600">•</span>
+                            <span id="nowPlayingSection" class="text-cyan-400 font-bold px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40">Strofa 1</span>
+                            <span class="text-zinc-600">•</span>
+                            <span id="songTimeProgress" class="text-amber-400 font-mono-code font-bold">00:00 / 02:49</span>
+                        </div>
+                    </div>
+
+                    <!-- Hardware Monitor Mini-Rack -->
+                    <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] font-mono-code">
+                            <span class="text-zinc-400">Patch Hardware Attiva:</span>
+                            <span id="hwOscDisplay" class="text-orange-400 font-bold px-2 py-0.5 rounded bg-orange-950/40 border border-orange-800/40">OSC: TRI</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-1.5 text-[10px] font-mono-code text-center">
+                            <div class="bg-zinc-900 p-1 rounded border border-zinc-800">
+                                <span class="text-zinc-500 block">Shape</span>
+                                <strong id="hwShapeVal" class="text-zinc-200">64</strong>
+                            </div>
+                            <div class="bg-zinc-900 p-1 rounded border border-zinc-800">
+                                <span class="text-zinc-500 block">Cutoff</span>
+                                <strong id="hwCutoffVal" class="text-cyan-400">80</strong>
+                            </div>
+                            <div class="bg-zinc-900 p-1 rounded border border-zinc-800">
+                                <span class="text-zinc-500 block">Release</span>
+                                <strong id="hwReleaseVal" class="text-emerald-400">45</strong>
+                            </div>
+                            <div class="bg-zinc-900 p-1 rounded border border-zinc-800">
+                                <span class="text-zinc-500 block">Reverb</span>
+                                <strong id="hwReverbVal" class="text-purple-400">30</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transport Buttons -->
+                    <div class="grid grid-cols-3 gap-2 pt-1">
+                        <button id="playPauseBtn" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg">
+                            <i id="playPauseIcon" class="fa-solid fa-play"></i>
+                            <span id="playPauseLabel">PLAY</span>
+                        </button>
+                        <button id="stopBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                            <i class="fa-solid fa-stop"></i>
+                            <span>STOP</span>
+                        </button>
+                        <button id="nextRadioVariationBtn" class="py-2.5 bg-purple-950/60 hover:bg-purple-900 text-purple-300 border border-purple-700/60 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition" title="Passa subito alla prossima canzone">
+                            <i class="fa-solid fa-forward-step"></i>
+                            <span>Nuovo Brano</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <div class="flex flex-col gap-1 bg-zinc-950 p-2 rounded-lg border border-zinc-800 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-zinc-400 font-semibold">Tempo (BPM)</span>
+                                <span id="bpmDisplay" class="font-mono-code font-bold text-orange-400">120</span>
+                            </div>
+                            <input type="range" id="bpmSlider" min="50" max="180" value="120" class="w-full accent-orange-500 h-1 bg-zinc-800 rounded">
+                        </div>
+                        <div class="flex flex-col gap-1 bg-zinc-950 p-2 rounded-lg border border-zinc-800 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-zinc-400 font-semibold">Gate (%)</span>
+                                <span id="gateDisplay" class="font-mono-code font-bold text-cyan-400">75%</span>
+                            </div>
+                            <input type="range" id="gateSlider" min="20" max="95" value="75" class="w-full accent-cyan-500 h-1 bg-zinc-800 rounded">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Dual Time Tracker (Pomodoro, Cronometro & Timer Gigante) -->
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyTimerSection">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-amber-600/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-stopwatch-20"></i>
+                        </span>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">3. Focus Companion & Timer Gigante</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="activeTimerBadge" class="text-xs font-mono-code font-bold text-amber-400 mr-1">25:00</span>
+                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bodyTimerSection" class="section-body p-3.5 flex flex-col gap-3">
+                    
+                    <!-- Timer Mode Switch -->
+                    <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-lg border border-zinc-800 text-xs">
+                        <button id="timerTypePomodoroBtn" class="py-1 rounded font-bold transition text-amber-400 bg-zinc-800">
+                            <i class="fa-solid fa-hourglass-half mr-1"></i> Focus Pomodoro
+                        </button>
+                        <button id="timerTypeStopwatchBtn" class="py-1 rounded font-bold transition text-zinc-400 hover:text-zinc-200">
+                            <i class="fa-solid fa-stopwatch mr-1"></i> Cronometro Libero
+                        </button>
+                    </div>
+
+                    <!-- Pomodoro Controls -->
+                    <div id="pomodoroControls" class="flex flex-col gap-2">
+                        <div class="grid grid-cols-4 gap-1.5 text-xs">
+                            <button class="timer-preset-btn py-1 px-1 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code timer-btn-active text-[11px]" data-minutes="25">25m</button>
+                            <button class="timer-preset-btn py-1 px-1 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code text-[11px]" data-minutes="45">45m</button>
+                            <button class="timer-preset-btn py-1 px-1 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code text-[11px]" data-minutes="60">60m</button>
+                            <div class="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded px-1 py-0.5">
+                                <input type="number" id="customMinutesInput" min="1" max="180" placeholder="Min" class="w-full bg-transparent text-amber-300 font-mono-code text-center text-xs focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stopwatch Display -->
+                    <div id="stopwatchControls" class="hidden flex flex-col gap-1 text-center bg-zinc-950 p-2 rounded-lg border border-zinc-800">
+                        <span class="text-[10px] text-zinc-400">Tempo Totale Trascorso in Sessione:</span>
+                        <strong id="stopwatchDisplay" class="font-mono-code text-sm text-cyan-400 font-black">00:00:00</strong>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2">
+                        <button id="startTimerBtn" class="flex-1 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-play text-[10px]"></i> Avvia Timer
+                        </button>
+                        <button id="resetTimerBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-rotate-left text-[10px]"></i> Reset
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-800">
+                        <button id="toggleGiantTimerMainBtn" class="py-2 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border border-amber-700/50 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow">
+                            <i class="fa-solid fa-clock text-amber-400"></i> Timer Gigante
+                        </button>
+                        <button id="openZenBtn" class="py-2 bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow">
+                            <i class="fa-solid fa-expand text-indigo-400"></i> Modalità Zen
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panic Button -->
+            <button id="panicBtn" class="w-full py-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow">
+                <i class="fa-solid fa-triangle-exclamation text-red-400"></i> PANIC (All Sound & Notes Off)
+            </button>
+
+        </section>
+
+        <!-- Right Column: Visualizer, Tracker & Export System -->
+        <section class="lg:col-span-7 flex flex-col gap-3">
+            
+            <!-- Section 4: Real-time Multi-Mode Visualizer with Pad Matrix -->
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyVisualizerSection">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </span>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">4. Visualizer Dinamico & Pad Matrix</span>
+                    </div>
+                    <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                        <div class="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded-lg p-0.5 text-[10px] flex-wrap justify-end">
+                            <button class="vis-mode-btn px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-semibold transition" data-mode="landscape">Paesaggio</button>
+                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="pads">🎛️ Pad Matrix</button>
+                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="fluid">Onde</button>
+                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="geometric">Geometria</button>
+                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="oscilloscope">Onda</button>
+                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="bars">Spettro</button>
+                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="mandala">Mandala</button>
+                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="nebula">Nebula</button>
+                        </div>
+                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bodyVisualizerSection" class="section-body p-3.5 flex flex-col gap-2">
+                    <div class="relative w-full h-52 sm:h-64 bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden shadow-inner flex items-center justify-center">
+                        <canvas id="visualizerCanvas" class="w-full h-full block absolute inset-0 z-0"></canvas>
+                        
+                        <!-- Floating Giant Timer Overlay in Visualizer (Optional) -->
+                        <div id="giantTimerMainOverlay" class="hidden relative z-10 bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl border border-zinc-700/60 shadow-2xl flex flex-col items-center pointer-events-none">
+                            <span id="giantTimerMainLabel" class="text-[10px] font-mono-code uppercase tracking-widest text-amber-400 font-bold">FOCUS TIMER</span>
+                            <span id="giantTimerMainDisplay" class="font-mono-code text-4xl sm:text-5xl font-black text-zinc-100 tracking-wider">25:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Esportazione Canzoni (Manuale & Auto-Download Silenzioso) -->
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyExportSection">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-cloud-arrow-down"></i>
+                        </span>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">5. Esportazione & Download Canzoni</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bodyExportSection" class="section-body p-3.5 flex flex-col gap-3">
+                    
+                    <!-- Manual Export Action Buttons -->
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <button id="downloadCurrentAbcBtn" class="flex-1 py-1.5 px-2 bg-zinc-800 hover:bg-zinc-700 text-orange-300 border border-zinc-700 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 shadow">
+                            <i class="fa-solid fa-download text-orange-400"></i> Scarica .ABC
+                        </button>
+                        <button id="downloadCurrentJsonBtn" class="flex-1 py-1.5 px-2 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 shadow">
+                            <i class="fa-solid fa-file-export text-indigo-400"></i> Scarica .JSON (NTS-1)
+                        </button>
+                        <button id="downloadCurrentWavBtn" class="flex-1 py-1.5 px-2 bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-700/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 shadow">
+                            <i class="fa-solid fa-volume-high text-sky-400"></i> Scarica Audio .WAV
+                        </button>
+                    </div>
+
+                    <!-- Auto-Download Silent Module -->
+                    <div class="bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="autoDownloadToggle" class="accent-emerald-500 rounded">
+                                <span class="text-xs font-bold text-zinc-200">
+                                    💾 Auto-Download Silenzioso a Fine Brano
+                                </span>
+                            </label>
+                            <span class="text-[10px] text-zinc-500 font-mono-code">Archivio Continuo</span>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs pl-6 text-zinc-400">
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="autoDlJsonCheck" checked class="accent-indigo-500 rounded"> .JSON (Patch NTS-1)
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="autoDlAbcCheck" checked class="accent-orange-500 rounded"> .ABC
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="autoDlWavCheck" class="accent-sky-500 rounded"> .WAV (Audio)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Live ABC / Song Tracker View -->
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center justify-between text-[11px] text-zinc-400 font-semibold">
+                            <span>Sorgente Notazione Corrente:</span>
+                            <span id="trackerStats" class="text-zinc-500 font-mono-code">In attesa...</span>
+                        </div>
+                        <textarea id="liveAbcView" rows="5" readonly spellcheck="false" class="w-full bg-zinc-950 font-mono-code text-xs text-orange-200/90 border border-zinc-800 rounded-lg p-2.5 focus:outline-none custom-scrollbar resize-y shadow-inner" placeholder="Il codice ABC del brano apparirà qui per l'esportazione..."></textarea>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Zen Mode True Border-to-Border Edge Fullscreen Overlay -->
+    <div id="zenOverlay" class="fixed inset-0 w-screen h-screen bg-black z-50 hidden select-none overflow-hidden flex items-center justify-center">
+        <canvas id="zenCanvas" class="absolute inset-0 w-full h-full block z-0"></canvas>
+
+        <!-- Centered Giant Timer Floating (Zen Fullscreen) -->
+        <div id="zenGiantTimerOverlay" class="hidden relative z-10 bg-black/50 backdrop-blur-lg px-8 sm:px-12 py-5 sm:py-8 rounded-3xl border border-zinc-800/80 shadow-2xl flex flex-col items-center pointer-events-none transition-opacity duration-300">
+            <span id="zenGiantTimerLabel" class="text-xs sm:text-sm font-mono-code uppercase tracking-widest text-amber-400 font-bold mb-1">FOCUS TIMER</span>
+            <span id="zenGiantTimerDisplay" class="font-mono-code text-6xl sm:text-8xl md:text-9xl font-black text-zinc-100 tracking-wider">25:00</span>
+        </div>
+
+        <!-- Top Floating HUD -->
+        <div id="zenTopHUD" class="absolute top-0 left-0 right-0 p-3 sm:p-5 flex items-center justify-between z-10 bg-gradient-to-b from-black/80 via-black/30 to-transparent transition-opacity duration-300">
+            <div class="flex items-center gap-2 text-xs font-mono-code text-zinc-300 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 led-active"></span>
+                <span id="zenModeLabel">RADIO GENERATIVA</span>
+            </div>
+
+            <div class="flex items-center gap-1 bg-black/60 backdrop-blur-md border border-zinc-800 rounded-xl p-1 text-xs flex-wrap justify-center">
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition" data-mode="landscape">Paesaggio</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="pads">Pad Matrix</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="fluid">Onde</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="geometric">Geometria</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="oscilloscope">Onda</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="bars">Spettro</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="mandala">Mandala</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="nebula">Nebula</button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="toggleZenGiantTimerBtn" class="px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800 text-amber-400 font-mono-code text-xs font-bold hover:bg-zinc-800 transition" title="Mostra / Nascondi Timer Gigante (Tasto T)">
+                    <i class="fa-solid fa-stopwatch mr-1"></i> <span id="zenTimerBtnDisplay">25:00</span>
+                </button>
+                <button id="toggleZenUiBtn" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md hover:bg-zinc-800 text-zinc-300 flex items-center justify-center border border-zinc-800 transition" title="Nascondi / Mostra UI (Tasto H)">
+                    <i id="toggleZenUiIcon" class="fa-solid fa-eye-slash text-xs"></i>
+                </button>
+                <button id="closeZenBtn" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 flex items-center justify-center border border-zinc-800 transition" title="Esci da Zen Mode">
+                    <i class="fa-solid fa-compress text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Floating Now Playing Tag con Tutte le Informazioni -->
+        <div id="zenInfoHUD" class="absolute bottom-4 left-4 z-10 pointer-events-none bg-black/60 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-zinc-800/80 transition-opacity duration-300 max-w-[75vw] flex flex-col gap-1">
+            <h2 id="zenTrackTitle" class="text-sm sm:text-base font-black text-zinc-100 tracking-wider truncate">Radio: Chill Lo-Fi Study</h2>
+            <div class="flex items-center gap-2 text-[10px] sm:text-xs font-mono-code flex-wrap">
+                <span id="zenTrackGenre" class="text-purple-400 font-semibold">Spaziale, Sognante</span>
+                <span class="text-zinc-600">•</span>
+                <span id="zenTrackBpm" class="text-orange-400 font-bold">78 BPM</span>
+                <span class="text-zinc-600">•</span>
+                <span id="zenTrackSection" class="text-cyan-400 font-bold px-1.5 py-0.2 rounded bg-cyan-950/60 border border-cyan-800/40">Strofa 1</span>
+                <span class="text-zinc-600">•</span>
+                <span id="zenTrackOsc" class="text-emerald-400">OSC: TRI</span>
+                <span class="text-zinc-600">•</span>
+                <span id="zenSongTimeProgress" class="text-amber-400 font-bold">00:00 / 02:49</span>
+            </div>
+        </div>
+
+        <!-- Floating Transport Dock -->
+        <div id="zenDockHUD" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-black/60 backdrop-blur-md border border-zinc-800/80 p-2 rounded-2xl shadow-2xl transition-opacity duration-300">
+            <button id="zenPlayPauseBtn" class="w-11 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center text-base transition shadow-lg">
+                <i id="zenPlayPauseIcon" class="fa-solid fa-play"></i>
+            </button>
+            <button id="zenVariationBtn" class="w-9 h-9 rounded-xl bg-purple-900/80 hover:bg-purple-800 text-purple-200 flex items-center justify-center transition border border-purple-700/60" title="Nuovo Brano">
+                <i class="fa-solid fa-forward-step text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>Korg NTS-1 Suite • ABC Standalone Player & Generative Radio (Prototipo 2)</p>
+        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.4.0</span>
+    </footer>
+
+    <!-- Application Script Logic -->
+    <script>
+        // --- CONSTANTS: 11 GENRES, 6 MOODS, 6 STRUCTURES, 4 ALGORITHMS ---
+        const ALL_GENRES = [
+            { key: 'synthwave', name: '⚡ Synthwave / Retrowave', osc: '76', chorusOsc: '112', root: 'C3', scale: 'minor_pentatonic', bpm: 125, rhythm: 'syncopated_16' },
+            { key: 'modal_jazz', name: '🎷 Modal Jazz & Soul', osc: '88', chorusOsc: '16', root: 'D3', scale: 'dorian', bpm: 108, rhythm: 'free' },
+            { key: 'lofi_study', name: '☕ Chill Lo-Fi Study', osc: '16', chorusOsc: '88', root: 'C3', scale: 'dorian', bpm: 78, rhythm: 'syllabic_8' },
+            { key: 'ambient_cloud', name: '🌌 Ambient Cloud & Meditation', osc: '64', chorusOsc: '88', root: 'C3', scale: 'dorian', bpm: 68, rhythm: 'free' },
+            { key: 'classic_rock', name: '🎸 Classic Rock Riff', osc: '0', chorusOsc: '76', root: 'A2', scale: 'minor_pentatonic', bpm: 118, rhythm: 'syllabic_4' },
+            { key: 'punk_rock', name: '⚡ Punk Rock High Energy', osc: '32', chorusOsc: '0', root: 'A2', scale: 'minor_pentatonic', bpm: 172, rhythm: 'syllabic_4' },
+            { key: 'acid_groove', name: '🧪 Acid 303 Groove', osc: '76', chorusOsc: '32', root: 'C3', scale: 'minor_pentatonic', bpm: 136, rhythm: 'syncopated_16' },
+            { key: 'juno_pop', name: '🎹 80s Synthpop (Juno Vibe)', osc: '112', chorusOsc: '88', root: 'F3', scale: 'major_pentatonic', bpm: 122, rhythm: 'syllabic_8' },
+            { key: 'chiptune', name: '👾 8-Bit Arcade Chiptune', osc: '32', chorusOsc: '32', root: 'C3', scale: 'major_pentatonic', bpm: 140, rhythm: 'syllabic_4' },
+            { key: 'post_rock', name: '🌧️ Post-Rock Atmosphere', osc: '0', chorusOsc: '112', root: 'D3', scale: 'eolian', bpm: 85, rhythm: 'free' },
+            { key: 'space_drone', name: '🪐 Sci-Fi Space Drone', osc: '48', chorusOsc: '100', root: 'G2', scale: 'hirajoshi', bpm: 60, rhythm: 'free' }
+        ];
+
+        const ALL_MOODS = [
+            { key: 'cheerful', name: '☀️ Allegro & Vivace (Maggiore)', scaleKey: 'major_pentatonic' },
+            { key: 'melancholic', name: '🍂 Malinconico & Intimo (Minore/Dorico)', scaleKey: 'dorian' },
+            { key: 'dark', name: '🌑 Triste, Cupo & Freddo (Eolio/Locrio)', scaleKey: 'eolian' },
+            { key: 'energetic', name: '⚡ Veloce, Aggressivo & Martellante', scaleKey: 'minor_pentatonic' },
+            { key: 'dreamy', name: '🌌 Spaziale, Sognante & Fluttuante', scaleKey: 'dorian' },
+            { key: 'mysterious', name: '🔮 Sospeso & Misterioso (Hirajoshi)', scaleKey: 'hirajoshi' }
+        ];
+
+        const ALL_STRUCTS = [
+            { key: 'radio_pop', name: '📻 Pop / Rock Standard', sections: ['Intro', 'Strofa 1', 'Ritornello', 'Strofa 2', 'Ritornello', 'Bridge', 'Ritornello', 'Outro'] },
+            { key: 'ballad_aaba', name: '📜 Ballata Folk Strofica', sections: ['Intro', 'Strofa A', 'Strofa B', 'Coro', 'Strofa C', 'Outro'] },
+            { key: 'epic_long', name: '🌌 Prog Epic Extended (12 Parti)', sections: ['Intro Atmosferica', 'Strofa 1', 'Strofa 2', 'Ritornello Epico', 'Sviluppo Modale', 'Bridge', 'Assolo Climax', 'Ritornello Finale', 'Outro Drone'] },
+            { key: 'blues_12bar', name: '🎺 Blues & Jazz 12-Misure', sections: ['Tema Blues', 'Variazione 1', 'Bridge Solista', 'Ripresa Finale'] },
+            { key: 'nursery_rhyme', name: '🎈 Filastrocca Rapida (AABB)', sections: ['Strofa A', 'Ritornello A', 'Strofa B', 'Ritornello B'] },
+            { key: 'continuous_groove', name: '🔄 Continuous Groove Loop', sections: ['Continuous Groove'] }
+        ];
+
+        const ALL_ALGOS = [
+            { key: 'markov', name: '🎲 Markov Modale' },
+            { key: 'euclidean', name: '📐 Euclidean Rhythms' },
+            { key: 'arpeggio', name: '🎹 Arpeggiatore Armonico' },
+            { key: 'scalar_flow', name: '🌊 Pentatonic Flow' }
+        ];
+
+        const HARMONIC_SCALES = {
+            major_pentatonic: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24],
+            minor_pentatonic: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24],
+            dorian: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19, 21, 22, 24],
+            eolian: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22, 24],
+            hirajoshi: [0, 2, 3, 7, 8, 12, 14, 15, 19, 20, 24]
+        };
+
+        const ROOT_MAP = { 'C3': 48, 'A2': 45, 'D3': 50, 'F3': 53, 'G2': 43 };
+        const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const BASE_NOTE_MAP = { 'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11 };
+
+        // --- STATE VARIABLES ---
+        let currentMode = 'file';
+        let isPlaying = false;
+        let isPaused = false;
+        let activePlaybackTimer = null;
+        let activeNoteOffTimers = [];
+        let currentStepIndex = 0;
+        let fileParsedEvents = [];
+        let animationPhase = 0;
+        let isZenUiVisible = true;
+        let isGiantTimerVisible = false;
+        let currentVisualizerMode = 'landscape';
+
+        // Pad Matrix Active Notes
+        let currentlyActivePadMidi = new Set();
+
+        // Selected Tag Filters (Multiselezione)
+        let selectedGenreKeys = new Set(ALL_GENRES.map(g => g.key));
+        let selectedMoodKeys = new Set(ALL_MOODS.map(m => m.key));
+        let selectedStructKeys = new Set(ALL_STRUCTS.map(s => s.key));
+        let selectedAlgoKeys = new Set(ALL_ALGOS.map(a => a.key));
+
+        // Song & Radio Timing Engine State
+        let activeSongSections = [];
+        let currentSongSectionIdx = 0;
+        let radioCurrentGenreObj = ALL_GENRES[2]; // Lo-Fi default
+        let radioCurrentMoodObj = ALL_MOODS[4]; // Spaziale default
+        let radioCurrentAlgo = 'markov';
+        let radioBaseRoot = 48;
+        let radioScale = HARMONIC_SCALES.dorian;
+        let radioScaleIndex = 2;
+        
+        let accumulatedBeats = 0;
+        let sectionMeasureLength = 8;
+        let currentSongElapsedSec = 0;
+        let targetSongDurationSec = 169;
+        let songProgressInterval = null;
+
+        let euclideanPattern = [1, 0, 1, 0, 1, 0, 1, 0];
+        let euclideanStep = 0;
+        let recordedSongEvents = [];
+
+        // --- COLLAPSIBLE SECTION CONTROLLER ---
+        function updateSectionHeaderChevron(header, isOpen) {
+            const chevron = header.querySelector('.toggle-btn i') || header.querySelector('i.fa-chevron-down, i.fa-chevron-right');
+            if (chevron) {
+                chevron.className = isOpen 
+                    ? 'fa-solid fa-chevron-down text-xs transition-transform duration-200'
+                    : 'fa-solid fa-chevron-right text-xs transition-transform duration-200';
+            }
+        }
+
+        function setupCollapsibleSections() {
+            document.querySelectorAll('.collapsible-section .section-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const targetId = header.dataset.target;
+                    const body = document.getElementById(targetId);
+                    if (!body) return;
+
+                    const isCurrentlyHidden = body.classList.contains('hidden');
+                    if (isCurrentlyHidden) {
+                        body.classList.remove('hidden');
+                        updateSectionHeaderChevron(header, true);
+                    } else {
+                        body.classList.add('hidden');
+                        updateSectionHeaderChevron(header, false);
+                    }
+                    setTimeout(resizeCanvases, 50);
+                });
+            });
+
+            const expandAllBtn = document.getElementById('expandAllSectionsBtn');
+            const collapseAllBtn = document.getElementById('collapseAllSectionsBtn');
+
+            if (expandAllBtn) {
+                expandAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.collapsible-section .section-body').forEach(body => body.classList.remove('hidden'));
+                    document.querySelectorAll('.collapsible-section .section-header').forEach(header => updateSectionHeaderChevron(header, true));
+                    setTimeout(resizeCanvases, 50);
+                });
+            }
+
+            if (collapseAllBtn) {
+                collapseAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.collapsible-section .section-body').forEach(body => body.classList.add('hidden'));
+                    document.querySelectorAll('.collapsible-section .section-header').forEach(header => updateSectionHeaderChevron(header, false));
+                });
+            }
+        }
+
+        // --- WEB AUDIO & ANALYSER ENGINE ---
+        let audioCtx = null;
+        let masterGainNode = null;
+        let analyserNode = null;
+        let visualizerGainNode = null;
+        let activeVoices = new Map();
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioClass) {
+                    audioCtx = new AudioClass();
+                    analyserNode = audioCtx.createAnalyser();
+                    analyserNode.fftSize = 256;
+
+                    masterGainNode = audioCtx.createGain();
+                    masterGainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                    masterGainNode.connect(audioCtx.destination);
+
+                    visualizerGainNode = audioCtx.createGain();
+                    visualizerGainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                    visualizerGainNode.connect(analyserNode);
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function playInternalNote(midiNote, vel = 100, audible = true) {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            stopInternalNote(midiNote, true);
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
+
+            const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            osc.type = 'sawtooth';
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(3600, ctx.currentTime);
+            filter.Q.setValueAtTime(2.5, ctx.currentTime);
+
+            const peak = 0.20 * (vel / 127);
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(peak, ctx.currentTime + 0.015);
+
+            osc.connect(filter);
+            filter.connect(gain);
+
+            if (audible) {
+                gain.connect(masterGainNode);
+                gain.connect(visualizerGainNode);
+            } else {
+                gain.connect(visualizerGainNode);
+            }
+
+            osc.start();
+            activeVoices.set(midiNote, { osc, gain });
+        }
+
+        function stopInternalNote(midiNote, instant = false) {
+            if (!activeVoices.has(midiNote)) return;
+            const ctx = getAudioContext();
+            const voice = activeVoices.get(midiNote);
+            activeVoices.delete(midiNote);
+
+            if (ctx && voice) {
+                try {
+                    voice.gain.gain.cancelScheduledValues(ctx.currentTime);
+                    if (instant) {
+                        voice.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                        voice.osc.stop();
+                        voice.osc.disconnect();
+                    } else {
+                        voice.gain.gain.setValueAtTime(Math.max(0.0001, voice.gain.gain.value), ctx.currentTime);
+                        voice.gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
+                        setTimeout(() => {
+                            try { voice.osc.stop(); voice.osc.disconnect(); } catch (e) {}
+                        }, 60);
+                    }
+                } catch (e) {
+                    try { voice.osc.stop(); } catch (err) {}
+                }
+            }
+        }
+
+        function stopAllInternalNotes() {
+            for (const n of Array.from(activeVoices.keys())) stopInternalNote(n, true);
+            activeVoices.clear();
+        }
+
+        function playTibetanBowlChime() {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const fundamental = 216;
+            const harmonics = [1, 2.76, 5.4, 8.9];
+            const gains = [0.4, 0.25, 0.12, 0.06];
+
+            harmonics.forEach((ratio, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(fundamental * ratio, ctx.currentTime);
+
+                gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(gains[idx], ctx.currentTime + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 4.5);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 4.6);
+            });
+        }
+
+        // --- WEB MIDI ACCESS ---
+        let midiAccess = null;
+        let selectedOutput = null;
+        let midiChannel = 0;
+        let currentlyPlayingMidiNotes = new Set();
+
+        async function initWebMIDI() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+
+            if (!navigator.requestMIDIAccess) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
+                statusText.textContent = 'Synth Interno (Casse)';
+                document.getElementById('soundTargetSelect').value = 'internal';
+                return;
+            }
+
+            try {
+                midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+                const outputs = Array.from(midiAccess.outputs.values());
+                let korg = outputs.find(o => (o.name || '').toLowerCase().includes('nts') || (o.name || '').toLowerCase().includes('korg'));
+                
+                if (korg) {
+                    selectedOutput = korg;
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `Connesso: ${korg.name}`;
+                } else if (outputs.length > 0) {
+                    selectedOutput = outputs[0];
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `MIDI: ${outputs[0].name}`;
+                } else {
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 led-orange';
+                    statusText.textContent = 'Synth Interno (Nessun MIDI)';
+                }
+            } catch (e) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
+                statusText.textContent = 'Synth Interno Attivo';
+            }
+        }
+
+        function sendMidiCC(cc, val) {
+            const target = document.getElementById('soundTargetSelect').value;
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    selectedOutput.send([0xB0 | (midiChannel & 0x0F), cc & 0x7F, val & 0x7F]);
+                } catch (e) {}
+            }
+        }
+
+        function sendNoteOn(midiNote, vel = 100) {
+            const target = document.getElementById('soundTargetSelect').value;
+            currentlyPlayingMidiNotes.add(midiNote);
+            currentlyActivePadMidi.add(midiNote % 12);
+
+            if (target === 'internal' || target === 'both') playInternalNote(midiNote, vel, true);
+            else if (target === 'midi') playInternalNote(midiNote, vel, false);
+
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    selectedOutput.send([0x90 | (midiChannel & 0x0F), midiNote & 0x7F, vel & 0x7F]);
+                } catch (e) {}
+            }
+        }
+
+        function sendNoteOff(midiNote) {
+            const target = document.getElementById('soundTargetSelect').value;
+            currentlyPlayingMidiNotes.delete(midiNote);
+            currentlyActivePadMidi.delete(midiNote % 12);
+
+            stopInternalNote(midiNote, false);
+
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    selectedOutput.send([0x80 | (midiChannel & 0x0F), midiNote & 0x7F, 0]);
+                } catch (e) {}
+            }
+        }
+
+        function silenceActiveNotes() {
+            if (selectedOutput) {
+                try {
+                    const statusCC = 0xB0 | (midiChannel & 0x0F);
+                    selectedOutput.send([statusCC, 120, 0]);
+                    selectedOutput.send([statusCC, 123, 0]);
+                    selectedOutput.send([statusCC, 64, 0]);
+                    for (const n of currentlyPlayingMidiNotes) {
+                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n & 0x7F, 0]);
+                    }
+                } catch (e) {}
+            }
+            currentlyPlayingMidiNotes.clear();
+            currentlyActivePadMidi.clear();
+            stopAllInternalNotes();
+        }
+
+        function panic() {
+            stopPlayback();
+            silenceActiveNotes();
+            if (selectedOutput) {
+                try {
+                    for (let n = 0; n < 128; n++) {
+                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n, 0]);
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function getOscName(oscVal) {
+            const map = {
+                '0': 'SAW', '16': 'TRI', '32': 'SQR', '48': 'VPM', '64': 'WAVES',
+                '76': 'Volca Bass', '88': 'Chords', '100': 'Proba-B', '112': 'J6'
+            };
+            return map[String(oscVal)] || `CC:${oscVal}`;
+        }
+
+        // --- TAG PILLS RENDERING (MULTISELEZIONE) ---
+        function renderAllTagFilters() {
+            // 1. Generi
+            const gContainer = document.getElementById('genresTagContainer');
+            gContainer.innerHTML = '';
+            ALL_GENRES.forEach(g => {
+                const btn = document.createElement('button');
+                const isSel = selectedGenreKeys.has(g.key);
+                btn.className = `px-2 py-0.5 rounded text-[10px] border border-zinc-800 transition ${isSel ? 'tag-pill-active' : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200'}`;
+                btn.textContent = g.name;
+                btn.onclick = () => {
+                    if (selectedGenreKeys.has(g.key)) {
+                        if (selectedGenreKeys.size > 1) selectedGenreKeys.delete(g.key);
+                    } else selectedGenreKeys.add(g.key);
+                    renderAllTagFilters();
+                };
+                gContainer.appendChild(btn);
+            });
+
+            // 2. Moods
+            const mContainer = document.getElementById('moodsTagContainer');
+            mContainer.innerHTML = '';
+            ALL_MOODS.forEach(m => {
+                const btn = document.createElement('button');
+                const isSel = selectedMoodKeys.has(m.key);
+                btn.className = `px-2 py-0.5 rounded text-[10px] border border-zinc-800 transition ${isSel ? 'tag-mood-active' : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200'}`;
+                btn.textContent = m.name;
+                btn.onclick = () => {
+                    if (selectedMoodKeys.has(m.key)) {
+                        if (selectedMoodKeys.size > 1) selectedMoodKeys.delete(m.key);
+                    } else selectedMoodKeys.add(m.key);
+                    renderAllTagFilters();
+                };
+                mContainer.appendChild(btn);
+            });
+
+            // 3. Strutture
+            const sContainer = document.getElementById('structsTagContainer');
+            sContainer.innerHTML = '';
+            ALL_STRUCTS.forEach(s => {
+                const btn = document.createElement('button');
+                const isSel = selectedStructKeys.has(s.key);
+                btn.className = `px-2 py-0.5 rounded text-[10px] border border-zinc-800 transition ${isSel ? 'tag-struct-active' : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200'}`;
+                btn.textContent = s.name;
+                btn.onclick = () => {
+                    if (selectedStructKeys.has(s.key)) {
+                        if (selectedStructKeys.size > 1) selectedStructKeys.delete(s.key);
+                    } else selectedStructKeys.add(s.key);
+                    renderAllTagFilters();
+                };
+                sContainer.appendChild(btn);
+            });
+
+            // 4. Algoritmi
+            const aContainer = document.getElementById('algosTagContainer');
+            aContainer.innerHTML = '';
+            ALL_ALGOS.forEach(a => {
+                const btn = document.createElement('button');
+                const isSel = selectedAlgoKeys.has(a.key);
+                btn.className = `px-2 py-0.5 rounded text-[10px] border border-zinc-800 transition ${isSel ? 'tag-algo-active' : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200'}`;
+                btn.textContent = a.name;
+                btn.onclick = () => {
+                    if (selectedAlgoKeys.has(a.key)) {
+                        if (selectedAlgoKeys.size > 1) selectedAlgoKeys.delete(a.key);
+                    } else selectedAlgoKeys.add(a.key);
+                    renderAllTagFilters();
+                };
+                aContainer.appendChild(btn);
+            });
+        }
+
+        document.getElementById('selectAllGenresBtn').addEventListener('click', () => {
+            ALL_GENRES.forEach(g => selectedGenreKeys.add(g.key));
+            renderAllTagFilters();
+        });
+        document.getElementById('clearAllGenresBtn').addEventListener('click', () => {
+            selectedGenreKeys.clear();
+            selectedGenreKeys.add(ALL_GENRES[2].key);
+            renderAllTagFilters();
+        });
+        document.getElementById('selectAllMoodsBtn').addEventListener('click', () => {
+            ALL_MOODS.forEach(m => selectedMoodKeys.add(m.key));
+            renderAllTagFilters();
+        });
+        document.getElementById('clearAllMoodsBtn').addEventListener('click', () => {
+            selectedMoodKeys.clear();
+            selectedMoodKeys.add(ALL_MOODS[4].key);
+            renderAllTagFilters();
+        });
+        document.getElementById('selectAllStructsBtn').addEventListener('click', () => {
+            ALL_STRUCTS.forEach(s => selectedStructKeys.add(s.key));
+            renderAllTagFilters();
+        });
+        document.getElementById('selectAllAlgosBtn').addEventListener('click', () => {
+            ALL_ALGOS.forEach(a => selectedAlgoKeys.add(a.key));
+            renderAllTagFilters();
+        });
+
+        // --- FULL SONG INITIALIZATION & TIMING CONTROLLER ---
+        function initNewRadioSong() {
+            // Se abilitato, esegui il salvataggio automatico prima del cambio brano
+            if (currentMode === 'radio' && recordedSongEvents.length > 0 && document.getElementById('autoDownloadToggle').checked) {
+                performSilentAutoDownload();
+            }
+
+            const availableGenres = ALL_GENRES.filter(g => selectedGenreKeys.has(g.key));
+            const availableMoods = ALL_MOODS.filter(m => selectedMoodKeys.has(m.key));
+            const availableStructs = ALL_STRUCTS.filter(s => selectedStructKeys.has(s.key));
+            const availableAlgos = ALL_ALGOS.filter(a => selectedAlgoKeys.has(a.key));
+
+            radioCurrentGenreObj = availableGenres[Math.floor(Math.random() * availableGenres.length)] || ALL_GENRES[2];
+            radioCurrentMoodObj = availableMoods[Math.floor(Math.random() * availableMoods.length)] || ALL_MOODS[4];
+            const chosenStruct = availableStructs[Math.floor(Math.random() * availableStructs.length)] || ALL_STRUCTS[0];
+            radioCurrentAlgo = (availableAlgos[Math.floor(Math.random() * availableAlgos.length)] || ALL_ALGOS[0]).key;
+
+            radioBaseRoot = ROOT_MAP[radioCurrentGenreObj.root] || 48;
+            radioScale = HARMONIC_SCALES[radioCurrentMoodObj.scaleKey] || HARMONIC_SCALES.dorian;
+            radioScaleIndex = Math.floor(radioScale.length / 2);
+
+            activeSongSections = [...chosenStruct.sections];
+            currentSongSectionIdx = 0;
+            accumulatedBeats = 0;
+            currentSongElapsedSec = 0;
+            recordedSongEvents = [];
+
+            // Range Durata Casuale
+            const minDur = parseInt(document.getElementById('minDurationSelect').value, 10) || 60;
+            const maxDur = parseInt(document.getElementById('maxDurationSelect').value, 10) || 180;
+            targetSongDurationSec = Math.floor(minDur + Math.random() * (Math.max(minDur + 10, maxDur) - minDur));
+
+            // Calcolo esatto delle misure necessarie per coprire l'intera durata senza troncamenti
+            const bpm = radioCurrentGenreObj.bpm || 120;
+            const totalBeatsRequired = (targetSongDurationSec / 60) * bpm;
+            const totalMeasuresRequired = Math.max(8, Math.round(totalBeatsRequired / 4));
+            sectionMeasureLength = Math.max(4, Math.round(totalMeasuresRequired / activeSongSections.length));
+
+            document.getElementById('bpmSlider').value = bpm;
+            document.getElementById('bpmDisplay').textContent = bpm;
+
+            const initialOsc = parseInt(radioCurrentGenreObj.osc, 10);
+            sendMidiCC(53, initialOsc);
+            sendMidiCC(54, 64);
+            sendMidiCC(55, 32);
+            sendMidiCC(43, 80);
+
+            document.getElementById('hwOscDisplay').textContent = `OSC: ${getOscName(initialOsc)}`;
+            document.getElementById('hwShapeVal').textContent = '64';
+            document.getElementById('hwCutoffVal').textContent = '80';
+
+            const titleText = `Radio: ${radioCurrentGenreObj.name.replace(/^[^\s]+\s/, '')}`;
+            const moodText = radioCurrentMoodObj.name.replace(/^[^\s]+\s/, '');
+            const initialSec = activeSongSections[0];
+
+            document.getElementById('nowPlayingTitle').textContent = titleText;
+            document.getElementById('nowPlayingGenre').textContent = moodText;
+            document.getElementById('nowPlayingBpm').textContent = `${bpm} BPM`;
+            document.getElementById('nowPlayingSection').textContent = initialSec;
+
+            document.getElementById('zenTrackTitle').textContent = titleText;
+            document.getElementById('zenTrackGenre').textContent = moodText;
+            document.getElementById('zenTrackBpm').textContent = `${bpm} BPM`;
+            document.getElementById('zenTrackSection').textContent = initialSec;
+            document.getElementById('zenTrackOsc').textContent = `OSC: ${getOscName(initialOsc)}`;
+
+            updateSongProgressUI();
+            startSongProgressTracker();
+        }
+
+        function updateSongProgressUI() {
+            const mCur = Math.floor(currentSongElapsedSec / 60).toString().padStart(2, '0');
+            const sCur = (currentSongElapsedSec % 60).toString().padStart(2, '0');
+            const mTot = Math.floor(targetSongDurationSec / 60).toString().padStart(2, '0');
+            const sTot = (targetSongDurationSec % 60).toString().padStart(2, '0');
+
+            const text = `${mCur}:${sCur} / ${mTot}:${sTot}`;
+            document.getElementById('songTimeProgress').textContent = text;
+            document.getElementById('zenSongTimeProgress').textContent = text;
+        }
+
+        function startSongProgressTracker() {
+            clearInterval(songProgressInterval);
+            songProgressInterval = setInterval(() => {
+                if (isPlaying && !isPaused && currentMode === 'radio') {
+                    currentSongElapsedSec++;
+                    updateSongProgressUI();
+
+                    if (currentSongElapsedSec >= targetSongDurationSec) {
+                        initNewRadioSong();
+                    }
+                }
+            }, 1000);
+        }
+
+        function generateMultiAlgorithmStep() {
+            const currentSec = activeSongSections[currentSongSectionIdx] || '';
+            const isChorus = currentSec.toLowerCase().includes('ritornello') || currentSec.toLowerCase().includes('coro') || currentSec.toLowerCase().includes('climax');
+
+            let duration = 0.25;
+            let midiNote = radioBaseRoot + radioScale[radioScaleIndex];
+
+            if (radioCurrentAlgo === 'markov') {
+                if (Math.random() < 0.10) return { type: 'rest', duration: 0.25, token: 'z', beats: 0.5 };
+                const delta = (Math.random() < 0.65) ? (Math.random() < 0.5 ? 1 : -1) : (Math.random() < 0.5 ? 2 : -2);
+                radioScaleIndex = Math.max(0, Math.min(radioScale.length - 1, radioScaleIndex + delta));
+                midiNote = radioBaseRoot + radioScale[radioScaleIndex];
+                if (isChorus) midiNote += 12;
+                duration = Math.random() < 0.25 ? 0.125 : (Math.random() < 0.8 ? 0.25 : 0.5);
+
+            } else if (radioCurrentAlgo === 'euclidean') {
+                euclideanStep = (euclideanStep + 1) % 8;
+                if (euclideanPattern[euclideanStep] === 0) {
+                    return { type: 'rest', duration: 0.125, token: 'z', beats: 0.25 };
+                }
+                const step = [0, 2, 4, 2, 0, 3, 5, 0][euclideanStep % 8];
+                midiNote = radioBaseRoot + (radioScale[step % radioScale.length] || 0);
+                if (isChorus) midiNote += 12;
+                duration = 0.125;
+
+            } else if (radioCurrentAlgo === 'arpeggio') {
+                const arpSteps = [0, 2, 4, 7, 4, 2];
+                const arpIdx = Math.floor(accumulatedBeats) % arpSteps.length;
+                midiNote = radioBaseRoot + (radioScale[arpSteps[arpIdx] % radioScale.length] || 0);
+                if (isChorus) midiNote += 12;
+                duration = 0.25;
+
+            } else if (radioCurrentAlgo === 'scalar_flow') {
+                radioScaleIndex = (radioScaleIndex + 1) % radioScale.length;
+                midiNote = radioBaseRoot + radioScale[radioScaleIndex];
+                if (isChorus) midiNote += 12;
+                duration = 0.25;
+            }
+
+            const beats = duration * 2;
+            const token = NOTE_NAMES[midiNote % 12] + (Math.floor(midiNote / 12) - 1);
+            return { type: 'note', midiNotes: [midiNote], duration: duration, token: token, beats: beats };
+        }
+
+        // --- RIGOROUS SECTION PROGRESSION (REAL MEASURES) ---
+        function advanceSongStructure(stepBeats) {
+            accumulatedBeats += (stepBeats || 0.5);
+            const beatsPerMeasure = 4;
+            const beatsPerSection = sectionMeasureLength * beatsPerMeasure;
+
+            if (accumulatedBeats >= beatsPerSection) {
+                accumulatedBeats = 0;
+                currentSongSectionIdx++;
+
+                if (currentSongSectionIdx >= activeSongSections.length) {
+                    currentSongSectionIdx = activeSongSections.length - 1;
+                }
+
+                const currentSecName = activeSongSections[currentSongSectionIdx];
+                document.getElementById('nowPlayingSection').textContent = currentSecName;
+                document.getElementById('zenTrackSection').textContent = currentSecName;
+
+                if (currentSecName.toLowerCase().includes('ritornello') || currentSecName.toLowerCase().includes('coro') || currentSecName.toLowerCase().includes('climax')) {
+                    const chorusOsc = parseInt(radioCurrentGenreObj.chorusOsc, 10);
+                    sendMidiCC(53, chorusOsc);
+                    sendMidiCC(54, 90);
+                    sendMidiCC(55, 60);
+                    document.getElementById('hwOscDisplay').textContent = `OSC: ${getOscName(chorusOsc)}`;
+                    document.getElementById('zenTrackOsc').textContent = `OSC: ${getOscName(chorusOsc)}`;
+                    document.getElementById('hwShapeVal').textContent = '90';
+                } else {
+                    const mainOsc = parseInt(radioCurrentGenreObj.osc, 10);
+                    sendMidiCC(53, mainOsc);
+                    sendMidiCC(54, 64);
+                    sendMidiCC(55, 32);
+                    document.getElementById('hwOscDisplay').textContent = `OSC: ${getOscName(mainOsc)}`;
+                    document.getElementById('zenTrackOsc').textContent = `OSC: ${getOscName(mainOsc)}`;
+                    document.getElementById('hwShapeVal').textContent = '64';
+                }
+            }
+        }
+
+        // --- PLAYBACK ENGINE ---
+        function startPlayback() {
+            getAudioContext();
+            if (isPlaying && !isPaused) return;
+
+            if (currentMode === 'radio' && activeSongSections.length === 0) {
+                initNewRadioSong();
+            }
+
+            isPlaying = true;
+            isPaused = false;
+            updateTransportUI();
+            scheduleNextEvent();
+        }
+
+        function scheduleNextEvent() {
+            if (!isPlaying || isPaused) return;
+
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 120;
+            const quarterMs = 60000 / bpm;
+            const gatePct = (parseInt(document.getElementById('gateSlider').value, 10) || 75) / 100;
+
+            let evt = null;
+
+            if (currentMode === 'file') {
+                if (fileParsedEvents.length === 0) {
+                    stopPlayback();
+                    return;
+                }
+                if (currentStepIndex >= fileParsedEvents.length) {
+                    currentStepIndex = 0;
+                }
+                evt = fileParsedEvents[currentStepIndex];
+                currentStepIndex++;
+                document.getElementById('trackerStats').textContent = `Passo: ${currentStepIndex} / ${fileParsedEvents.length}`;
+            } else {
+                evt = generateMultiAlgorithmStep();
+                advanceSongStructure(evt.beats || 0.5);
+                recordedSongEvents.push(evt);
+
+                const currentSec = activeSongSections[currentSongSectionIdx] || 'Groove';
+                document.getElementById('liveAbcView').value = buildCompleteAbcScoreFromRecorded(recordedSongEvents, radioCurrentGenreObj, radioCurrentMoodObj, bpm);
+                document.getElementById('trackerStats').textContent = `Sezione: ${currentSec} • ${recordedSongEvents.length} note registrate`;
+            }
+
+            if (evt.type === 'cc') {
+                sendMidiCC(evt.cc, evt.value);
+                scheduleNextEvent();
+                return;
+            }
+
+            const stepMs = (evt.duration || 0.25) * quarterMs;
+
+            if (evt.type === 'note') {
+                const noteMs = Math.max(20, stepMs * gatePct);
+                evt.midiNotes.forEach(n => {
+                    sendNoteOn(n, 100);
+                    const t = setTimeout(() => sendNoteOff(n), noteMs);
+                    activeNoteOffTimers.push(t);
+                });
+            }
+
+            activePlaybackTimer = setTimeout(() => scheduleNextEvent(), stepMs);
+        }
+
+        function pausePlayback() {
+            if (!isPlaying) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                clearTimeout(activePlaybackTimer);
+                activeNoteOffTimers.forEach(t => clearTimeout(t));
+                silenceActiveNotes();
+            } else {
+                scheduleNextEvent();
+            }
+            updateTransportUI();
+        }
+
+        function stopPlayback() {
+            clearTimeout(activePlaybackTimer);
+            activeNoteOffTimers.forEach(t => clearTimeout(t));
+            clearInterval(songProgressInterval);
+            silenceActiveNotes();
+            isPlaying = false;
+            isPaused = false;
+            currentStepIndex = 0;
+            currentSongElapsedSec = 0;
+            updateTransportUI();
+        }
+
+        function updateTransportUI() {
+            const led = document.getElementById('playerLed');
+            const icon = document.getElementById('playPauseIcon');
+            const label = document.getElementById('playPauseLabel');
+            const zenIcon = document.getElementById('zenPlayPauseIcon');
+
+            if (isPlaying && !isPaused) {
+                led.className = 'w-2 h-2 rounded-full bg-emerald-500 led-active';
+                icon.className = 'fa-solid fa-pause';
+                label.textContent = 'PAUSA';
+                zenIcon.className = 'fa-solid fa-pause';
+            } else if (isPaused) {
+                led.className = 'w-2 h-2 rounded-full bg-yellow-500 led-orange';
+                icon.className = 'fa-solid fa-play';
+                label.textContent = 'RIPRENDI';
+                zenIcon.className = 'fa-solid fa-play';
+            } else {
+                led.className = 'w-2 h-2 rounded-full bg-zinc-600';
+                icon.className = 'fa-solid fa-play';
+                label.textContent = 'PLAY';
+                zenIcon.className = 'fa-solid fa-play';
+            }
+        }
+
+        // --- ABC PARSER ---
+        function parseABC(text, fallbackBpm = 120) {
+            const lines = text.split('\n');
+            const events = [];
+            let currentBpm = fallbackBpm;
+            let unitLength = 1 / 16;
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line || (line.startsWith('%') && !line.startsWith('%%MIDI'))) continue;
+
+                if (line.startsWith('Q:')) {
+                    const m = line.match(/Q:\s*(\d+)/i);
+                    if (m) currentBpm = parseInt(m[1], 10);
+                    continue;
+                }
+                if (line.startsWith('L:')) {
+                    const m = line.match(/L:\s*1\/(\d+)/i);
+                    if (m) unitLength = 1 / parseInt(m[1], 10);
+                    continue;
+                }
+                if (line.startsWith('%%MIDI control')) {
+                    const m = line.match(/%%MIDI\s+control\s+(\d+)\s+(\d+)/i);
+                    if (m) {
+                        events.push({ type: 'cc', cc: parseInt(m[1], 10), value: parseInt(m[2], 10) });
+                    }
+                    continue;
+                }
+                if (line.startsWith('X:') || line.startsWith('T:') || line.startsWith('C:') || line.startsWith('M:') || line.startsWith('K:')) continue;
+
+                const matches = line.match(/(\[[^\]]+\]|\^?[_]?[=]?[A-Ga-g][',]*[0-9]*\/?[0-9]*|z[0-9]*\/?[0-9]*|[|])/g) || [];
+                for (let tok of matches) {
+                    tok = tok.trim();
+                    if (!tok || tok === '|') continue;
+
+                    if (tok.startsWith('z') || tok.startsWith('Z')) {
+                        const mult = parseDurationMultiplier(tok.substring(1));
+                        events.push({ type: 'rest', duration: mult * (unitLength * 4), token: tok });
+                        continue;
+                    }
+
+                    if (tok.startsWith('[')) {
+                        const m = tok.match(/\[([^\]]+)\]([0-9]*\/?[0-9]*)?/);
+                        if (m) {
+                            const mult = parseDurationMultiplier(m[2] || '');
+                            const notesStr = m[1].match(/(\^?[_]?[=]?[A-Ga-g][',]*)/g) || [];
+                            const midiNotes = notesStr.map(s => parseSinglePitch(s)).filter(n => n !== null);
+                            if (midiNotes.length > 0) {
+                                events.push({ type: 'note', midiNotes, duration: mult * (unitLength * 4), token: tok });
+                            }
+                        }
+                        continue;
+                    }
+
+                    const m = tok.match(/(\^?[_]?[=]?[A-Ga-g][',]*)([0-9]*\/?[0-9]*)?/);
+                    if (m) {
+                        const midi = parseSinglePitch(m[1]);
+                        const mult = parseDurationMultiplier(m[2] || '');
+                        if (midi !== null) {
+                            events.push({ type: 'note', midiNotes: [midi], duration: mult * (unitLength * 4), token: tok });
+                        }
+                    }
+                }
+            }
+
+            return { events, detectedBpm: currentBpm };
+        }
+
+        function parseDurationMultiplier(durStr) {
+            if (!durStr) return 1;
+            if (durStr === '/') return 0.5;
+            if (durStr.startsWith('/')) {
+                const den = parseInt(durStr.substring(1), 10);
+                return isNaN(den) || den === 0 ? 0.5 : 1 / den;
+            }
+            if (durStr.includes('/')) {
+                const parts = durStr.split('/');
+                return (parseInt(parts[0], 10) || 1) / (parseInt(parts[1], 10) || 2);
+            }
+            const v = parseFloat(durStr);
+            return isNaN(v) ? 1 : v;
+        }
+
+        function parseSinglePitch(str) {
+            const m = str.match(/(\^|_|=)?([A-Ga-g])([',]*)/);
+            if (!m) return null;
+            const acc = m[1];
+            const letter = m[2];
+            const octMods = m[3] || '';
+            let oct = (letter === letter.toLowerCase()) ? 5 : 4;
+
+            for (let c of octMods) {
+                if (c === "'") oct++;
+                if (c === ",") oct--;
+            }
+
+            let semi = BASE_NOTE_MAP[letter.toLowerCase()] || 0;
+            if (acc === '^') semi += 1;
+            if (acc === '_') semi -= 1;
+            return (oct + 1) * 12 + semi;
+        }
+
+        // --- COMPLETE SCORE BUILDER & EXPORT UTILITIES ---
+        function midiNoteToABC(midiNote, duration = 0.25) {
+            const oct = Math.floor(midiNote / 12) - 1;
+            const semi = midiNote % 12;
+            const pitchNames = ['C', '^C', 'D', '^D', 'E', 'F', '^F', 'G', '^G', 'A', '^A', 'B'];
+            const p = pitchNames[semi];
+
+            let acc = p.startsWith('^') ? '^' : '';
+            let letter = p.replace('^', '');
+            let result = '';
+
+            if (oct === 4) result = `${acc}${letter.toUpperCase()}`;
+            else if (oct === 5) result = `${acc}${letter.toLowerCase()}`;
+            else if (oct < 4) result = `${acc}${letter.toUpperCase()}${','.repeat(4 - oct)}`;
+            else result = `${acc}${letter.toLowerCase()}${"'".repeat(oct - 5)}`;
+
+            if (duration === 0.125) result += '/2';
+            else if (duration === 0.5) result += '2';
+            else if (duration === 1.0) result += '4';
+            return result;
+        }
+
+        function buildCompleteAbcScoreFromRecorded(events, genreObj, moodObj, bpm) {
+            const lines = [];
+            const title = (genreObj && genreObj.name) ? genreObj.name.replace(/^[^\s]+\s/, '') : 'Radio Stream';
+            lines.push(`X: 1`);
+            lines.push(`T: Radio - ${title}`);
+            lines.push(`C: Korg NTS-1 Infinite Radio`);
+            lines.push(`M: 4/4`);
+            lines.push(`L: 1/8`);
+            lines.push(`Q: ${bpm || 120}`);
+            lines.push(`K: C`);
+            lines.push(`%%MIDI control 53 ${genreObj ? genreObj.osc : 76}`);
+            lines.push(`%%MIDI control 54 64`);
+            lines.push(`%%MIDI control 55 32`);
+            lines.push(``);
+
+            let curMeasureBeats = 0;
+            let measureNotes = [];
+
+            events.forEach(evt => {
+                if (evt.type === 'rest') {
+                    measureNotes.push(evt.duration === 0.125 ? 'z/2' : (evt.duration === 0.5 ? 'z2' : 'z'));
+                    curMeasureBeats += (evt.duration * 2);
+                } else if (evt.type === 'note' && evt.midiNotes) {
+                    const nStr = evt.midiNotes.map(n => midiNoteToABC(n, evt.duration)).join('');
+                    measureNotes.push(nStr);
+                    curMeasureBeats += (evt.duration * 2);
+                }
+
+                if (curMeasureBeats >= 4) {
+                    lines.push(measureNotes.join(' ') + ' |');
+                    measureNotes = [];
+                    curMeasureBeats = 0;
+                }
+            });
+
+            if (measureNotes.length > 0) {
+                lines.push(measureNotes.join(' ') + ' |');
+            }
+
+            return lines.join('\n');
+        }
+
+        // --- EXPORT ENGINES (JSON, ABC, WAV) ---
+        function getBundleData() {
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 120;
+            const abcCode = document.getElementById('liveAbcView').value || "X:1\nT:Radio\nM:4/4\nL:1/8\nQ:120\nK:C\nC D E G |";
+            const genre = radioCurrentGenreObj ? radioCurrentGenreObj.key : 'synthwave';
+            const title = radioCurrentGenreObj ? radioCurrentGenreObj.name.replace(/^[^\s]+\s/, '') : 'Radio Track';
+            const osc = parseInt(radioCurrentGenreObj ? radioCurrentGenreObj.osc : 76, 10);
+
+            return {
+                title: `Radio_${title.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now().toString().slice(-4)}`,
+                genre: genre,
+                bpm: bpm,
+                abcCode: abcCode,
+                jsonBundle: {
+                    generator: "Korg NTS-1 Suite - Infinite Radio",
+                    version: "1.4.0",
+                    timestamp: new Date().toISOString(),
+                    metadata: {
+                        title: `Radio - ${title}`,
+                        composer: "NTS-1 Infinite Radio",
+                        meter: "4/4",
+                        notes: `Generato con algoritmo ${radioCurrentAlgo}`
+                    },
+                    genre: genre,
+                    mood: radioCurrentMoodObj ? radioCurrentMoodObj.key : 'melancholic',
+                    bpm: bpm,
+                    mainOsc: String(osc),
+                    patch: {
+                        osc: osc,
+                        shape: parseInt(document.getElementById('hwShapeVal').textContent, 10) || 64,
+                        alt: 32,
+                        cutoff: parseInt(document.getElementById('hwCutoffVal').textContent, 10) || 80,
+                        resonance: 20,
+                        attack: 10,
+                        release: parseInt(document.getElementById('hwReleaseVal').textContent, 10) || 45,
+                        delayTime: 25,
+                        reverbMix: parseInt(document.getElementById('hwReverbVal').textContent, 10) || 30
+                    },
+                    abcCode: abcCode
+                }
+            };
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+
+        document.getElementById('downloadCurrentAbcBtn').addEventListener('click', () => {
+            const data = getBundleData();
+            const blob = new Blob([data.abcCode], { type: 'text/plain;charset=utf-8' });
+            downloadBlob(blob, `${data.title}.abc`);
+        });
+
+        document.getElementById('downloadCurrentJsonBtn').addEventListener('click', () => {
+            const data = getBundleData();
+            const blob = new Blob([JSON.stringify(data.jsonBundle, null, 2)], { type: 'application/json' });
+            downloadBlob(blob, `${data.title}.json`);
+        });
+
+        document.getElementById('downloadCurrentWavBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('downloadCurrentWavBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Render...';
+            btn.disabled = true;
+
+            try {
+                const data = getBundleData();
+                const parsed = parseABC(data.abcCode, data.bpm);
+                const wavBlob = await renderOfflineWavAudio(parsed.events, data.bpm);
+                downloadBlob(wavBlob, `${data.title}.wav`);
+            } catch (err) {
+                alert('Errore nel rendering audio WAV');
+            } finally {
+                btn.innerHTML = orig;
+                btn.disabled = false;
+            }
+        });
+
+        // --- SILENT AUTO-DOWNLOAD ENGINE ---
+        async function performSilentAutoDownload() {
+            const isJson = document.getElementById('autoDlJsonCheck').checked;
+            const isAbc = document.getElementById('autoDlAbcCheck').checked;
+            const isWav = document.getElementById('autoDlWavCheck').checked;
+
+            if (!isJson && !isAbc && !isWav) return;
+            const data = getBundleData();
+
+            if (isJson) {
+                const blob = new Blob([JSON.stringify(data.jsonBundle, null, 2)], { type: 'application/json' });
+                downloadBlob(blob, `${data.title}.json`);
+            }
+            if (isAbc) {
+                const blob = new Blob([data.abcCode], { type: 'text/plain;charset=utf-8' });
+                downloadBlob(blob, `${data.title}.abc`);
+            }
+            if (isWav) {
+                try {
+                    const parsed = parseABC(data.abcCode, data.bpm);
+                    const wavBlob = await renderOfflineWavAudio(parsed.events, data.bpm);
+                    downloadBlob(wavBlob, `${data.title}.wav`);
+                } catch (e) {}
+            }
+        }
+
+        // --- OFFLINE WAV AUDIO ENCODER ---
+        function audioBufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1;
+            const bitDepth = 16;
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            const numSamples = buffer.length;
+            const dataSize = numSamples * blockAlign;
+            const headerSize = 44;
+            const totalSize = headerSize + dataSize;
+            const arrayBuffer = new ArrayBuffer(totalSize);
+            const view = new DataView(arrayBuffer);
+
+            function writeString(offset, string) {
+                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+            }
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, totalSize - 8, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            let offset = 44;
+            for (let i = 0; i < numSamples; i++) {
+                for (let channel = 0; channel < numChannels; channel++) {
+                    let sample = buffer.getChannelData(channel)[i];
+                    sample = Math.max(-1, Math.min(1, sample));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        async function renderOfflineWavAudio(events, bpmVal) {
+            const secPerQuarter = 60 / bpmVal;
+            let totalDurationSec = 0;
+            for (let evt of events) {
+                if (evt.type === 'note' || evt.type === 'rest') {
+                    totalDurationSec += (evt.duration * secPerQuarter);
+                }
+            }
+            totalDurationSec = Math.max(1, totalDurationSec + 0.5);
+
+            const sampleRate = 44100;
+            const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, Math.ceil(totalDurationSec * sampleRate), sampleRate);
+            let currentTimeSec = 0;
+            const gate = (parseInt(document.getElementById('gateSlider').value, 10) || 75) / 100;
+
+            for (let evt of events) {
+                if (evt.type === 'rest') {
+                    currentTimeSec += (evt.duration * secPerQuarter);
+                } else if (evt.type === 'note' && evt.midiNotes) {
+                    const stepDurationSec = evt.duration * secPerQuarter;
+                    const noteDurationSec = Math.max(0.04, stepDurationSec * gate);
+
+                    evt.midiNotes.forEach(midiNote => {
+                        const osc = offlineCtx.createOscillator();
+                        const gain = offlineCtx.createGain();
+                        const filter = offlineCtx.createBiquadFilter();
+
+                        const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+                        osc.frequency.setValueAtTime(freq, currentTimeSec);
+                        osc.type = 'sawtooth';
+
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(3600, currentTimeSec);
+                        filter.Q.setValueAtTime(2.5, currentTimeSec);
+
+                        gain.gain.setValueAtTime(0.0001, currentTimeSec);
+                        gain.gain.exponentialRampToValueAtTime(0.22, currentTimeSec + 0.015);
+                        gain.gain.setValueAtTime(0.22, currentTimeSec + noteDurationSec);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, currentTimeSec + noteDurationSec + 0.06);
+
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(offlineCtx.destination);
+
+                        osc.start(currentTimeSec);
+                        osc.stop(currentTimeSec + noteDurationSec + 0.08);
+                    });
+
+                    currentTimeSec += stepDurationSec;
+                }
+            }
+
+            const renderedBuffer = await offlineCtx.startRendering();
+            return audioBufferToWav(renderedBuffer);
+        }
+
+        // --- DUAL TIMER & GIANT TIMER ENGINE ---
+        let timerMode = 'pomodoro';
+        let pomodoroRemainingSec = 25 * 60;
+        let stopwatchElapsedSec = 0;
+        let isTimerRunning = false;
+        let masterTimerInterval = null;
+
+        function formatTimerDisplay(secTotal, includeHours = false) {
+            const h = Math.floor(secTotal / 3600).toString().padStart(2, '0');
+            const m = Math.floor((secTotal % 3600) / 60).toString().padStart(2, '0');
+            const s = (secTotal % 60).toString().padStart(2, '0');
+            return includeHours ? `${h}:${m}:${s}` : `${m}:${s}`;
+        }
+
+        function updateTimersDisplay() {
+            const isStopwatch = (timerMode === 'stopwatch');
+            const formatted = isStopwatch ? formatTimerDisplay(stopwatchElapsedSec, true) : formatTimerDisplay(pomodoroRemainingSec, false);
+            const label = isStopwatch ? 'CRONOMETRO' : 'FOCUS POMODORO';
+
+            document.getElementById('activeTimerBadge').textContent = formatted;
+            document.getElementById('stopwatchDisplay').textContent = formatted;
+            document.getElementById('zenTimerBtnDisplay').textContent = formatted;
+
+            document.getElementById('giantTimerMainDisplay').textContent = formatted;
+            document.getElementById('giantTimerMainLabel').textContent = label;
+            document.getElementById('zenGiantTimerDisplay').textContent = formatted;
+            document.getElementById('zenGiantTimerLabel').textContent = label;
+        }
+
+        function startTimer() {
+            if (isTimerRunning) {
+                clearInterval(masterTimerInterval);
+                isTimerRunning = false;
+                document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-play text-[10px]"></i> Riprendi';
+                return;
+            }
+
+            isTimerRunning = true;
+            document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-pause text-[10px]"></i> Pausa';
+
+            masterTimerInterval = setInterval(() => {
+                if (timerMode === 'pomodoro') {
+                    if (pomodoroRemainingSec > 0) {
+                        pomodoroRemainingSec--;
+                        updateTimersDisplay();
+                        if (pomodoroRemainingSec <= 15 && masterGainNode) {
+                            const targetGain = Math.max(0, pomodoroRemainingSec / 15);
+                            masterGainNode.gain.setValueAtTime(targetGain, audioCtx.currentTime);
+                        }
+                    } else {
+                        clearInterval(masterTimerInterval);
+                        isTimerRunning = false;
+                        stopPlayback();
+                        if (masterGainNode) masterGainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                        playTibetanBowlChime();
+                        document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-check text-[10px]"></i> Finito!';
+                    }
+                } else {
+                    stopwatchElapsedSec++;
+                    updateTimersDisplay();
+                }
+            }, 1000);
+        }
+
+        function resetTimer(mins = 25) {
+            clearInterval(masterTimerInterval);
+            isTimerRunning = false;
+            pomodoroRemainingSec = mins * 60;
+            stopwatchElapsedSec = 0;
+            if (masterGainNode) masterGainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+            updateTimersDisplay();
+            document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-play text-[10px]"></i> Avvia Timer';
+        }
+
+        function toggleGiantTimer() {
+            isGiantTimerVisible = !isGiantTimerVisible;
+            const mainEl = document.getElementById('giantTimerMainOverlay');
+            const zenEl = document.getElementById('zenGiantTimerOverlay');
+
+            if (isGiantTimerVisible) {
+                mainEl.classList.remove('hidden');
+                zenEl.classList.remove('hidden');
+                document.getElementById('toggleGiantTimerMainBtn').classList.add('bg-amber-800/60');
+            } else {
+                mainEl.classList.add('hidden');
+                zenEl.classList.add('hidden');
+                document.getElementById('toggleGiantTimerMainBtn').classList.remove('bg-amber-800/60');
+            }
+        }
+
+        document.getElementById('toggleGiantTimerMainBtn').addEventListener('click', toggleGiantTimer);
+        document.getElementById('toggleZenGiantTimerBtn').addEventListener('click', toggleGiantTimer);
+
+        // --- MULTI-MODE CANVAS VISUALIZER (CON PAD MATRIX) ---
+        const mainCanvas = document.getElementById('visualizerCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const zenCanvas = document.getElementById('zenCanvas');
+        const zenCtx = zenCanvas.getContext('2d');
+
+        function resizeCanvases() {
+            if (mainCanvas && mainCanvas.parentElement) {
+                mainCanvas.width = mainCanvas.parentElement.clientWidth;
+                mainCanvas.height = mainCanvas.parentElement.clientHeight;
+            }
+            if (zenCanvas) {
+                zenCanvas.width = window.innerWidth;
+                zenCanvas.height = window.innerHeight;
+            }
+        }
+
+        function drawVisualizer() {
+            requestAnimationFrame(drawVisualizer);
+            animationPhase += 0.02;
+
+            if (!analyserNode) {
+                clearCanvas(mainCtx, mainCanvas);
+                clearCanvas(zenCtx, zenCanvas);
+                return;
+            }
+
+            const bufferLength = analyserNode.frequencyBinCount;
+            const timeData = new Uint8Array(bufferLength);
+            const freqData = new Uint8Array(bufferLength);
+            analyserNode.getByteTimeDomainData(timeData);
+            analyserNode.getByteFrequencyData(freqData);
+
+            if (mainCanvas.clientHeight > 0) {
+                renderScene(mainCtx, mainCanvas, timeData, freqData, bufferLength, false);
+            }
+            if (!document.getElementById('zenOverlay').classList.contains('hidden')) {
+                renderScene(zenCtx, zenCanvas, timeData, freqData, bufferLength, true);
+            }
+        }
+
+        function clearCanvas(ctx, canvas) {
+            if (!ctx || !canvas) return;
+            ctx.fillStyle = '#09090b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function renderScene(ctx, canvas, timeData, freqData, bufferLength, isZen = false) {
+            clearCanvas(ctx, canvas);
+            const active = isPlaying && !isPaused;
+
+            if (currentVisualizerMode === 'pads') {
+                renderPadMatrix(ctx, canvas, active);
+            } else if (currentVisualizerMode === 'landscape') {
+                renderLandscape(ctx, canvas, timeData, freqData, bufferLength, active);
+            } else if (currentVisualizerMode === 'fluid') {
+                renderFluidWaves(ctx, canvas, timeData, freqData, bufferLength, active);
+            } else if (currentVisualizerMode === 'geometric') {
+                renderGeometricMesh(ctx, canvas, timeData, freqData, bufferLength, active);
+            } else if (currentVisualizerMode === 'oscilloscope') {
+                renderOscilloscope(ctx, canvas, timeData, bufferLength, active ? (isZen ? '#22c55e' : '#f97316') : '#3f3f46');
+            } else if (currentVisualizerMode === 'bars') {
+                renderSpectrumBars(ctx, canvas, freqData, bufferLength, active);
+            } else if (currentVisualizerMode === 'mandala') {
+                renderRadialMandala(ctx, canvas, timeData, freqData, bufferLength, active);
+            } else if (currentVisualizerMode === 'nebula') {
+                renderCosmicNebula(ctx, canvas, freqData, bufferLength, active);
+            }
+        }
+
+        // 8. PAD MATRIX VISUALIZER (LAUNCHPAD GRID 4x3)
+        function renderPadMatrix(ctx, canvas, active) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const cols = 4;
+            const rows = 3;
+            const padMargin = Math.min(w, h) * 0.025;
+            
+            const totalW = w * 0.85;
+            const totalH = h * 0.85;
+            const padW = (totalW - (padMargin * (cols - 1))) / cols;
+            const padH = (totalH - (padMargin * (rows - 1))) / rows;
+            const startX = (w - totalW) / 2;
+            const startY = (h - totalH) / 2;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const semiIndex = r * cols + c;
+                    const isNoteActive = active && currentlyActivePadMidi.has(semiIndex);
+                    const padX = startX + c * (padW + padMargin);
+                    const padY = startY + r * (padH + padMargin);
+                    const noteName = NOTE_NAMES[semiIndex];
+
+                    ctx.save();
+                    if (isNoteActive) {
+                        ctx.shadowColor = '#f97316';
+                        ctx.shadowBlur = 18;
+                        ctx.fillStyle = '#ea580c';
+                        ctx.strokeStyle = '#fdba74';
+                        ctx.lineWidth = 2.5;
+                    } else {
+                        ctx.fillStyle = '#18181b';
+                        ctx.strokeStyle = '#27272a';
+                        ctx.lineWidth = 1;
+                    }
+
+                    ctx.beginPath();
+                    ctx.roundRect(padX, padY, padW, padH, 8);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = isNoteActive ? '#ffffff' : '#71717a';
+                    ctx.font = `bold ${Math.max(10, Math.floor(padH * 0.32))}px JetBrains Mono`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(noteName, padX + padW / 2, padY + padH / 2);
+                    ctx.restore();
+                }
+            }
+        }
+
+        function renderLandscape(ctx, canvas, timeData, freqData, bufferLength, active) {
+            const w = canvas.width;
+            const h = canvas.height;
+            let bassEnergy = 0;
+            for (let i = 0; i < 8; i++) bassEnergy += freqData[i];
+            bassEnergy = active ? (bassEnergy / 8) / 255 : 0.05;
+
+            let midEnergy = 0;
+            for (let i = 8; i < 24; i++) midEnergy += freqData[i];
+            midEnergy = active ? (midEnergy / 16) / 255 : 0.05;
+
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+            skyGrad.addColorStop(0, '#0a0a14');
+            skyGrad.addColorStop(0.6, '#180e29');
+            skyGrad.addColorStop(1, '#2c122d');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            const sunY = h * 0.45;
+            const sunR = Math.min(w, h) * 0.22 * (0.9 + bassEnergy * 0.2);
+            const sunGrad = ctx.createRadialGradient(w / 2, sunY, sunR * 0.2, w / 2, sunY, sunR);
+            const baseHue = (animationPhase * 15) % 360;
+            sunGrad.addColorStop(0, `hsla(${baseHue}, 100%, 75%, 0.95)`);
+            sunGrad.addColorStop(0.7, `hsla(${(baseHue + 40) % 360}, 95%, 55%, 0.8)`);
+            sunGrad.addColorStop(1, 'rgba(255, 100, 50, 0)');
+            ctx.fillStyle = sunGrad;
+            ctx.beginPath();
+            ctx.arc(w / 2, sunY, sunR, 0, Math.PI * 2);
+            ctx.fill();
+
+            drawRidgeLayer(ctx, w, h, { baseY: h * 0.55, heightScale: h * 0.22, freq: 0.008, speed: animationPhase * 0.15, energy: midEnergy, startColor: '#2b1055', endColor: '#120524' });
+            drawRidgeLayer(ctx, w, h, { baseY: h * 0.68, heightScale: h * 0.26, freq: 0.012, speed: animationPhase * 0.35, energy: bassEnergy * 1.3, startColor: '#7928ca', endColor: '#1f0d3d' });
+            drawRidgeLayer(ctx, w, h, { baseY: h * 0.82, heightScale: h * 0.28, freq: 0.016, speed: animationPhase * 0.6, energy: (bassEnergy + midEnergy) * 0.8, startColor: '#ff0080', endColor: '#09090b', strokeColor: '#f97316' });
+        }
+
+        function drawRidgeLayer(ctx, w, h, cfg) {
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            const steps = 60;
+            const dx = w / steps;
+            for (let i = 0; i <= steps; i++) {
+                const x = i * dx;
+                const sin1 = Math.sin(x * cfg.freq + cfg.speed);
+                const sin2 = Math.cos(x * cfg.freq * 2.1 - cfg.speed * 0.8) * 0.4;
+                const noise = (sin1 + sin2) * cfg.heightScale * (0.7 + cfg.energy * 0.6);
+                const y = cfg.baseY - noise;
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(w, h);
+            ctx.closePath();
+            const grad = ctx.createLinearGradient(0, cfg.baseY - cfg.heightScale, 0, h);
+            grad.addColorStop(0, cfg.startColor);
+            grad.addColorStop(1, cfg.endColor);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            if (cfg.strokeColor) {
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = cfg.strokeColor;
+                ctx.stroke();
+            }
+        }
+
+        function renderFluidWaves(ctx, canvas, timeData, freqData, bufferLength, active) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const layers = 4;
+            for (let l = 0; l < layers; l++) {
+                const layerRatio = (l + 1) / layers;
+                const baseY = h * (0.35 + layerRatio * 0.5);
+                const hue = (animationPhase * 25 + l * 55) % 360;
+                ctx.beginPath();
+                ctx.moveTo(0, h);
+                const sampleStep = Math.floor(bufferLength / 40);
+                const dx = w / 40;
+                for (let i = 0; i <= 40; i++) {
+                    const x = i * dx;
+                    const sampleVal = active ? (timeData[(i * sampleStep) % bufferLength] - 128) / 128 : 0;
+                    const wave = Math.sin(i * 0.25 + animationPhase * (0.8 + l * 0.3) + l) * (h * 0.08);
+                    const audioMod = sampleVal * (h * 0.18 * layerRatio);
+                    ctx.lineTo(x, baseY + wave + audioMod);
+                }
+                ctx.lineTo(w, h);
+                ctx.closePath();
+                const grad = ctx.createLinearGradient(0, baseY - h * 0.2, 0, h);
+                grad.addColorStop(0, `hsla(${hue}, 90%, 60%, ${0.35 + layerRatio * 0.25})`);
+                grad.addColorStop(1, `hsla(${(hue + 40) % 360}, 95%, 25%, 0.85)`);
+                ctx.fillStyle = grad;
+                ctx.fill();
+            }
+        }
+
+        function renderGeometricMesh(ctx, canvas, timeData, freqData, bufferLength, active) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const cols = 10;
+            const rows = 6;
+            const cellW = w / cols;
+            const cellH = h / rows;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const x0 = c * cellW;
+                    const y0 = r * cellH;
+                    const idx = (r * cols + c) % bufferLength;
+                    const val = active ? (freqData[idx] / 255) : 0.05;
+                    const shift = Math.sin(animationPhase + (c + r) * 0.4) * (cellH * 0.25 * val);
+                    const hue = (animationPhase * 20 + (c * 15) + (r * 25)) % 360;
+
+                    ctx.beginPath();
+                    ctx.moveTo(x0, y0 + shift);
+                    ctx.lineTo(x0 + cellW, y0);
+                    ctx.lineTo(x0, y0 + cellH);
+                    ctx.closePath();
+                    ctx.fillStyle = `hsla(${hue}, 85%, ${20 + val * 45}%, 0.75)`;
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(x0 + cellW, y0);
+                    ctx.lineTo(x0 + cellW, y0 + cellH - shift);
+                    ctx.lineTo(x0, y0 + cellH);
+                    ctx.closePath();
+                    ctx.fillStyle = `hsla(${(hue + 30) % 360}, 90%, ${15 + val * 50}%, 0.85)`;
+                    ctx.fill();
+                }
+            }
+        }
+
+        function renderOscilloscope(ctx, canvas, dataArray, bufferLength, strokeColor) {
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = strokeColor;
+            ctx.beginPath();
+            const sliceWidth = canvas.width * 1.0 / bufferLength;
+            let x = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * (canvas.height / 2);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+        }
+
+        function renderSpectrumBars(ctx, canvas, freqData, bufferLength, active) {
+            const barCount = 32;
+            const barWidth = (canvas.width / barCount) - 2;
+            const step = Math.floor(bufferLength / barCount);
+            for (let i = 0; i < barCount; i++) {
+                let sum = 0;
+                for (let j = 0; j < step; j++) sum += freqData[i * step + j];
+                const avg = active ? (sum / step) : 4;
+                const barHeight = Math.max(4, (avg / 255) * (canvas.height * 0.9));
+                const hue = (i / barCount) * 180 + (animationPhase * 20) % 360;
+                ctx.fillStyle = active ? `hsl(${hue}, 85%, 55%)` : '#27272a';
+                ctx.fillRect(i * (barWidth + 2), canvas.height - barHeight, barWidth, barHeight);
+            }
+        }
+
+        function renderRadialMandala(ctx, canvas, timeData, freqData, bufferLength, active) {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const maxRadius = Math.min(cx, cy) * 0.85;
+            const points = 48;
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(animationPhase * 0.3);
+            let energy = 0;
+            for (let i = 0; i < 32; i++) energy += freqData[i];
+            energy = active ? (energy / 32) / 255 : 0.05;
+
+            for (let ring = 1; ring <= 3; ring++) {
+                const r = maxRadius * (ring / 3) * (0.8 + energy * 0.4);
+                const hue = (ring * 80 + animationPhase * 30) % 360;
+                ctx.strokeStyle = active ? `hsl(${hue}, 90%, 60%)` : '#3f3f46';
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                for (let i = 0; i <= points; i++) {
+                    const angle = (i / points) * Math.PI * 2;
+                    const sampleIdx = (i * 2) % bufferLength;
+                    const waveMod = active ? ((timeData[sampleIdx] - 128) / 128) * 18 : 0;
+                    const currR = r + waveMod;
+                    const x = Math.cos(angle) * currR;
+                    const y = Math.sin(angle) * currR;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function renderCosmicNebula(ctx, canvas, freqData, bufferLength, active) {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            let lowEnergy = 0;
+            for (let i = 0; i < 16; i++) lowEnergy += freqData[i];
+            lowEnergy = active ? (lowEnergy / 16) / 255 : 0.05;
+
+            const baseR = Math.min(cx, cy) * 0.5 * (0.8 + lowEnergy * 0.6);
+            const hue = (animationPhase * 25) % 360;
+            const grad = ctx.createRadialGradient(cx, cy, 4, cx, cy, baseR * 1.6);
+            grad.addColorStop(0, active ? `hsla(${hue}, 90%, 65%, 0.8)` : 'rgba(39, 39, 42, 0.4)');
+            grad.addColorStop(0.5, active ? `hsla(${(hue + 60) % 360}, 80%, 50%, 0.4)` : 'rgba(24, 24, 27, 0.2)');
+            grad.addColorStop(1, 'rgba(9, 9, 11, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, baseR * 1.6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function setVisualizerMode(mode) {
+            currentVisualizerMode = mode;
+            document.querySelectorAll('.vis-mode-btn').forEach(btn => {
+                const isActive = btn.dataset.mode === mode;
+                btn.className = isActive 
+                    ? 'vis-mode-btn px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-semibold transition'
+                    : 'vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition';
+            });
+            document.querySelectorAll('.zen-vis-btn').forEach(btn => {
+                const isActive = btn.dataset.mode === mode;
+                btn.className = isActive
+                    ? 'zen-vis-btn px-2 sm:px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition'
+                    : 'zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition';
+            });
+        }
+
+        document.querySelectorAll('.vis-mode-btn, .zen-vis-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => setVisualizerMode(e.currentTarget.dataset.mode));
+        });
+
+        // --- ZEN OVERLAY CONTROLS ---
+        const zenOverlay = document.getElementById('zenOverlay');
+        const toggleZenUiBtn = document.getElementById('toggleZenUiBtn');
+        const toggleZenUiIcon = document.getElementById('toggleZenUiIcon');
+
+        function toggleZenUi() {
+            isZenUiVisible = !isZenUiVisible;
+            const opacityClass = isZenUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none';
+            document.getElementById('zenTopHUD').className = `absolute top-0 left-0 right-0 p-3 sm:p-5 flex items-center justify-between z-10 bg-gradient-to-b from-black/80 via-black/30 to-transparent transition-opacity duration-300 ${isZenUiVisible ? 'opacity-100' : 'opacity-20 hover:opacity-100'}`;
+            document.getElementById('zenInfoHUD').className = `absolute bottom-4 left-4 z-10 pointer-events-none bg-black/60 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-zinc-800/80 transition-opacity duration-300 max-w-[75vw] flex flex-col gap-1 ${opacityClass}`;
+            document.getElementById('zenDockHUD').className = `absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-black/60 backdrop-blur-md border border-zinc-800/80 p-2 rounded-2xl shadow-2xl transition-opacity duration-300 ${opacityClass}`;
+            toggleZenUiIcon.className = isZenUiVisible ? 'fa-solid fa-eye-slash text-xs' : 'fa-solid fa-eye text-xs';
+        }
+
+        toggleZenUiBtn.addEventListener('click', toggleZenUi);
+        document.getElementById('openZenBtn').addEventListener('click', () => {
+            zenOverlay.classList.remove('hidden');
+            resizeCanvases();
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        });
+        document.getElementById('closeZenBtn').addEventListener('click', () => {
+            zenOverlay.classList.add('hidden');
+            if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+        });
+        window.addEventListener('keydown', (e) => {
+            if (!zenOverlay.classList.contains('hidden')) {
+                if (e.key === 'h' || e.key === 'H') toggleZenUi();
+                if (e.key === 't' || e.key === 'T') toggleGiantTimer();
+                if (e.key === 'Escape') zenOverlay.classList.add('hidden');
+            }
+        });
+
+        // --- SOURCE SWITCHING (FILE vs RADIO) ---
+        const modeFileBtn = document.getElementById('modeFileBtn');
+        const modeRadioBtn = document.getElementById('modeRadioBtn');
+        const fileUploadContainer = document.getElementById('fileUploadContainer');
+        const radioSettingsContainer = document.getElementById('radioSettingsContainer');
+
+        modeFileBtn.addEventListener('click', () => {
+            stopPlayback();
+            currentMode = 'file';
+            modeFileBtn.className = 'py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-zinc-800 text-orange-400 border border-orange-500/40';
+            modeRadioBtn.className = 'py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-zinc-400 hover:text-zinc-200';
+            fileUploadContainer.classList.remove('hidden');
+            radioSettingsContainer.classList.add('hidden');
+            document.getElementById('nowPlayingGenre').textContent = 'Modalità: File ABC';
+            document.getElementById('zenModeLabel').textContent = 'PLAYER FILE ABC';
+        });
+
+        modeRadioBtn.addEventListener('click', () => {
+            stopPlayback();
+            currentMode = 'radio';
+            modeRadioBtn.className = 'py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-purple-950 text-purple-300 border border-purple-500/40';
+            modeFileBtn.className = 'py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-zinc-400 hover:text-zinc-200';
+            fileUploadContainer.classList.add('hidden');
+            radioSettingsContainer.classList.remove('hidden');
+            initNewRadioSong();
+            document.getElementById('zenModeLabel').textContent = 'RADIO GENERATIVA';
+        });
+
+        // --- FILE IMPORT (ABC / JSON) ---
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFileLoaded(file);
+        });
+
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-orange-500'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-orange-500'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-orange-500');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFileLoaded(file);
+        });
+
+        async function handleFileLoaded(file) {
+            stopPlayback();
+            const text = await file.text();
+            let abcCode = text;
+            let title = file.name.replace(/\.[^/.]+$/, "");
+            let bpm = 120;
+            let osc = 76;
+
+            if (file.name.endsWith('.json')) {
+                try {
+                    const data = JSON.parse(text);
+                    abcCode = data.abcCode || text;
+                    title = data.metadata?.title || title;
+                    bpm = data.bpm || 120;
+                    osc = data.mainOsc || 76;
+                } catch (err) {}
+            }
+
+            const parsed = parseABC(abcCode, bpm);
+            fileParsedEvents = parsed.events;
+            bpm = parsed.detectedBpm || bpm;
+
+            document.getElementById('bpmSlider').value = bpm;
+            document.getElementById('bpmDisplay').textContent = bpm;
+            document.getElementById('nowPlayingTitle').textContent = title;
+            document.getElementById('zenTrackTitle').textContent = title;
+            document.getElementById('nowPlayingBpm').textContent = `${bpm} BPM`;
+            document.getElementById('zenTrackBpm').textContent = `${bpm} BPM`;
+            document.getElementById('zenTrackOsc').textContent = `OSC: ${getOscName(osc)}`;
+            document.getElementById('liveAbcView').value = abcCode;
+            document.getElementById('trackerStats').textContent = `${fileParsedEvents.length} note caricate`;
+        }
+
+        // --- BUTTONS & CONTROLS BINDING ---
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            if (isPlaying && !isPaused) pausePlayback();
+            else startPlayback();
+        });
+        document.getElementById('zenPlayPauseBtn').addEventListener('click', () => {
+            if (isPlaying && !isPaused) pausePlayback();
+            else startPlayback();
+        });
+        document.getElementById('stopBtn').addEventListener('click', stopPlayback);
+        document.getElementById('panicBtn').addEventListener('click', panic);
+
+        document.getElementById('nextRadioVariationBtn').addEventListener('click', () => {
+            if (currentMode === 'radio') initNewRadioSong();
+        });
+        document.getElementById('zenVariationBtn').addEventListener('click', () => {
+            if (currentMode === 'radio') initNewRadioSong();
+        });
+
+        document.getElementById('bpmSlider').addEventListener('input', (e) => {
+            document.getElementById('bpmDisplay').textContent = e.target.value;
+            document.getElementById('nowPlayingBpm').textContent = `${e.target.value} BPM`;
+            document.getElementById('zenTrackBpm').textContent = `${e.target.value} BPM`;
+        });
+        document.getElementById('gateSlider').addEventListener('input', (e) => {
+            document.getElementById('gateDisplay').textContent = `${e.target.value}%`;
+        });
+
+        // Timer Controls
+        const timerTypePomodoroBtn = document.getElementById('timerTypePomodoroBtn');
+        const timerTypeStopwatchBtn = document.getElementById('timerTypeStopwatchBtn');
+        const pomodoroControls = document.getElementById('pomodoroControls');
+        const stopwatchControls = document.getElementById('stopwatchControls');
+
+        timerTypePomodoroBtn.addEventListener('click', () => {
+            timerMode = 'pomodoro';
+            timerTypePomodoroBtn.className = 'py-1 rounded font-bold transition text-amber-400 bg-zinc-800';
+            timerTypeStopwatchBtn.className = 'py-1 rounded font-bold transition text-zinc-400 hover:text-zinc-200';
+            pomodoroControls.classList.remove('hidden');
+            stopwatchControls.classList.add('hidden');
+            updateTimersDisplay();
+        });
+
+        timerTypeStopwatchBtn.addEventListener('click', () => {
+            timerMode = 'stopwatch';
+            timerTypeStopwatchBtn.className = 'py-1 rounded font-bold transition text-cyan-400 bg-zinc-800';
+            timerTypePomodoroBtn.className = 'py-1 rounded font-bold transition text-zinc-400 hover:text-zinc-200';
+            pomodoroControls.classList.add('hidden');
+            stopwatchControls.classList.remove('hidden');
+            updateTimersDisplay();
+        });
+
+        document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.timer-preset-btn').forEach(b => b.classList.remove('timer-btn-active'));
+                e.currentTarget.classList.add('timer-btn-active');
+                document.getElementById('customMinutesInput').value = '';
+                resetTimer(parseInt(e.currentTarget.dataset.minutes, 10));
+            });
+        });
+
+        document.getElementById('customMinutesInput').addEventListener('change', (e) => {
+            const v = parseInt(e.target.value, 10);
+            if (!isNaN(v) && v > 0) {
+                document.querySelectorAll('.timer-preset-btn').forEach(b => b.classList.remove('timer-btn-active'));
+                resetTimer(v);
+            }
+        });
+
+        document.getElementById('startTimerBtn').addEventListener('click', startTimer);
+        document.getElementById('resetTimerBtn').addEventListener('click', () => resetTimer(25));
+
+        // --- INITIALIZATION ---
+        window.addEventListener('resize', resizeCanvases);
+        window.addEventListener('DOMContentLoaded', () => {
+            setupCollapsibleSections();
+            renderAllTagFilters();
+            initWebMIDI();
+            resizeCanvases();
+            drawVisualizer();
+            updateTimersDisplay();
+        });
+    </script>
+</body>
+</html>
