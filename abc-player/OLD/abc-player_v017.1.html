@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Korg NTS-1 - ABC Player & Generative Radio v1.7.2</title>
+    <title>Korg NTS-1 - ABC Player & Generative Radio v1.7.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,10 +31,6 @@
         .tag-algo-active { background-color: rgba(16, 185, 129, 0.25) !important; border-color: #34d399 !important; color: #d1fae5 !important; font-weight: 600; }
         .tag-osc-active { background-color: rgba(249, 115, 22, 0.25) !important; border-color: #fb923c !important; color: #ffedd5 !important; font-weight: 600; }
         .timer-btn-active { background-color: rgba(245, 158, 11, 0.25) !important; border-color: #f59e0b !important; color: #fbbf24 !important; font-weight: bold; }
-        
-        /* Master & Sub Presets Active Styles */
-        .master-preset-active { background-color: rgba(249, 115, 22, 0.25) !important; border-color: #f97316 !important; color: #fed7aa !important; box-shadow: 0 0 10px rgba(249, 115, 22, 0.3); }
-        .quick-preset-active { font-weight: 700; box-shadow: 0 0 8px currentColor; filter: brightness(1.25); border-width: 1.5px !important; }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-3 md:p-5 select-none overflow-x-hidden">
@@ -48,9 +44,9 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">ABC PLAYER & RADIO</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">v1.7.2</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">v1.7.1</span>
                 </div>
-                <p class="text-xs text-zinc-400">Player Standalone, Master Presets Globali, Filtri Reattivi & Esportazione Scaletta</p>
+                <p class="text-xs text-zinc-400">Player Standalone, Preset Rapidi, Tooltips Descrittivi & Gestione Scaletta Jukebox</p>
             </div>
         </div>
 
@@ -133,38 +129,14 @@
                     <!-- Panel B: Infinite Radio Settings -->
                     <div id="radioSettingsContainer" class="hidden flex flex-col gap-3 bg-zinc-950/80 border border-purple-500/30 rounded-xl p-3 radio-pulse">
                         
-                        <!-- MASTER PRESETS GENERALI (SCELTA RAPIDA GLOBALE) -->
-                        <div class="flex flex-col gap-1.5 bg-zinc-900/90 p-2.5 rounded-lg border border-orange-500/30 shadow-md">
-                            <div class="flex items-center justify-between text-[11px]">
-                                <span class="font-bold text-orange-400 flex items-center gap-1">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Preset Master Generali:
-                                </span>
-                                <span class="text-[9px] text-zinc-500">Configurazione con 1 click</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-1.5 pt-0.5">
-                                <button id="masterZenBtn" class="py-1.5 px-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-semibold text-amber-300 hover:border-amber-500 transition flex items-center gap-1.5" title="Imposta tutto per disegno/relax: Oscillatori morbidi, Lo-Fi/Ambient, forme aperte e scale doriche">
-                                    <span>🎨</span> Focus Pittura & Zen
-                                </button>
-                                <button id="masterSynthwaveBtn" class="py-1.5 px-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-semibold text-purple-300 hover:border-purple-500 transition flex items-center gap-1.5" title="Imposta tutto per Synthwave: Volca Bass & SAW, ritmi sincopati, Arpeggi e scale minori">
-                                    <span>⚡</span> Synthwave & Retrowave
-                                </button>
-                                <button id="masterLofiBtn" class="py-1.5 px-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-semibold text-emerald-300 hover:border-emerald-500 transition flex items-center gap-1.5" title="Imposta tutto per studio e lettura: Triangolo, Lo-Fi, progressioni jazz e Markov">
-                                    <span>☕</span> Deep Lo-Fi Study
-                                </button>
-                                <button id="masterExperimBtn" class="py-1.5 px-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-semibold text-cyan-300 hover:border-cyan-500 transition flex items-center gap-1.5" title="Imposta tutto per sound design: Sintesi FM, Proba-B, scale Hirajoshi e ritmi euclidei">
-                                    <span>🧪</span> Experimental Sound
-                                </button>
-                            </div>
-                        </div>
-
                         <!-- Multiselezione Oscillatori NTS-1 -->
                         <div class="flex flex-col gap-1.5 bg-zinc-900/80 p-2.5 rounded-lg border border-zinc-800">
                             <div class="flex items-center justify-between text-[11px] flex-wrap gap-1">
                                 <span class="font-bold text-orange-300"><i class="fa-solid fa-microchip text-orange-400 mr-1"></i>Oscillatori Hardware NTS-1:</span>
                                 <div class="flex items-center gap-1 flex-wrap">
-                                    <button id="presetFocusOscBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60 hover:bg-amber-900 transition" title="Consigliato per disegno e relax: TRI, WAVES, Chords, J6">🎨 Disegno/Zen</button>
-                                    <button id="presetSynthwaveOscBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/60 hover:bg-purple-900 transition" title="Consigliato per Synthwave e Lead: SAW, SQR, Volca Bass, J6">⚡ Synthwave</button>
-                                    <button id="presetExperimOscBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 hover:bg-cyan-900 transition" title="Sperimentale e FM: VPM, WAVES, Chords, Proba-B">🧪 Sperimentale</button>
+                                    <button id="presetFocusOscBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60 hover:bg-amber-900" title="Consigliato per disegno e relax: TRI, WAVES, Chords, J6">🎨 Disegno/Zen</button>
+                                    <button id="presetSynthwaveOscBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/60 hover:bg-purple-900" title="Consigliato per Synthwave e Lead: SAW, SQR, Volca Bass, J6">⚡ Synthwave</button>
+                                    <button id="presetExperimOscBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 hover:bg-cyan-900" title="Sperimentale e FM: VPM, WAVES, Chords, Proba-B">🧪 Sperimentale</button>
                                     <button id="selectAllOscsBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Tutti</button>
                                 </div>
                             </div>
@@ -176,8 +148,8 @@
                             <div class="flex items-center justify-between text-[11px] flex-wrap gap-1">
                                 <span class="font-bold text-emerald-300"><i class="fa-solid fa-brain text-emerald-400 mr-1"></i>Algoritmi Melodici:</span>
                                 <div class="flex items-center gap-1 flex-wrap">
-                                    <button id="presetOrganicAlgoBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 hover:bg-emerald-900 transition" title="Algoritmi melodici fluidi e naturali: Markov + Scalar Flow">🎲 Organico</button>
-                                    <button id="presetRhythmicAlgoBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-teal-950/60 text-teal-300 border border-teal-800/60 hover:bg-teal-900 transition" title="Algoritmi geometrici e cadenzati: Euclidean + Arpeggio">⚡ Ritmico</button>
+                                    <button id="presetOrganicAlgoBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 hover:bg-emerald-900" title="Algoritmi melodici fluidi e naturali: Markov + Scalar Flow">🎲 Organico</button>
+                                    <button id="presetRhythmicAlgoBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-teal-950/60 text-teal-300 border border-teal-800/60 hover:bg-teal-900" title="Algoritmi geometrici e cadenzati: Euclidean + Arpeggio">⚡ Ritmico</button>
                                     <button id="selectAllAlgosBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Tutti</button>
                                 </div>
                             </div>
@@ -189,9 +161,9 @@
                             <div class="flex items-center justify-between text-[11px] flex-wrap gap-1">
                                 <span class="font-bold text-cyan-300"><i class="fa-solid fa-cubes text-cyan-400 mr-1"></i>Strutture Formali:</span>
                                 <div class="flex items-center gap-1 flex-wrap">
-                                    <button id="presetPopStructBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 hover:bg-cyan-900 transition" title="Forme radio brevi: Pop Standard & Filastrocca">📻 Radio Pop</button>
-                                    <button id="presetEpicStructBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-sky-950/60 text-sky-300 border border-sky-800/60 hover:bg-sky-900 transition" title="Forme lunghe ed evolutive: Prog Epic & Ballata Folk">🌌 Long Form</button>
-                                    <button id="presetGrooveStructBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800/60 hover:bg-blue-900 transition" title="Loop ipnotici e ciclici: Blues 12-bar & Continuous Groove">🔄 Groove</button>
+                                    <button id="presetPopStructBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 hover:bg-cyan-900" title="Forme radio brevi: Pop Standard & Filastrocca">📻 Radio Pop</button>
+                                    <button id="presetEpicStructBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-sky-950/60 text-sky-300 border border-sky-800/60 hover:bg-sky-900" title="Forme lunghe ed evolutive: Prog Epic & Ballata Folk">🌌 Long Form</button>
+                                    <button id="presetGrooveStructBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800/60 hover:bg-blue-900" title="Loop ipnotici e ciclici: Blues 12-bar & Continuous Groove">🔄 Groove</button>
                                     <button id="selectAllStructsBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Tutti</button>
                                 </div>
                             </div>
@@ -225,9 +197,9 @@
                             <div class="flex items-center justify-between text-[11px] flex-wrap gap-1">
                                 <span class="font-bold text-purple-300"><i class="fa-solid fa-layer-group text-purple-400 mr-1"></i>Generi Inclusi:</span>
                                 <div class="flex items-center gap-1 flex-wrap">
-                                    <button id="presetChillGenreBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-950/60 text-indigo-300 border border-indigo-800/60 hover:bg-indigo-900 transition" title="Consigliato per focus/disegno: Lo-Fi, Ambient, Modal Jazz, Post-Rock">☕ Chill/Studio</button>
-                                    <button id="presetElecGenreBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/60 hover:bg-purple-900 transition" title="Elettronica pura: Synthwave, Acid 303, Juno Pop, Chiptune">⚡ Elettronica</button>
-                                    <button id="presetRockGenreBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/60 hover:bg-rose-900 transition" title="Riff ed energia: Classic Rock, Punk Rock">🎸 Rock</button>
+                                    <button id="presetChillGenreBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-950/60 text-indigo-300 border border-indigo-800/60 hover:bg-indigo-900" title="Consigliato per focus/disegno: Lo-Fi, Ambient, Modal Jazz, Post-Rock">☕ Chill/Studio</button>
+                                    <button id="presetElecGenreBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/60 hover:bg-purple-900" title="Elettronica pura: Synthwave, Acid 303, Juno Pop, Chiptune">⚡ Elettronica</button>
+                                    <button id="presetRockGenreBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/60 hover:bg-rose-900" title="Riff ed energia: Classic Rock, Punk Rock">🎸 Rock</button>
                                     <button id="selectAllGenresBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Tutti</button>
                                 </div>
                             </div>
@@ -239,8 +211,8 @@
                             <div class="flex items-center justify-between text-[11px] flex-wrap gap-1">
                                 <span class="font-bold text-amber-300"><i class="fa-solid fa-masks-theater text-amber-400 mr-1"></i>Mood / Tonalità:</span>
                                 <div class="flex items-center gap-1 flex-wrap">
-                                    <button id="presetBrightMoodBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60 hover:bg-amber-900 transition" title="Toni aperti e luminosi: Allegro & Vivace, Spaziale & Sognante">☀️ Positivo</button>
-                                    <button id="presetDeepMoodBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800 transition" title="Toni modali profondi: Malinconico, Cupo, Misterioso">🌑 Introspettivo</button>
+                                    <button id="presetBrightMoodBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60 hover:bg-amber-900" title="Toni aperti e luminosi: Allegro & Vivace, Spaziale & Sognante">☀️ Positivo</button>
+                                    <button id="presetDeepMoodBtn" class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800" title="Toni modali profondi: Malinconico, Cupo, Misterioso">🌑 Introspettivo</button>
                                     <button id="selectAllMoodsBtn" class="text-[9px] text-zinc-400 hover:text-zinc-200 underline">Tutti</button>
                                 </div>
                             </div>
@@ -586,12 +558,12 @@
 
     <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p>Korg NTS-1 Suite • Standalone Player & Infinite Radio (Prototipo 2)</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.7.2</span>
+        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.7.1</span>
     </footer>
 
     <!-- Application Script Logic -->
     <script>
-        // --- DATA STRUCTURES & DEFINITIONS ---
+        // --- DATA STRUCTURES WITH EXTENSIVE DESCRIPTIONS ---
         const ALL_OSCS = [
             { cc: 0, name: 'SAW (Sawtooth)', desc: 'Onda dente di sega nativa: brillante, ricca di armoniche, ideale per lead e bassi energici.' },
             { cc: 16, name: 'TRI (Triangle)', desc: 'Onda triangolare nativa: calda, vellutata, perfetta per studio, relax e toni morbidi.' },
@@ -1030,79 +1002,7 @@
             return map[String(oscVal)] || `CC:${oscVal}`;
         }
 
-        // --- PRESET ACTIVE STATE DETECTOR & TAG RENDERING ---
-        function setsAreEqual(a, b) {
-            if (a.size !== b.size) return false;
-            for (let item of a) if (!b.has(item)) return false;
-            return true;
-        }
-
-        function updatePresetButtonsHighlight() {
-            // Master Presets
-            const isMasterZen = setsAreEqual(selectedOscCcs, new Set([16, 64, 88, 112])) &&
-                                setsAreEqual(selectedAlgoKeys, new Set(['markov', 'scalar_flow'])) &&
-                                setsAreEqual(selectedStructKeys, new Set(['epic_long', 'ballad_aaba', 'continuous_groove'])) &&
-                                setsAreEqual(selectedGenreKeys, new Set(['lofi_study', 'ambient_cloud', 'modal_jazz'])) &&
-                                setsAreEqual(selectedMoodKeys, new Set(['melancholic', 'dreamy']));
-
-            const isMasterSynthwave = setsAreEqual(selectedOscCcs, new Set([0, 32, 76, 112])) &&
-                                      setsAreEqual(selectedAlgoKeys, new Set(['euclidean', 'arpeggio'])) &&
-                                      setsAreEqual(selectedStructKeys, new Set(['radio_pop', 'continuous_groove'])) &&
-                                      setsAreEqual(selectedGenreKeys, new Set(['synthwave', 'acid_groove', 'juno_pop'])) &&
-                                      setsAreEqual(selectedMoodKeys, new Set(['energetic', 'cheerful']));
-
-            const isMasterLofi = setsAreEqual(selectedOscCcs, new Set([16, 88])) &&
-                                 setsAreEqual(selectedAlgoKeys, new Set(['markov', 'scalar_flow'])) &&
-                                 setsAreEqual(selectedGenreKeys, new Set(['lofi_study', 'modal_jazz'])) &&
-                                 setsAreEqual(selectedMoodKeys, new Set(['cheerful', 'dreamy']));
-
-            const isMasterExperim = setsAreEqual(selectedOscCcs, new Set([48, 64, 88, 100])) &&
-                                    setsAreEqual(selectedAlgoKeys, new Set(['markov', 'euclidean'])) &&
-                                    setsAreEqual(selectedGenreKeys, new Set(['space_drone', 'acid_groove', 'ambient_cloud'])) &&
-                                    setsAreEqual(selectedMoodKeys, new Set(['mysterious', 'dark']));
-
-            document.getElementById('masterZenBtn').className = `py-1.5 px-2 rounded-lg border text-[10px] font-semibold transition flex items-center gap-1.5 ${isMasterZen ? 'master-preset-active' : 'bg-zinc-950 border-zinc-800 text-amber-300 hover:border-amber-500'}`;
-            document.getElementById('masterSynthwaveBtn').className = `py-1.5 px-2 rounded-lg border text-[10px] font-semibold transition flex items-center gap-1.5 ${isMasterSynthwave ? 'master-preset-active' : 'bg-zinc-950 border-zinc-800 text-purple-300 hover:border-purple-500'}`;
-            document.getElementById('masterLofiBtn').className = `py-1.5 px-2 rounded-lg border text-[10px] font-semibold transition flex items-center gap-1.5 ${isMasterLofi ? 'master-preset-active' : 'bg-zinc-950 border-zinc-800 text-emerald-300 hover:border-emerald-500'}`;
-            document.getElementById('masterExperimBtn').className = `py-1.5 px-2 rounded-lg border text-[10px] font-semibold transition flex items-center gap-1.5 ${isMasterExperim ? 'master-preset-active' : 'bg-zinc-950 border-zinc-800 text-cyan-300 hover:border-cyan-500'}`;
-
-            // Sub Presets Oscillatori
-            const isOscZen = setsAreEqual(selectedOscCcs, new Set([16, 64, 88, 112]));
-            const isOscSynth = setsAreEqual(selectedOscCcs, new Set([0, 32, 76, 112]));
-            const isOscExp = setsAreEqual(selectedOscCcs, new Set([48, 64, 88, 100]));
-            document.getElementById('presetFocusOscBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isOscZen ? 'bg-amber-900/90 text-amber-200 border-amber-400 quick-preset-active' : 'bg-amber-950/60 text-amber-300 border-amber-800/60 hover:bg-amber-900'}`;
-            document.getElementById('presetSynthwaveOscBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isOscSynth ? 'bg-purple-900/90 text-purple-200 border-purple-400 quick-preset-active' : 'bg-purple-950/60 text-purple-300 border-purple-800/60 hover:bg-purple-900'}`;
-            document.getElementById('presetExperimOscBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isOscExp ? 'bg-cyan-900/90 text-cyan-200 border-cyan-400 quick-preset-active' : 'bg-cyan-950/60 text-cyan-300 border-cyan-800/60 hover:bg-cyan-900'}`;
-
-            // Sub Presets Algoritmi
-            const isAlgoOrg = setsAreEqual(selectedAlgoKeys, new Set(['markov', 'scalar_flow']));
-            const isAlgoRhythm = setsAreEqual(selectedAlgoKeys, new Set(['euclidean', 'arpeggio']));
-            document.getElementById('presetOrganicAlgoBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isAlgoOrg ? 'bg-emerald-900/90 text-emerald-200 border-emerald-400 quick-preset-active' : 'bg-emerald-950/60 text-emerald-300 border-emerald-800/60 hover:bg-emerald-900'}`;
-            document.getElementById('presetRhythmicAlgoBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isAlgoRhythm ? 'bg-teal-900/90 text-teal-200 border-teal-400 quick-preset-active' : 'bg-teal-950/60 text-teal-300 border-teal-800/60 hover:bg-teal-900'}`;
-
-            // Sub Presets Strutture
-            const isStructPop = setsAreEqual(selectedStructKeys, new Set(['radio_pop', 'nursery_rhyme']));
-            const isStructEpic = setsAreEqual(selectedStructKeys, new Set(['epic_long', 'ballad_aaba']));
-            const isStructGroove = setsAreEqual(selectedStructKeys, new Set(['blues_12bar', 'continuous_groove']));
-            document.getElementById('presetPopStructBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isStructPop ? 'bg-cyan-900/90 text-cyan-200 border-cyan-400 quick-preset-active' : 'bg-cyan-950/60 text-cyan-300 border-cyan-800/60 hover:bg-cyan-900'}`;
-            document.getElementById('presetEpicStructBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isStructEpic ? 'bg-sky-900/90 text-sky-200 border-sky-400 quick-preset-active' : 'bg-sky-950/60 text-sky-300 border-sky-800/60 hover:bg-sky-900'}`;
-            document.getElementById('presetGrooveStructBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isStructGroove ? 'bg-blue-900/90 text-blue-200 border-blue-400 quick-preset-active' : 'bg-blue-950/60 text-blue-300 border-blue-800/60 hover:bg-blue-900'}`;
-
-            // Sub Presets Generi
-            const isGenreChill = setsAreEqual(selectedGenreKeys, new Set(['lofi_study', 'ambient_cloud', 'modal_jazz', 'post_rock']));
-            const isGenreElec = setsAreEqual(selectedGenreKeys, new Set(['synthwave', 'acid_groove', 'juno_pop', 'chiptune']));
-            const isGenreRock = setsAreEqual(selectedGenreKeys, new Set(['classic_rock', 'punk_rock']));
-            document.getElementById('presetChillGenreBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isGenreChill ? 'bg-indigo-900/90 text-indigo-200 border-indigo-400 quick-preset-active' : 'bg-indigo-950/60 text-indigo-300 border-indigo-800/60 hover:bg-indigo-900'}`;
-            document.getElementById('presetElecGenreBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isGenreElec ? 'bg-purple-900/90 text-purple-200 border-purple-400 quick-preset-active' : 'bg-purple-950/60 text-purple-300 border-purple-800/60 hover:bg-purple-900'}`;
-            document.getElementById('presetRockGenreBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isGenreRock ? 'bg-rose-900/90 text-rose-200 border-rose-400 quick-preset-active' : 'bg-rose-950/60 text-rose-300 border-rose-800/60 hover:bg-rose-900'}`;
-
-            // Sub Presets Mood
-            const isMoodBright = setsAreEqual(selectedMoodKeys, new Set(['cheerful', 'dreamy']));
-            const isMoodDeep = setsAreEqual(selectedMoodKeys, new Set(['melancholic', 'dark', 'mysterious']));
-            document.getElementById('presetBrightMoodBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isMoodBright ? 'bg-amber-900/90 text-amber-200 border-amber-400 quick-preset-active' : 'bg-amber-950/60 text-amber-300 border-amber-800/60 hover:bg-amber-900'}`;
-            document.getElementById('presetDeepMoodBtn').className = `text-[9px] px-1.5 py-0.5 rounded border transition ${isMoodDeep ? 'bg-zinc-800 text-zinc-100 border-zinc-400 quick-preset-active' : 'bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800'}`;
-        }
-
+        // --- TAG PILLS RENDERING WITH TOOLTIPS ---
         function renderAllTagFilters() {
             // 0. Oscillatori
             const oscContainer = document.getElementById('oscsTagContainer');
@@ -1193,48 +1093,9 @@
                 };
                 mContainer.appendChild(btn);
             });
-
-            updatePresetButtonsHighlight();
         }
 
-        // --- MASTER PRESET CLICKS ---
-        document.getElementById('masterZenBtn').addEventListener('click', () => {
-            selectedOscCcs = new Set([16, 64, 88, 112]);
-            selectedAlgoKeys = new Set(['markov', 'scalar_flow']);
-            selectedStructKeys = new Set(['epic_long', 'ballad_aaba', 'continuous_groove']);
-            selectedGenreKeys = new Set(['lofi_study', 'ambient_cloud', 'modal_jazz']);
-            selectedMoodKeys = new Set(['melancholic', 'dreamy']);
-            renderAllTagFilters();
-        });
-
-        document.getElementById('masterSynthwaveBtn').addEventListener('click', () => {
-            selectedOscCcs = new Set([0, 32, 76, 112]);
-            selectedAlgoKeys = new Set(['euclidean', 'arpeggio']);
-            selectedStructKeys = new Set(['radio_pop', 'continuous_groove']);
-            selectedGenreKeys = new Set(['synthwave', 'acid_groove', 'juno_pop']);
-            selectedMoodKeys = new Set(['energetic', 'cheerful']);
-            renderAllTagFilters();
-        });
-
-        document.getElementById('masterLofiBtn').addEventListener('click', () => {
-            selectedOscCcs = new Set([16, 88]);
-            selectedAlgoKeys = new Set(['markov', 'scalar_flow']);
-            selectedStructKeys = new Set(['radio_pop', 'ballad_aaba']);
-            selectedGenreKeys = new Set(['lofi_study', 'modal_jazz']);
-            selectedMoodKeys = new Set(['cheerful', 'dreamy']);
-            renderAllTagFilters();
-        });
-
-        document.getElementById('masterExperimBtn').addEventListener('click', () => {
-            selectedOscCcs = new Set([48, 64, 88, 100]);
-            selectedAlgoKeys = new Set(['markov', 'euclidean']);
-            selectedStructKeys = new Set(['epic_long', 'continuous_groove']);
-            selectedGenreKeys = new Set(['space_drone', 'acid_groove', 'ambient_cloud']);
-            selectedMoodKeys = new Set(['mysterious', 'dark']);
-            renderAllTagFilters();
-        });
-
-        // --- SUB PRESETS QUICK CLICKS ---
+        // --- PRESET QUICK SELECTORS (ALL CATEGORIES) ---
         // Oscillatori
         document.getElementById('presetFocusOscBtn').addEventListener('click', () => { selectedOscCcs = new Set([16, 64, 88, 112]); renderAllTagFilters(); });
         document.getElementById('presetSynthwaveOscBtn').addEventListener('click', () => { selectedOscCcs = new Set([0, 32, 76, 112]); renderAllTagFilters(); });
@@ -1770,7 +1631,7 @@
                 abcCode: abcCode,
                 jsonBundle: {
                     generator: "Korg NTS-1 Suite - Infinite Radio",
-                    version: "1.7.2",
+                    version: "1.7.1",
                     timestamp: new Date().toISOString(),
                     metadata: {
                         title: `Radio - ${title}`,
@@ -1829,7 +1690,7 @@
             const playlistBundle = {
                 type: "korg_nts1_playlist",
                 version: "1.0.0",
-                generator: "Korg NTS-1 Suite - Standalone Player & Radio (v1.7.2)",
+                generator: "Korg NTS-1 Suite - Standalone Player & Radio (v1.7.1)",
                 timestamp: new Date().toISOString(),
                 title: `Sessione Radio NTS-1 (${new Date().toLocaleDateString()})`,
                 totalTracks: sessionHistory.length,

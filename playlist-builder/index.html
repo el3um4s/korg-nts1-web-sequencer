@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Korg NTS-1 - Playlist Builder Studio</title>
+    <title>Korg NTS-1 - Playlist Builder Studio v1.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,9 +35,9 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">PLAYLIST BUILDER</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 3 v1.0</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 3 v1.1</span>
                 </div>
-                <p class="text-xs text-zinc-400">Assemblatore Scalette & Patch Hardware Korg NTS-1 con Calcolo Durate</p>
+                <p class="text-xs text-zinc-400">Assemblatore Scalette, Export Singoli (.ABC/.JSON/.WAV), Tracklist Album & Patch Hardware</p>
             </div>
         </div>
 
@@ -63,7 +63,7 @@
     <!-- Main Workspace -->
     <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow">
         
-        <!-- Left Column: Scaletta & Importazione -->
+        <!-- Left Column: Scaletta, Importazione & Tracklist Summary -->
         <section class="lg:col-span-7 flex flex-col gap-3">
             
             <!-- Drag & Drop Zone / Multi-upload -->
@@ -78,7 +78,7 @@
                 <input type="file" id="multiFileInput" multiple accept=".json,.abc,.txt" class="hidden">
             </div>
 
-            <!-- Header Scaletta & Statistiche -->
+            <!-- Header Scaletta, Statistiche & Azioni Tracklist -->
             <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 shadow-xl flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <span class="w-6 h-6 rounded-md bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs">
@@ -91,6 +91,12 @@
                 </div>
 
                 <div class="flex items-center gap-1.5 flex-wrap">
+                    <button id="copyTracklistBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-700 rounded-lg text-xs font-semibold transition flex items-center gap-1" title="Copia l'elenco dei brani con durata per documentare il disco">
+                        <i class="fa-solid fa-clipboard text-amber-400"></i> Copia Elenco
+                    </button>
+                    <button id="downloadTracklistTxtBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-emerald-300 border border-zinc-700 rounded-lg text-xs font-semibold transition flex items-center gap-1" title="Scarica l'elenco della tracklist in formato .txt">
+                        <i class="fa-solid fa-file-lines text-emerald-400"></i> Tracklist .TXT
+                    </button>
                     <button id="addEmptyTrackBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-lg text-xs font-medium transition flex items-center gap-1">
                         <i class="fa-solid fa-plus text-orange-400"></i> Aggiungi Traccia
                     </button>
@@ -243,7 +249,7 @@
 
     <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p>Korg NTS-1 Suite • Playlist Builder Studio (Prototipo 3)</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">COMPATIBILE CON JUKEBOX v1.0</span>
+        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.1.0</span>
     </footer>
 
     <!-- Application Script Logic -->
@@ -324,9 +330,7 @@
         }
 
         function stopAllInternalNotes() {
-            for (const n of Array.from(activeVoices.keys())) {
-                stopInternalNote(n, true);
-            }
+            for (const n of Array.from(activeVoices.keys())) stopInternalNote(n, true);
             activeVoices.clear();
         }
 
@@ -410,7 +414,6 @@
                     selectedOutput.send([statusCC, 120, 0]);
                     selectedOutput.send([statusCC, 123, 0]);
                     selectedOutput.send([statusCC, 64, 0]);
-
                     for (const n of currentlyPlayingMidiNotes) {
                         selectedOutput.send([0x80 | (midiChannel & 0x0F), n & 0x7F, 0]);
                     }
@@ -443,9 +446,7 @@
                 }
                 if (line.startsWith('%%MIDI control')) {
                     const m = line.match(/%%MIDI\s+control\s+(\d+)\s+(\d+)/i);
-                    if (m) {
-                        events.push({ type: 'cc', cc: parseInt(m[1], 10), value: parseInt(m[2], 10) });
-                    }
+                    if (m) events.push({ type: 'cc', cc: parseInt(m[1], 10), value: parseInt(m[2], 10) });
                     continue;
                 }
                 if (line.startsWith('X:') || line.startsWith('T:') || line.startsWith('C:') || line.startsWith('M:') || line.startsWith('K:')) continue;
@@ -467,9 +468,7 @@
                             const mult = parseDurationMultiplier(m[2] || '');
                             const notesStr = m[1].match(/(\^?[_]?[=]?[A-Ga-g][',]*)/g) || [];
                             const midiNotes = notesStr.map(s => parseSinglePitch(s)).filter(n => n !== null);
-                            if (midiNotes.length > 0) {
-                                events.push({ type: 'note', midiNotes, duration: mult * (unitLength * 4) });
-                            }
+                            if (midiNotes.length > 0) events.push({ type: 'note', midiNotes, duration: mult * (unitLength * 4) });
                         }
                         continue;
                     }
@@ -478,9 +477,7 @@
                     if (m) {
                         const midi = parseSinglePitch(m[1]);
                         const mult = parseDurationMultiplier(m[2] || '');
-                        if (midi !== null) {
-                            events.push({ type: 'note', midiNotes: [midi], duration: mult * (unitLength * 4) });
-                        }
+                        if (midi !== null) events.push({ type: 'note', midiNotes: [midi], duration: mult * (unitLength * 4) });
                     }
                 }
             }
@@ -541,6 +538,214 @@
             return `${m}:${s}`;
         }
 
+        // --- SINGLE TRACK DOWNLOAD ENGINES & OFFLINE WAV RENDERER ---
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+
+        function downloadSingleTrackAbc(index) {
+            const t = playlist[index];
+            if (!t) return;
+            const cleanTitle = (t.title || `Traccia_${index + 1}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+            const blob = new Blob([t.abcCode], { type: 'text/plain;charset=utf-8' });
+            downloadBlob(blob, `${cleanTitle}.abc`);
+        }
+
+        function downloadSingleTrackJson(index) {
+            const t = playlist[index];
+            if (!t) return;
+            const cleanTitle = (t.title || `Traccia_${index + 1}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+            const jsonBundle = {
+                generator: "Korg NTS-1 Suite - Playlist Builder",
+                version: "1.1.0",
+                timestamp: new Date().toISOString(),
+                metadata: {
+                    title: t.title,
+                    composer: t.composer || "Autore",
+                    meter: "4/4"
+                },
+                genre: t.genre || 'custom',
+                bpm: t.bpm || 120,
+                mainOsc: String(t.patch?.osc ?? 0),
+                patch: t.patch || { osc: 0, shape: 64, alt: 32, cutoff: 80, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
+                abcCode: t.abcCode
+            };
+            const blob = new Blob([JSON.stringify(jsonBundle, null, 2)], { type: 'application/json' });
+            downloadBlob(blob, `${cleanTitle}.json`);
+        }
+
+        function audioBufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1;
+            const bitDepth = 16;
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            const numSamples = buffer.length;
+            const dataSize = numSamples * blockAlign;
+            const headerSize = 44;
+            const totalSize = headerSize + dataSize;
+            const arrayBuffer = new ArrayBuffer(totalSize);
+            const view = new DataView(arrayBuffer);
+
+            function writeString(offset, string) {
+                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+            }
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, totalSize - 8, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            let offset = 44;
+            for (let i = 0; i < numSamples; i++) {
+                for (let channel = 0; channel < numChannels; channel++) {
+                    let sample = buffer.getChannelData(channel)[i];
+                    sample = Math.max(-1, Math.min(1, sample));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        async function renderOfflineWavAudio(events, bpmVal) {
+            const secPerQuarter = 60 / bpmVal;
+            let totalDurationSec = 0;
+            for (let evt of events) {
+                if (evt.type === 'note' || evt.type === 'rest') {
+                    totalDurationSec += (evt.duration * secPerQuarter);
+                }
+            }
+            totalDurationSec = Math.max(1, totalDurationSec + 0.5);
+
+            const sampleRate = 44100;
+            const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, Math.ceil(totalDurationSec * sampleRate), sampleRate);
+            let currentTimeSec = 0;
+            const gate = 0.75;
+
+            for (let evt of events) {
+                if (evt.type === 'rest') {
+                    currentTimeSec += (evt.duration * secPerQuarter);
+                } else if (evt.type === 'note' && evt.midiNotes) {
+                    const stepDurationSec = evt.duration * secPerQuarter;
+                    const noteDurationSec = Math.max(0.04, stepDurationSec * gate);
+
+                    evt.midiNotes.forEach(midiNote => {
+                        const osc = offlineCtx.createOscillator();
+                        const gain = offlineCtx.createGain();
+                        const filter = offlineCtx.createBiquadFilter();
+
+                        const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+                        osc.frequency.setValueAtTime(freq, currentTimeSec);
+                        osc.type = 'sawtooth';
+
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(3600, currentTimeSec);
+                        filter.Q.setValueAtTime(2.5, currentTimeSec);
+
+                        gain.gain.setValueAtTime(0.0001, currentTimeSec);
+                        gain.gain.exponentialRampToValueAtTime(0.22, currentTimeSec + 0.015);
+                        gain.gain.setValueAtTime(0.22, currentTimeSec + noteDurationSec);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, currentTimeSec + noteDurationSec + 0.06);
+
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(offlineCtx.destination);
+
+                        osc.start(currentTimeSec);
+                        osc.stop(currentTimeSec + noteDurationSec + 0.08);
+                    });
+
+                    currentTimeSec += stepDurationSec;
+                }
+            }
+
+            const renderedBuffer = await offlineCtx.startRendering();
+            return audioBufferToWav(renderedBuffer);
+        }
+
+        async function downloadSingleTrackWav(index, btnElement) {
+            const t = playlist[index];
+            if (!t) return;
+            const origHtml = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px]"></i>';
+            btnElement.disabled = true;
+
+            try {
+                const parsed = parseABC(t.abcCode, t.bpm);
+                const wavBlob = await renderOfflineWavAudio(parsed.events, t.bpm);
+                const cleanTitle = (t.title || `Traccia_${index + 1}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+                downloadBlob(wavBlob, `${cleanTitle}.wav`);
+            } catch (err) {
+                alert('Errore nel rendering audio WAV');
+            } finally {
+                btnElement.innerHTML = origHtml;
+                btnElement.disabled = false;
+            }
+        }
+
+        // --- TRACKLIST SUMMARY (COPY & DOWNLOAD .TXT) ---
+        function generateTracklistSummaryText() {
+            if (playlist.length === 0) return 'Nessuna canzone presente nella playlist.';
+            let totalSec = 0;
+            const title = document.getElementById('playlistTitleInput').value.trim() || 'Sessione Focus NTS-1';
+            const lines = [];
+            lines.push(`================================================`);
+            lines.push(`🎶 KORG NTS-1 — TRACKLIST: ${title.toUpperCase()}`);
+            lines.push(`Data Esportazione: ${new Date().toLocaleString()}`);
+            lines.push(`Totale Brani: ${playlist.length}`);
+            lines.push(`================================================\n`);
+
+            playlist.forEach((track, idx) => {
+                const dur = calculateTrackDurationSec(track.abcCode, track.bpm);
+                totalSec += dur;
+                const num = (idx + 1).toString().padStart(2, '0');
+                lines.push(`${num}. ${track.title} [${(track.genre || 'Generico').toUpperCase()} • ${track.bpm} BPM] — ${formatTimeMinSec(dur)}`);
+            });
+
+            lines.push(`\n------------------------------------------------`);
+            lines.push(`⏱️ DURATA TOTALE: ${formatTimeMinSec(totalSec)} (${Math.round(totalSec / 60)} min)`);
+            lines.push(`================================================`);
+            return lines.join('\n');
+        }
+
+        document.getElementById('copyTracklistBtn').addEventListener('click', async () => {
+            const text = generateTracklistSummaryText();
+            const btn = document.getElementById('copyTracklistBtn');
+            const orig = btn.innerHTML;
+            try {
+                await navigator.clipboard.writeText(text);
+                btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copiato!';
+                setTimeout(() => btn.innerHTML = orig, 2000);
+            } catch (e) {
+                alert('Impossibile copiare negli appunti automaticamente:\n\n' + text);
+            }
+        });
+
+        document.getElementById('downloadTracklistTxtBtn').addEventListener('click', () => {
+            const text = generateTracklistSummaryText();
+            const title = document.getElementById('playlistTitleInput').value.trim() || 'tracklist';
+            const cleanTitle = title.toLowerCase().replace(/[^a-z0-9_-]/gi, '_');
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            downloadBlob(blob, `tracklist_${cleanTitle}_${Date.now().toString().slice(-4)}.txt`);
+        });
+
         // --- PLAYLIST STATE MANAGEMENT ---
         function renderPlaylistUI() {
             const container = document.getElementById('trackListContainer');
@@ -567,11 +772,10 @@
                 totalPlaylistSec += durSec;
 
                 const card = document.createElement('div');
-                card.className = `p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between gap-3 transition-all cursor-pointer ${index === selectedTrackIndex ? 'track-selected shadow-lg' : 'hover:bg-zinc-850'}`;
-                card.onclick = () => selectTrack(index);
+                card.className = `p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between gap-2.5 transition-all ${index === selectedTrackIndex ? 'track-selected shadow-lg' : 'hover:bg-zinc-850'}`;
 
                 card.innerHTML = `
-                    <div class="flex items-center gap-2.5 flex-grow min-w-0">
+                    <div class="flex items-center gap-2.5 flex-grow min-w-0 cursor-pointer" onclick="selectTrack(${index})">
                         <span class="w-6 h-6 rounded bg-zinc-800 text-orange-400 font-mono-code text-xs font-bold flex items-center justify-center flex-shrink-0">
                             ${index + 1}
                         </span>
@@ -587,18 +791,33 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 flex-shrink-0">
-                        <span class="text-xs font-mono-code font-bold text-indigo-400 bg-indigo-950/40 px-2 py-1 rounded border border-indigo-900/40">
+                    <div class="flex items-center gap-1.5 flex-shrink-0" onclick="event.stopPropagation()">
+                        <span class="text-xs font-mono-code font-bold text-indigo-400 bg-indigo-950/40 px-2 py-1 rounded border border-indigo-900/40 mr-1">
                             ${formatTimeMinSec(durSec)}
                         </span>
+                        
+                        <!-- Single Track Export Buttons -->
+                        <button onclick="downloadSingleTrackAbc(${index})" class="w-6 h-6 rounded bg-zinc-950 hover:bg-zinc-800 text-orange-400 hover:text-orange-300 border border-zinc-800 flex items-center justify-center text-[10px] transition" title="Scarica lo spartito .ABC di questa traccia">
+                            <i class="fa-solid fa-file-code"></i>
+                        </button>
+                        <button onclick="downloadSingleTrackJson(${index})" class="w-6 h-6 rounded bg-zinc-950 hover:bg-zinc-800 text-indigo-400 hover:text-indigo-300 border border-zinc-800 flex items-center justify-center text-[10px] transition" title="Scarica questa singola traccia in .JSON con patch hardware NTS-1">
+                            <i class="fa-solid fa-file-export"></i>
+                        </button>
+                        <button onclick="downloadSingleTrackWav(${index}, this)" class="w-6 h-6 rounded bg-zinc-950 hover:bg-zinc-800 text-sky-400 hover:text-sky-300 border border-zinc-800 flex items-center justify-center text-[10px] transition" title="Effettua il render offline e scarica l'audio .WAV di questa traccia">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </button>
+
+                        <div class="h-4 w-[1px] bg-zinc-800 mx-0.5"></div>
+
+                        <!-- Ordering and Remove Actions -->
                         <div class="flex items-center gap-1">
-                            <button onclick="event.stopPropagation(); moveTrack(${index}, -1)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center text-[10px]" title="Sposta Su" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>
+                            <button onclick="moveTrack(${index}, -1)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center text-[10px]" title="Sposta Su" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>
                                 <i class="fa-solid fa-chevron-up"></i>
                             </button>
-                            <button onclick="event.stopPropagation(); moveTrack(${index}, 1)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center text-[10px]" title="Sposta Giù" ${index === playlist.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>
+                            <button onclick="moveTrack(${index}, 1)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center text-[10px]" title="Sposta Giù" ${index === playlist.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>
                                 <i class="fa-solid fa-chevron-down"></i>
                             </button>
-                            <button onclick="event.stopPropagation(); removeTrack(${index})" class="w-6 h-6 rounded bg-red-950/40 hover:bg-red-900 text-red-300 flex items-center justify-center text-[10px] ml-1" title="Elimina Traccia">
+                            <button onclick="removeTrack(${index})" class="w-6 h-6 rounded bg-red-950/40 hover:bg-red-900 text-red-300 flex items-center justify-center text-[10px] ml-0.5" title="Elimina Traccia">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
@@ -728,7 +947,6 @@
         });
         document.getElementById('trackAbcTextarea').addEventListener('input', (e) => updateActiveTrackField('abcCode', e.target.value));
 
-        // Rack sliders listeners
         const rackSliders = [
             { id: 'paramCc54', label: 'valCc54', key: 'shape', cc: 54 },
             { id: 'paramCc55', label: 'valCc55', key: 'alt', cc: 55 },
@@ -780,7 +998,6 @@
             previewEvents = parsed.events;
             if (previewEvents.length === 0) return;
 
-            // Invia patch hardware prima di suonare
             const p = track.patch;
             sendMidiCC(53, p.osc);
             sendMidiCC(54, p.shape);
@@ -851,7 +1068,6 @@
             if (fileName.endsWith('.json')) {
                 try {
                     const data = JSON.parse(text);
-                    // Controllo se è una intera playlist esportata
                     if (data.type === 'korg_nts1_playlist' && Array.isArray(data.tracks)) {
                         playlist = data.tracks;
                         if (data.title) document.getElementById('playlistTitleInput').value = data.title;
@@ -860,7 +1076,6 @@
                         return;
                     }
 
-                    // Se è un singolo file generato da abc-generator.html
                     const title = (data.metadata && data.metadata.title) ? data.metadata.title : file.name.replace(/\.[^/.]+$/, "");
                     const bpm = data.bpm || 120;
                     const osc = parseInt(data.mainOsc, 10) || 76;
@@ -872,24 +1087,13 @@
                         composer: (data.metadata && data.metadata.composer) || 'Autore',
                         genre: genre,
                         bpm: bpm,
-                        patch: {
-                            osc: osc,
-                            shape: 64,
-                            alt: 32,
-                            cutoff: 80,
-                            resonance: 20,
-                            attack: 10,
-                            release: 45,
-                            delayTime: 25,
-                            reverbMix: 30
-                        },
+                        patch: data.patch || { osc: osc, shape: 64, alt: 32, cutoff: 80, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
                         abcCode: abcCode
                     });
                 } catch (e) {
                     console.error('Errore lettura JSON:', e);
                 }
             } else {
-                // File .abc o testo grezzo
                 const lines = text.split('\n');
                 let foundTitle = file.name.replace(/\.[^/.]+$/, "");
                 let foundBpm = 120;
@@ -909,17 +1113,7 @@
                     composer: 'Autore',
                     genre: 'custom',
                     bpm: foundBpm,
-                    patch: {
-                        osc: foundOsc,
-                        shape: 64,
-                        alt: 32,
-                        cutoff: 80,
-                        resonance: 20,
-                        attack: 10,
-                        release: 45,
-                        delayTime: 25,
-                        reverbMix: 30
-                    },
+                    patch: { osc: foundOsc, shape: 64, alt: 32, cutoff: 80, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
                     abcCode: text
                 });
             }
@@ -934,24 +1128,17 @@
         dropZone.addEventListener('click', () => multiFileInput.click());
         multiFileInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
-            for (let f of files) {
-                await processImportedFile(f);
-            }
+            for (let f of files) await processImportedFile(f);
             multiFileInput.value = '';
         });
 
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
         dropZone.addEventListener('drop', async (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
             const files = Array.from(e.dataTransfer.files);
-            for (let f of files) {
-                await processImportedFile(f);
-            }
+            for (let f of files) await processImportedFile(f);
         });
 
         // --- PLAYLIST IMPORT / EXPORT (JUKEBOX COMPATIBLE) ---
@@ -986,15 +1173,10 @@
             };
 
             const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${cleanFilename}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, `${cleanFilename}.json`);
         });
 
-        // --- BUTTONS & INITIALIZATION ---
+        // --- INITIALIZATION ---
         document.getElementById('addEmptyTrackBtn').addEventListener('click', addEmptyTrack);
         document.getElementById('clearPlaylistBtn').addEventListener('click', () => {
             if (confirm('Sei sicuro di voler svuotare l\'intera scaletta?')) {
