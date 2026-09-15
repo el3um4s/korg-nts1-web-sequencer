@@ -43,9 +43,9 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">ZEN JUKEBOX PLAYER</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 4 v1.5</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 4 v1.3</span>
                 </div>
-                <p class="text-xs text-zinc-400">Esecutore Continuo per Studio/Focus, Auto-Patch Switch & Visualizer ad Aree Piene</p>
+                <p class="text-xs text-zinc-400">Esecutore Continuo per Studio/Focus, Auto-Patch Switch & Sezioni Modulari</p>
             </div>
         </div>
 
@@ -84,7 +84,7 @@
     </div>
 
     <!-- Main Workspace -->
-    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 items-start flex-grow">
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow">
         
         <!-- Left Column: Master Transport, Now Playing & Focus Timer -->
         <section class="lg:col-span-5 flex flex-col gap-3">
@@ -258,11 +258,8 @@
                     </div>
                     <div class="flex items-center gap-2" onclick="event.stopPropagation()">
                         <!-- Visualizer Mode Selector -->
-                        <div class="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded-lg p-0.5 text-[10px] flex-wrap justify-end">
-                            <button class="vis-mode-btn px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-semibold transition" data-mode="landscape">Paesaggio</button>
-                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="fluid">Onde Fluide</button>
-                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="geometric">Geometria</button>
-                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="oscilloscope">Onda</button>
+                        <div class="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded-lg p-0.5 text-[10px]">
+                            <button class="vis-mode-btn px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-semibold transition" data-mode="oscilloscope">Onda</button>
                             <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="bars">Spettro</button>
                             <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="mandala">Mandala</button>
                             <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="nebula">Nebula</button>
@@ -274,14 +271,14 @@
                 </div>
 
                 <div id="bodyVisualizerSection" class="section-body p-3.5 flex flex-col gap-2">
-                    <div class="relative w-full h-44 sm:h-52 bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden shadow-inner">
+                    <div class="relative w-full h-36 sm:h-44 bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden">
                         <canvas id="visualizerCanvas" class="w-full h-full block"></canvas>
                     </div>
                 </div>
             </div>
 
             <!-- Section 4: Scaletta Playlist & Caricamento -->
-            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200 flex-grow">
                 <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyPlaylistSection">
                     <div class="flex items-center gap-2">
                         <span class="w-6 h-6 rounded-md bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs">
@@ -317,18 +314,15 @@
 
     <!-- Zen Mode Fullscreen Modal Overlay -->
     <div id="zenOverlay" class="fixed inset-0 bg-zinc-950 z-50 hidden flex flex-col justify-between p-4 sm:p-8 select-none">
-        <div class="flex items-center justify-between w-full flex-wrap gap-2">
+        <div class="flex items-center justify-between w-full">
             <div class="flex items-center gap-2 text-xs font-mono-code text-zinc-500">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 led-active"></span>
                 <span>MODALITÀ ZEN ATTIVA</span>
             </div>
 
             <!-- Zen Mode Visualizer Selector -->
-            <div class="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800 rounded-lg p-1 text-xs flex-wrap justify-center">
-                <button class="zen-vis-btn px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition" data-mode="landscape">Paesaggio</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="fluid">Onde Fluide</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="geometric">Geometria</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="oscilloscope">Onda</button>
+            <div class="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800 rounded-lg p-1 text-xs">
+                <button class="zen-vis-btn px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition" data-mode="oscilloscope">Onda</button>
                 <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="bars">Spettro</button>
                 <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="mandala">Mandala</button>
                 <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="nebula">Nebula</button>
@@ -365,7 +359,7 @@
 
     <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p>Korg NTS-1 Suite • Zen Jukebox Player (Prototipo 4)</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.5.0</span>
+        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.3.0</span>
     </footer>
 
     <!-- Application Script Logic -->
@@ -383,7 +377,7 @@
         let noteOffTimers = [];
         let trackElapsedSec = 0;
         let trackDurationInterval = null;
-        let currentVisualizerMode = 'landscape';
+        let currentVisualizerMode = 'oscilloscope';
         let animationPhase = 0;
 
         const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -1215,7 +1209,7 @@
             }
         });
 
-        // --- MULTI-MODE CANVAS VISUALIZER (AREA & LANDSCAPE ENGINES) ---
+        // --- MULTI-MODE CANVAS VISUALIZER ---
         const mainCanvas = document.getElementById('visualizerCanvas');
         const mainCtx = mainCanvas.getContext('2d');
         const zenCanvas = document.getElementById('zenCanvas');
@@ -1266,13 +1260,7 @@
             clearCanvas(ctx, canvas);
             const active = isPlaying && !isPaused;
 
-            if (currentVisualizerMode === 'landscape') {
-                renderLandscape(ctx, canvas, timeData, freqData, bufferLength, active);
-            } else if (currentVisualizerMode === 'fluid') {
-                renderFluidWaves(ctx, canvas, timeData, freqData, bufferLength, active);
-            } else if (currentVisualizerMode === 'geometric') {
-                renderGeometricMesh(ctx, canvas, timeData, freqData, bufferLength, active);
-            } else if (currentVisualizerMode === 'oscilloscope') {
+            if (currentVisualizerMode === 'oscilloscope') {
                 renderOscilloscope(ctx, canvas, timeData, bufferLength, active ? (isZen ? '#22c55e' : '#f97316') : '#3f3f46');
             } else if (currentVisualizerMode === 'bars') {
                 renderSpectrumBars(ctx, canvas, freqData, bufferLength, active);
@@ -1283,198 +1271,6 @@
             }
         }
 
-        // 1. VISUALIZER PAESAGGIO AD AREE PIENE (Synthwave Ridge / Silhouette)
-        function renderLandscape(ctx, canvas, timeData, freqData, bufferLength, active) {
-            const w = canvas.width;
-            const h = canvas.height;
-
-            let bassEnergy = 0;
-            for (let i = 0; i < 8; i++) bassEnergy += freqData[i];
-            bassEnergy = active ? (bassEnergy / 8) / 255 : 0.05;
-
-            let midEnergy = 0;
-            for (let i = 8; i < 24; i++) midEnergy += freqData[i];
-            midEnergy = active ? (midEnergy / 16) / 255 : 0.05;
-
-            // Cielo a gradiente profondo
-            const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-            skyGrad.addColorStop(0, '#0a0a14');
-            skyGrad.addColorStop(0.6, '#180e29');
-            skyGrad.addColorStop(1, '#2c122d');
-            ctx.fillStyle = skyGrad;
-            ctx.fillRect(0, 0, w, h);
-
-            // Sole / Luna all'orizzonte
-            const sunY = h * 0.45;
-            const sunR = Math.min(w, h) * 0.22 * (0.9 + bassEnergy * 0.2);
-            const sunGrad = ctx.createRadialGradient(w / 2, sunY, sunR * 0.2, w / 2, sunY, sunR);
-            const baseHue = (animationPhase * 15) % 360;
-            sunGrad.addColorStop(0, `hsla(${baseHue}, 100%, 75%, 0.95)`);
-            sunGrad.addColorStop(0.7, `hsla(${(baseHue + 40) % 360}, 95%, 55%, 0.8)`);
-            sunGrad.addColorStop(1, 'rgba(255, 100, 50, 0)');
-            ctx.fillStyle = sunGrad;
-            ctx.beginPath();
-            ctx.arc(w / 2, sunY, sunR, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Livello 1: Montagne di sfondo (Background Ridges)
-            drawRidgeLayer(ctx, w, h, {
-                baseY: h * 0.55,
-                heightScale: h * 0.22,
-                freq: 0.008,
-                speed: animationPhase * 0.15,
-                energy: midEnergy,
-                startColor: '#2b1055',
-                endColor: '#120524'
-            });
-
-            // Livello 2: Colline intermedie (Mid Ridges)
-            drawRidgeLayer(ctx, w, h, {
-                baseY: h * 0.68,
-                heightScale: h * 0.26,
-                freq: 0.012,
-                speed: animationPhase * 0.35,
-                energy: bassEnergy * 1.3,
-                startColor: '#7928ca',
-                endColor: '#1f0d3d'
-            });
-
-            // Livello 3: Dune in primo piano a profilo netto (Foreground Dunes)
-            drawRidgeLayer(ctx, w, h, {
-                baseY: h * 0.82,
-                heightScale: h * 0.28,
-                freq: 0.016,
-                speed: animationPhase * 0.6,
-                energy: (bassEnergy + midEnergy) * 0.8,
-                startColor: '#ff0080',
-                endColor: '#09090b',
-                strokeColor: '#f97316'
-            });
-        }
-
-        function drawRidgeLayer(ctx, w, h, cfg) {
-            ctx.beginPath();
-            ctx.moveTo(0, h);
-
-            const steps = 60;
-            const dx = w / steps;
-
-            for (let i = 0; i <= steps; i++) {
-                const x = i * dx;
-                const sin1 = Math.sin(x * cfg.freq + cfg.speed);
-                const sin2 = Math.cos(x * cfg.freq * 2.1 - cfg.speed * 0.8) * 0.4;
-                const noise = (sin1 + sin2) * cfg.heightScale * (0.7 + cfg.energy * 0.6);
-                const y = cfg.baseY - noise;
-                ctx.lineTo(x, y);
-            }
-
-            ctx.lineTo(w, h);
-            ctx.closePath();
-
-            const grad = ctx.createLinearGradient(0, cfg.baseY - cfg.heightScale, 0, h);
-            grad.addColorStop(0, cfg.startColor);
-            grad.addColorStop(1, cfg.endColor);
-            ctx.fillStyle = grad;
-            ctx.fill();
-
-            if (cfg.strokeColor) {
-                ctx.lineWidth = 1.5;
-                ctx.strokeStyle = cfg.strokeColor;
-                ctx.stroke();
-            }
-        }
-
-        // 2. VISUALIZER ONDE FLUIDE AD AREE SOVRAPPOSTE (Organic Ribbons / Acquarello)
-        function renderFluidWaves(ctx, canvas, timeData, freqData, bufferLength, active) {
-            const w = canvas.width;
-            const h = canvas.height;
-            const layers = 4;
-
-            for (let l = 0; l < layers; l++) {
-                const layerRatio = (l + 1) / layers;
-                const baseY = h * (0.35 + layerRatio * 0.5);
-                const hue = (animationPhase * 25 + l * 55) % 360;
-
-                ctx.beginPath();
-                ctx.moveTo(0, h);
-
-                const sampleStep = Math.floor(bufferLength / 40);
-                const dx = w / 40;
-
-                for (let i = 0; i <= 40; i++) {
-                    const x = i * dx;
-                    const sampleVal = active ? (timeData[(i * sampleStep) % bufferLength] - 128) / 128 : 0;
-                    const wave = Math.sin(i * 0.25 + animationPhase * (0.8 + l * 0.3) + l) * (h * 0.08);
-                    const audioMod = sampleVal * (h * 0.18 * layerRatio);
-                    const y = baseY + wave + audioMod;
-
-                    if (i === 0) ctx.lineTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-
-                ctx.lineTo(w, h);
-                ctx.closePath();
-
-                const grad = ctx.createLinearGradient(0, baseY - h * 0.2, 0, h);
-                grad.addColorStop(0, `hsla(${hue}, 90%, 60%, ${0.35 + layerRatio * 0.25})`);
-                grad.addColorStop(1, `hsla(${(hue + 40) % 360}, 95%, 25%, 0.85)`);
-
-                ctx.fillStyle = grad;
-                ctx.fill();
-            }
-        }
-
-        // 3. VISUALIZER GEOMETRICO SFACCETTATO (Isometric Poly-Mesh)
-        function renderGeometricMesh(ctx, canvas, timeData, freqData, bufferLength, active) {
-            const w = canvas.width;
-            const h = canvas.height;
-            const cols = 10;
-            const rows = 6;
-            const cellW = w / cols;
-            const cellH = h / rows;
-
-            let avgEnergy = 0;
-            for (let i = 0; i < 32; i++) avgEnergy += freqData[i];
-            avgEnergy = active ? (avgEnergy / 32) / 255 : 0.05;
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const x0 = c * cellW;
-                    const y0 = r * cellH;
-                    const idx = (r * cols + c) % bufferLength;
-                    const val = active ? (freqData[idx] / 255) : 0.05;
-
-                    const shift = Math.sin(animationPhase + (c + r) * 0.4) * (cellH * 0.25 * val);
-                    const hue = (animationPhase * 20 + (c * 15) + (r * 25)) % 360;
-
-                    // Triangolo 1
-                    ctx.beginPath();
-                    ctx.moveTo(x0, y0 + shift);
-                    ctx.lineTo(x0 + cellW, y0);
-                    ctx.lineTo(x0, y0 + cellH);
-                    ctx.closePath();
-                    ctx.fillStyle = `hsla(${hue}, 85%, ${20 + val * 45}%, 0.75)`;
-                    ctx.fill();
-                    ctx.strokeStyle = `hsla(${hue}, 90%, 75%, 0.3)`;
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-
-                    // Triangolo 2
-                    ctx.beginPath();
-                    ctx.moveTo(x0 + cellW, y0);
-                    ctx.lineTo(x0 + cellW, y0 + cellH - shift);
-                    ctx.lineTo(x0, y0 + cellH);
-                    ctx.closePath();
-                    ctx.fillStyle = `hsla(${(hue + 30) % 360}, 90%, ${15 + val * 50}%, 0.85)`;
-                    ctx.fill();
-                    ctx.strokeStyle = `hsla(${(hue + 30) % 360}, 95%, 80%, 0.3)`;
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                }
-            }
-        }
-
-        // 4. ONDA CLASSICA
         function renderOscilloscope(ctx, canvas, dataArray, bufferLength, strokeColor) {
             ctx.lineWidth = 2.5;
             ctx.strokeStyle = strokeColor;
@@ -1494,7 +1290,6 @@
             ctx.stroke();
         }
 
-        // 5. SPECTRUM BARS
         function renderSpectrumBars(ctx, canvas, freqData, bufferLength, active) {
             const barCount = 32;
             const barWidth = (canvas.width / barCount) - 2;
@@ -1515,7 +1310,6 @@
             }
         }
 
-        // 6. RADIAL MANDALA
         function renderRadialMandala(ctx, canvas, timeData, freqData, bufferLength, active) {
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
@@ -1554,7 +1348,6 @@
             ctx.restore();
         }
 
-        // 7. COSMIC NEBULA
         function renderCosmicNebula(ctx, canvas, freqData, bufferLength, active) {
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
@@ -1589,7 +1382,6 @@
             }
         }
 
-        // Selettori Modalità Visualizer
         function setVisualizerMode(mode) {
             currentVisualizerMode = mode;
             document.querySelectorAll('.vis-mode-btn').forEach(btn => {

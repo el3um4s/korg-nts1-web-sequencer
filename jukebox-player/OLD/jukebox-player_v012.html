@@ -43,9 +43,9 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">ZEN JUKEBOX PLAYER</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 4 v1.5</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 4 v1.2</span>
                 </div>
-                <p class="text-xs text-zinc-400">Esecutore Continuo per Studio/Focus, Auto-Patch Switch & Visualizer ad Aree Piene</p>
+                <p class="text-xs text-zinc-400">Esecutore Continuo per Studio/Focus, Auto-Patch Switch & Visualizer Evolutivi</p>
             </div>
         </div>
 
@@ -68,172 +68,134 @@
         </div>
     </header>
 
-    <!-- Global Collapse / Expand Toolbar -->
-    <div class="max-w-7xl mx-auto w-full flex items-center justify-between gap-2 px-1 mb-3 text-xs text-zinc-400">
-        <span class="text-[11px] font-medium text-zinc-500">
-            <i class="fa-solid fa-arrows-up-down mr-1"></i>Spazio di Lavoro Modulare
-        </span>
-        <div class="flex items-center gap-2">
-            <button id="expandAllSectionsBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[11px] text-zinc-300 transition flex items-center gap-1">
-                <i class="fa-solid fa-folder-open text-orange-400 text-[10px]"></i> Espandi tutto
-            </button>
-            <button id="collapseAllSectionsBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[11px] text-zinc-300 transition flex items-center gap-1">
-                <i class="fa-solid fa-folder-minus text-zinc-400 text-[10px]"></i> Riduci tutto
-            </button>
-        </div>
-    </div>
-
     <!-- Main Workspace -->
-    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 items-start flex-grow">
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow">
         
         <!-- Left Column: Master Transport, Now Playing & Focus Timer -->
         <section class="lg:col-span-5 flex flex-col gap-3">
             
-            <!-- Section 1: Now Playing & Master Transport -->
-            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
-                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyTransportSection">
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-md bg-orange-600/20 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-play"></i>
-                        </span>
-                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">1. Now Playing & Transport</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-1.5 mr-1" onclick="event.stopPropagation()">
-                            <span id="nowPlayingLed" class="w-2 h-2 rounded-full bg-zinc-600"></span>
-                            <span id="timeCounterDisplay" class="font-mono-code text-[11px] text-orange-400 font-bold">00:00 / 00:00</span>
-                        </div>
-                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
-                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
-                        </button>
+            <!-- Now Playing & Hardware Display -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+                    <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span id="nowPlayingLed" class="w-2 h-2 rounded-full bg-zinc-600"></span> In Riproduzione
+                    </span>
+                    <span id="timeCounterDisplay" class="font-mono-code text-xs text-orange-400 font-bold">00:00 / 00:00</span>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <h2 id="nowPlayingTitle" class="text-base sm:text-lg font-black text-zinc-100 truncate">Nessun Brano</h2>
+                    <div class="flex items-center gap-2 text-xs font-mono-code text-zinc-400">
+                        <span id="nowPlayingGenre" class="text-purple-400 font-medium">Genere: -</span>
+                        <span>•</span>
+                        <span id="nowPlayingBpm" class="text-orange-400">0 BPM</span>
                     </div>
                 </div>
 
-                <div id="bodyTransportSection" class="section-body p-3.5 flex flex-col gap-3">
-                    <div class="flex flex-col gap-1">
-                        <h2 id="nowPlayingTitle" class="text-base sm:text-lg font-black text-zinc-100 truncate">Nessun Brano</h2>
-                        <div class="flex items-center gap-2 text-xs font-mono-code text-zinc-400">
-                            <span id="nowPlayingGenre" class="text-purple-400 font-medium">Genere: -</span>
-                            <span>•</span>
-                            <span id="nowPlayingBpm" class="text-orange-400">0 BPM</span>
+                <!-- Hardware Monitor Display -->
+                <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 shadow-inner">
+                    <div class="flex items-center justify-between text-[11px] font-mono-code">
+                        <span class="text-zinc-400">Patch Hardware Attiva:</span>
+                        <span id="hwOscDisplay" class="text-orange-400 font-bold px-2 py-0.5 rounded bg-orange-950/40 border border-orange-800/40">OSC: SAW</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5 text-[10px] font-mono-code text-zinc-400 text-center">
+                        <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">Shape</span>
+                            <strong id="hwShapeVal" class="text-zinc-200">64</strong>
+                        </div>
+                        <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">Cutoff</span>
+                            <strong id="hwCutoffVal" class="text-cyan-400">80</strong>
+                        </div>
+                        <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">Release</span>
+                            <strong id="hwReleaseVal" class="text-emerald-400">45</strong>
+                        </div>
+                        <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">Reverb</span>
+                            <strong id="hwReverbVal" class="text-purple-400">30</strong>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Hardware Monitor Display -->
-                    <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 shadow-inner">
-                        <div class="flex items-center justify-between text-[11px] font-mono-code">
-                            <span class="text-zinc-400">Patch Hardware Attiva:</span>
-                            <span id="hwOscDisplay" class="text-orange-400 font-bold px-2 py-0.5 rounded bg-orange-950/40 border border-orange-800/40">OSC: SAW</span>
-                        </div>
-                        <div class="grid grid-cols-4 gap-1.5 text-[10px] font-mono-code text-zinc-400 text-center">
-                            <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
-                                <span class="text-zinc-500 block">Shape</span>
-                                <strong id="hwShapeVal" class="text-zinc-200">64</strong>
-                            </div>
-                            <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
-                                <span class="text-zinc-500 block">Cutoff</span>
-                                <strong id="hwCutoffVal" class="text-cyan-400">80</strong>
-                            </div>
-                            <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
-                                <span class="text-zinc-500 block">Release</span>
-                                <strong id="hwReleaseVal" class="text-emerald-400">45</strong>
-                            </div>
-                            <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
-                                <span class="text-zinc-500 block">Reverb</span>
-                                <strong id="hwReverbVal" class="text-purple-400">30</strong>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Progress Bar -->
+                <div class="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden border border-zinc-800">
+                    <div id="trackProgressBar" class="bg-orange-500 h-full w-0 transition-all duration-150"></div>
+                </div>
 
-                    <!-- Progress Bar -->
-                    <div class="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden border border-zinc-800">
-                        <div id="trackProgressBar" class="bg-orange-500 h-full w-0 transition-all duration-150"></div>
-                    </div>
+                <!-- Global Transport Buttons -->
+                <div class="grid grid-cols-4 gap-2 pt-1">
+                    <button id="prevTrackBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center transition" title="Traccia Precedente">
+                        <i class="fa-solid fa-backward-step"></i>
+                    </button>
+                    <button id="playPauseBtn" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg" title="Play / Pausa">
+                        <i id="playPauseIcon" class="fa-solid fa-play"></i>
+                        <span id="playPauseLabel">PLAY</span>
+                    </button>
+                    <button id="stopTrackBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center transition" title="Stop">
+                        <i class="fa-solid fa-stop"></i>
+                    </button>
+                    <button id="nextTrackBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center transition" title="Traccia Successiva">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                </div>
 
-                    <!-- Global Transport Buttons -->
-                    <div class="grid grid-cols-4 gap-2 pt-1">
-                        <button id="prevTrackBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center transition" title="Traccia Precedente">
-                            <i class="fa-solid fa-backward-step"></i>
-                        </button>
-                        <button id="playPauseBtn" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg" title="Play / Pausa">
-                            <i id="playPauseIcon" class="fa-solid fa-play"></i>
-                            <span id="playPauseLabel">PLAY</span>
-                        </button>
-                        <button id="stopTrackBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center transition" title="Stop">
-                            <i class="fa-solid fa-stop"></i>
-                        </button>
-                        <button id="nextTrackBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center transition" title="Traccia Successiva">
-                            <i class="fa-solid fa-forward-step"></i>
-                        </button>
-                    </div>
-
-                    <!-- Playback Mode Toggles -->
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <button id="shuffleToggleBtn" class="py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 rounded-lg font-medium transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-shuffle text-xs"></i>
-                            <span id="shuffleLabel">Shuffle: OFF</span>
-                        </button>
-                        <button id="loopModeToggleBtn" class="py-1.5 bg-orange-600/20 text-orange-400 border border-orange-500/40 rounded-lg font-medium transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-repeat text-xs"></i>
-                            <span id="loopModeLabel">Loop: Playlist</span>
-                        </button>
-                    </div>
+                <!-- Playback Mode Toggles -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button id="shuffleToggleBtn" class="py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 rounded-lg font-medium transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-shuffle text-xs"></i>
+                        <span id="shuffleLabel">Shuffle: OFF</span>
+                    </button>
+                    <button id="loopModeToggleBtn" class="py-1.5 bg-orange-600/20 text-orange-400 border border-orange-500/40 rounded-lg font-medium transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-repeat text-xs"></i>
+                        <span id="loopModeLabel">Loop: Playlist</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Section 2: Focus Companion / Pomodoro Timer & Humanize -->
-            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
-                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyFocusSection">
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-md bg-amber-600/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-hourglass-half"></i>
-                        </span>
-                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">2. Timer Focus & Humanize</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span id="focusTimerDisplay" class="font-mono-code text-xs font-bold text-amber-400 mr-1">25:00</span>
-                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
-                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
-                        </button>
+            <!-- Focus Companion / Pomodoro Timer & Humanize -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                    <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-hourglass-half text-amber-400"></i> Timer Focus / Sessione
+                    </span>
+                    <span id="focusTimerDisplay" class="font-mono-code text-xs font-bold text-amber-400">25:00</span>
+                </div>
+
+                <!-- Presets & Custom Input -->
+                <div class="grid grid-cols-4 gap-1.5 text-xs">
+                    <button class="timer-preset-btn py-1 px-1.5 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code timer-btn-active text-[11px]" data-minutes="25">25m</button>
+                    <button class="timer-preset-btn py-1 px-1.5 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code text-[11px]" data-minutes="45">45m</button>
+                    <button class="timer-preset-btn py-1 px-1.5 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code text-[11px]" data-minutes="60">60m</button>
+                    <div class="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-0.5">
+                        <input type="number" id="customMinutesInput" min="1" max="180" placeholder="Min" class="w-full bg-transparent text-amber-300 font-mono-code text-center text-xs focus:outline-none" title="Inserisci minuti personalizzati">
                     </div>
                 </div>
 
-                <div id="bodyFocusSection" class="section-body p-3.5 flex flex-col gap-3">
-                    <!-- Presets & Custom Input -->
-                    <div class="grid grid-cols-4 gap-1.5 text-xs">
-                        <button class="timer-preset-btn py-1 px-1.5 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code timer-btn-active text-[11px]" data-minutes="25">25m</button>
-                        <button class="timer-preset-btn py-1 px-1.5 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code text-[11px]" data-minutes="45">45m</button>
-                        <button class="timer-preset-btn py-1 px-1.5 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code text-[11px]" data-minutes="60">60m</button>
-                        <div class="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-0.5">
-                            <input type="number" id="customMinutesInput" min="1" max="180" placeholder="Min" class="w-full bg-transparent text-amber-300 font-mono-code text-center text-xs focus:outline-none" title="Inserisci minuti personalizzati">
-                        </div>
-                    </div>
+                <div class="flex items-center justify-between gap-2">
+                    <button id="startTimerBtn" class="flex-1 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-play text-[10px]"></i> Avvia Timer
+                    </button>
+                    <button id="resetTimerBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-rotate-left text-[10px]"></i> Reset
+                    </button>
+                </div>
 
-                    <div class="flex items-center justify-between gap-2">
-                        <button id="startTimerBtn" class="flex-1 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-play text-[10px]"></i> Avvia Timer
-                        </button>
-                        <button id="resetTimerBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-rotate-left text-[10px]"></i> Reset
-                        </button>
-                    </div>
+                <!-- Modulo Humanize 🎲 -->
+                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-2.5 flex items-center justify-between gap-2 text-xs">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="humanizeToggle" checked class="accent-orange-500 rounded">
+                        <span class="text-[11px] font-semibold text-zinc-300">
+                            🎲 Dado Humanize (Micro-Variazioni Live)
+                        </span>
+                    </label>
+                    <span class="text-[10px] text-zinc-500 font-mono-code">Octave/Vel/Gate</span>
+                </div>
 
-                    <!-- Modulo Humanize 🎲 -->
-                    <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-2.5 flex items-center justify-between gap-2 text-xs">
-                        <label class="inline-flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="humanizeToggle" checked class="accent-orange-500 rounded">
-                            <span class="text-[11px] font-semibold text-zinc-300">
-                                🎲 Dado Humanize (Micro-Variazioni Live)
-                            </span>
-                        </label>
-                        <span class="text-[10px] text-zinc-500 font-mono-code">Octave/Vel/Gate</span>
-                    </div>
-
-                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800">
-                        <button id="openZenBtn" class="w-full py-2 bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 shadow">
-                            <i class="fa-solid fa-expand text-indigo-400"></i> Modalità Zen (Fullscreen Visualizer)
-                        </button>
-                    </div>
+                <div class="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800">
+                    <button id="openZenBtn" class="w-full py-2 bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 shadow">
+                        <i class="fa-solid fa-expand text-indigo-400"></i> Modalità Zen (Fullscreen Visualizer)
+                    </button>
                 </div>
             </div>
 
@@ -247,67 +209,47 @@
         <!-- Right Column: Visualizer Canvas & Scaletta Playlist -->
         <section class="lg:col-span-7 flex flex-col gap-3">
             
-            <!-- Section 3: Real-time Visualizer Multi-Mode -->
-            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
-                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyVisualizerSection">
+            <!-- Real-time Visualizer Multi-Mode -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 shadow-xl flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                     <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-md bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span class="font-bold text-zinc-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i> Visualizer Dinamico
                         </span>
-                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">3. Visualizer Dinamico</span>
+                        <span id="visualizerFpsBadge" class="text-[10px] font-mono-code text-zinc-500">60 FPS</span>
                     </div>
-                    <div class="flex items-center gap-2" onclick="event.stopPropagation()">
-                        <!-- Visualizer Mode Selector -->
-                        <div class="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded-lg p-0.5 text-[10px] flex-wrap justify-end">
-                            <button class="vis-mode-btn px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-semibold transition" data-mode="landscape">Paesaggio</button>
-                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="fluid">Onde Fluide</button>
-                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="geometric">Geometria</button>
-                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="oscilloscope">Onda</button>
-                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="bars">Spettro</button>
-                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="mandala">Mandala</button>
-                            <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="nebula">Nebula</button>
-                        </div>
-                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
-                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
-                        </button>
+
+                    <!-- Visualizer Mode Selector -->
+                    <div class="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded-lg p-0.5 text-[11px]">
+                        <button class="vis-mode-btn px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-semibold transition" data-mode="oscilloscope">Onda</button>
+                        <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="bars">Spettro</button>
+                        <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="mandala">Mandala</button>
+                        <button class="vis-mode-btn px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="nebula">Nebula</button>
                     </div>
                 </div>
-
-                <div id="bodyVisualizerSection" class="section-body p-3.5 flex flex-col gap-2">
-                    <div class="relative w-full h-44 sm:h-52 bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden shadow-inner">
-                        <canvas id="visualizerCanvas" class="w-full h-full block"></canvas>
-                    </div>
+                <div class="relative w-full h-36 sm:h-44 bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden">
+                    <canvas id="visualizerCanvas" class="w-full h-full block"></canvas>
                 </div>
             </div>
 
-            <!-- Section 4: Scaletta Playlist & Caricamento -->
-            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
-                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyPlaylistSection">
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-md bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-list-ol"></i>
-                        </span>
-                        <div>
-                            <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">4. Scaletta Jukebox</span>
-                        </div>
+            <!-- Scaletta Playlist & Caricamento -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-3 flex-grow">
+                <div class="flex items-center justify-between flex-wrap gap-2 border-b border-zinc-800 pb-2">
+                    <div>
+                        <h3 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Scaletta del Jukebox</h3>
+                        <span id="playlistStatsBadge" class="text-[11px] text-zinc-400 font-mono-code">0 brani caricati</span>
                     </div>
-                    <div class="flex items-center gap-2" onclick="event.stopPropagation()">
-                        <span id="playlistStatsBadge" class="text-[10px] text-zinc-400 font-mono-code hidden sm:inline">0 brani caricati</span>
-                        <button id="importPlaylistBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-indigo-300 border border-zinc-700 rounded text-[11px] font-bold transition flex items-center gap-1">
-                            <i class="fa-solid fa-folder-open text-indigo-400"></i> .JSON
+                    <div class="flex items-center gap-2">
+                        <button id="importPlaylistBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-indigo-300 border border-zinc-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-folder-open text-indigo-400"></i> Carica Scaletta (.JSON)
                         </button>
                         <input type="file" id="playlistFileInput" accept=".json,.abc,.txt" multiple class="hidden">
-                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
-                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
-                        </button>
                     </div>
                 </div>
 
-                <div id="bodyPlaylistSection" class="section-body p-3.5 flex flex-col gap-3">
-                    <!-- Playlist Queue Cards -->
-                    <div id="jukeboxTrackList" class="flex flex-col gap-2 min-h-[160px] max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
-                        <!-- Tracce inserite dinamicamente -->
-                    </div>
+                <!-- Playlist Queue Cards -->
+                <div id="jukeboxTrackList" class="flex flex-col gap-2 min-h-[180px] max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+                    <!-- Tracce inserite dinamicamente -->
                 </div>
             </div>
 
@@ -317,18 +259,15 @@
 
     <!-- Zen Mode Fullscreen Modal Overlay -->
     <div id="zenOverlay" class="fixed inset-0 bg-zinc-950 z-50 hidden flex flex-col justify-between p-4 sm:p-8 select-none">
-        <div class="flex items-center justify-between w-full flex-wrap gap-2">
+        <div class="flex items-center justify-between w-full">
             <div class="flex items-center gap-2 text-xs font-mono-code text-zinc-500">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 led-active"></span>
                 <span>MODALITÀ ZEN ATTIVA</span>
             </div>
 
             <!-- Zen Mode Visualizer Selector -->
-            <div class="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800 rounded-lg p-1 text-xs flex-wrap justify-center">
-                <button class="zen-vis-btn px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition" data-mode="landscape">Paesaggio</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="fluid">Onde Fluide</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="geometric">Geometria</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="oscilloscope">Onda</button>
+            <div class="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800 rounded-lg p-1 text-xs">
+                <button class="zen-vis-btn px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition" data-mode="oscilloscope">Onda</button>
                 <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="bars">Spettro</button>
                 <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="mandala">Mandala</button>
                 <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="nebula">Nebula</button>
@@ -365,7 +304,7 @@
 
     <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p>Korg NTS-1 Suite • Zen Jukebox Player (Prototipo 4)</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.5.0</span>
+        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.2.0</span>
     </footer>
 
     <!-- Application Script Logic -->
@@ -383,67 +322,11 @@
         let noteOffTimers = [];
         let trackElapsedSec = 0;
         let trackDurationInterval = null;
-        let currentVisualizerMode = 'landscape';
+        let currentVisualizerMode = 'oscilloscope'; // 'oscilloscope' | 'bars' | 'mandala' | 'nebula'
         let animationPhase = 0;
 
         const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         const BASE_NOTE_MAP = { 'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11 };
-
-        // --- COLLAPSIBLE SECTION CONTROLLER ---
-        function updateSectionHeaderChevron(header, isOpen) {
-            const chevron = header.querySelector('.toggle-btn i') || header.querySelector('i.fa-chevron-down, i.fa-chevron-right');
-            if (chevron) {
-                chevron.className = isOpen 
-                    ? 'fa-solid fa-chevron-down text-xs transition-transform duration-200'
-                    : 'fa-solid fa-chevron-right text-xs transition-transform duration-200';
-            }
-        }
-
-        function setupCollapsibleSections() {
-            document.querySelectorAll('.collapsible-section .section-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    const targetId = header.dataset.target;
-                    const body = document.getElementById(targetId);
-                    if (!body) return;
-
-                    const isCurrentlyHidden = body.classList.contains('hidden');
-                    if (isCurrentlyHidden) {
-                        body.classList.remove('hidden');
-                        updateSectionHeaderChevron(header, true);
-                    } else {
-                        body.classList.add('hidden');
-                        updateSectionHeaderChevron(header, false);
-                    }
-                    setTimeout(resizeCanvases, 50);
-                });
-            });
-
-            const expandAllBtn = document.getElementById('expandAllSectionsBtn');
-            const collapseAllBtn = document.getElementById('collapseAllSectionsBtn');
-
-            if (expandAllBtn) {
-                expandAllBtn.addEventListener('click', () => {
-                    document.querySelectorAll('.collapsible-section .section-body').forEach(body => {
-                        body.classList.remove('hidden');
-                    });
-                    document.querySelectorAll('.collapsible-section .section-header').forEach(header => {
-                        updateSectionHeaderChevron(header, true);
-                    });
-                    setTimeout(resizeCanvases, 50);
-                });
-            }
-
-            if (collapseAllBtn) {
-                collapseAllBtn.addEventListener('click', () => {
-                    document.querySelectorAll('.collapsible-section .section-body').forEach(body => {
-                        body.classList.add('hidden');
-                    });
-                    document.querySelectorAll('.collapsible-section .section-header').forEach(header => {
-                        updateSectionHeaderChevron(header, false);
-                    });
-                });
-            }
-        }
 
         // --- WEB AUDIO & ANALYSER ENGINE ---
         let audioCtx = null;
@@ -1215,21 +1098,17 @@
             }
         });
 
-        // --- MULTI-MODE CANVAS VISUALIZER (AREA & LANDSCAPE ENGINES) ---
+        // --- MULTI-MODE CANVAS VISUALIZER ---
         const mainCanvas = document.getElementById('visualizerCanvas');
         const mainCtx = mainCanvas.getContext('2d');
         const zenCanvas = document.getElementById('zenCanvas');
         const zenCtx = zenCanvas.getContext('2d');
 
         function resizeCanvases() {
-            if (mainCanvas && mainCanvas.parentElement) {
-                mainCanvas.width = mainCanvas.parentElement.clientWidth;
-                mainCanvas.height = mainCanvas.parentElement.clientHeight;
-            }
-            if (zenCanvas && zenCanvas.parentElement) {
-                zenCanvas.width = zenCanvas.parentElement.clientWidth;
-                zenCanvas.height = zenCanvas.parentElement.clientHeight;
-            }
+            mainCanvas.width = mainCanvas.parentElement.clientWidth;
+            mainCanvas.height = mainCanvas.parentElement.clientHeight;
+            zenCanvas.width = zenCanvas.parentElement.clientWidth;
+            zenCanvas.height = zenCanvas.parentElement.clientHeight;
         }
 
         function drawVisualizer() {
@@ -1248,16 +1127,13 @@
             analyserNode.getByteTimeDomainData(timeData);
             analyserNode.getByteFrequencyData(freqData);
 
-            if (mainCanvas.clientHeight > 0) {
-                renderScene(mainCtx, mainCanvas, timeData, freqData, bufferLength, false);
-            }
+            renderScene(mainCtx, mainCanvas, timeData, freqData, bufferLength, false);
             if (!document.getElementById('zenOverlay').classList.contains('hidden')) {
                 renderScene(zenCtx, zenCanvas, timeData, freqData, bufferLength, true);
             }
         }
 
         function clearCanvas(ctx, canvas) {
-            if (!ctx || !canvas) return;
             ctx.fillStyle = '#09090b';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
@@ -1266,13 +1142,7 @@
             clearCanvas(ctx, canvas);
             const active = isPlaying && !isPaused;
 
-            if (currentVisualizerMode === 'landscape') {
-                renderLandscape(ctx, canvas, timeData, freqData, bufferLength, active);
-            } else if (currentVisualizerMode === 'fluid') {
-                renderFluidWaves(ctx, canvas, timeData, freqData, bufferLength, active);
-            } else if (currentVisualizerMode === 'geometric') {
-                renderGeometricMesh(ctx, canvas, timeData, freqData, bufferLength, active);
-            } else if (currentVisualizerMode === 'oscilloscope') {
+            if (currentVisualizerMode === 'oscilloscope') {
                 renderOscilloscope(ctx, canvas, timeData, bufferLength, active ? (isZen ? '#22c55e' : '#f97316') : '#3f3f46');
             } else if (currentVisualizerMode === 'bars') {
                 renderSpectrumBars(ctx, canvas, freqData, bufferLength, active);
@@ -1283,198 +1153,7 @@
             }
         }
 
-        // 1. VISUALIZER PAESAGGIO AD AREE PIENE (Synthwave Ridge / Silhouette)
-        function renderLandscape(ctx, canvas, timeData, freqData, bufferLength, active) {
-            const w = canvas.width;
-            const h = canvas.height;
-
-            let bassEnergy = 0;
-            for (let i = 0; i < 8; i++) bassEnergy += freqData[i];
-            bassEnergy = active ? (bassEnergy / 8) / 255 : 0.05;
-
-            let midEnergy = 0;
-            for (let i = 8; i < 24; i++) midEnergy += freqData[i];
-            midEnergy = active ? (midEnergy / 16) / 255 : 0.05;
-
-            // Cielo a gradiente profondo
-            const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-            skyGrad.addColorStop(0, '#0a0a14');
-            skyGrad.addColorStop(0.6, '#180e29');
-            skyGrad.addColorStop(1, '#2c122d');
-            ctx.fillStyle = skyGrad;
-            ctx.fillRect(0, 0, w, h);
-
-            // Sole / Luna all'orizzonte
-            const sunY = h * 0.45;
-            const sunR = Math.min(w, h) * 0.22 * (0.9 + bassEnergy * 0.2);
-            const sunGrad = ctx.createRadialGradient(w / 2, sunY, sunR * 0.2, w / 2, sunY, sunR);
-            const baseHue = (animationPhase * 15) % 360;
-            sunGrad.addColorStop(0, `hsla(${baseHue}, 100%, 75%, 0.95)`);
-            sunGrad.addColorStop(0.7, `hsla(${(baseHue + 40) % 360}, 95%, 55%, 0.8)`);
-            sunGrad.addColorStop(1, 'rgba(255, 100, 50, 0)');
-            ctx.fillStyle = sunGrad;
-            ctx.beginPath();
-            ctx.arc(w / 2, sunY, sunR, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Livello 1: Montagne di sfondo (Background Ridges)
-            drawRidgeLayer(ctx, w, h, {
-                baseY: h * 0.55,
-                heightScale: h * 0.22,
-                freq: 0.008,
-                speed: animationPhase * 0.15,
-                energy: midEnergy,
-                startColor: '#2b1055',
-                endColor: '#120524'
-            });
-
-            // Livello 2: Colline intermedie (Mid Ridges)
-            drawRidgeLayer(ctx, w, h, {
-                baseY: h * 0.68,
-                heightScale: h * 0.26,
-                freq: 0.012,
-                speed: animationPhase * 0.35,
-                energy: bassEnergy * 1.3,
-                startColor: '#7928ca',
-                endColor: '#1f0d3d'
-            });
-
-            // Livello 3: Dune in primo piano a profilo netto (Foreground Dunes)
-            drawRidgeLayer(ctx, w, h, {
-                baseY: h * 0.82,
-                heightScale: h * 0.28,
-                freq: 0.016,
-                speed: animationPhase * 0.6,
-                energy: (bassEnergy + midEnergy) * 0.8,
-                startColor: '#ff0080',
-                endColor: '#09090b',
-                strokeColor: '#f97316'
-            });
-        }
-
-        function drawRidgeLayer(ctx, w, h, cfg) {
-            ctx.beginPath();
-            ctx.moveTo(0, h);
-
-            const steps = 60;
-            const dx = w / steps;
-
-            for (let i = 0; i <= steps; i++) {
-                const x = i * dx;
-                const sin1 = Math.sin(x * cfg.freq + cfg.speed);
-                const sin2 = Math.cos(x * cfg.freq * 2.1 - cfg.speed * 0.8) * 0.4;
-                const noise = (sin1 + sin2) * cfg.heightScale * (0.7 + cfg.energy * 0.6);
-                const y = cfg.baseY - noise;
-                ctx.lineTo(x, y);
-            }
-
-            ctx.lineTo(w, h);
-            ctx.closePath();
-
-            const grad = ctx.createLinearGradient(0, cfg.baseY - cfg.heightScale, 0, h);
-            grad.addColorStop(0, cfg.startColor);
-            grad.addColorStop(1, cfg.endColor);
-            ctx.fillStyle = grad;
-            ctx.fill();
-
-            if (cfg.strokeColor) {
-                ctx.lineWidth = 1.5;
-                ctx.strokeStyle = cfg.strokeColor;
-                ctx.stroke();
-            }
-        }
-
-        // 2. VISUALIZER ONDE FLUIDE AD AREE SOVRAPPOSTE (Organic Ribbons / Acquarello)
-        function renderFluidWaves(ctx, canvas, timeData, freqData, bufferLength, active) {
-            const w = canvas.width;
-            const h = canvas.height;
-            const layers = 4;
-
-            for (let l = 0; l < layers; l++) {
-                const layerRatio = (l + 1) / layers;
-                const baseY = h * (0.35 + layerRatio * 0.5);
-                const hue = (animationPhase * 25 + l * 55) % 360;
-
-                ctx.beginPath();
-                ctx.moveTo(0, h);
-
-                const sampleStep = Math.floor(bufferLength / 40);
-                const dx = w / 40;
-
-                for (let i = 0; i <= 40; i++) {
-                    const x = i * dx;
-                    const sampleVal = active ? (timeData[(i * sampleStep) % bufferLength] - 128) / 128 : 0;
-                    const wave = Math.sin(i * 0.25 + animationPhase * (0.8 + l * 0.3) + l) * (h * 0.08);
-                    const audioMod = sampleVal * (h * 0.18 * layerRatio);
-                    const y = baseY + wave + audioMod;
-
-                    if (i === 0) ctx.lineTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-
-                ctx.lineTo(w, h);
-                ctx.closePath();
-
-                const grad = ctx.createLinearGradient(0, baseY - h * 0.2, 0, h);
-                grad.addColorStop(0, `hsla(${hue}, 90%, 60%, ${0.35 + layerRatio * 0.25})`);
-                grad.addColorStop(1, `hsla(${(hue + 40) % 360}, 95%, 25%, 0.85)`);
-
-                ctx.fillStyle = grad;
-                ctx.fill();
-            }
-        }
-
-        // 3. VISUALIZER GEOMETRICO SFACCETTATO (Isometric Poly-Mesh)
-        function renderGeometricMesh(ctx, canvas, timeData, freqData, bufferLength, active) {
-            const w = canvas.width;
-            const h = canvas.height;
-            const cols = 10;
-            const rows = 6;
-            const cellW = w / cols;
-            const cellH = h / rows;
-
-            let avgEnergy = 0;
-            for (let i = 0; i < 32; i++) avgEnergy += freqData[i];
-            avgEnergy = active ? (avgEnergy / 32) / 255 : 0.05;
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const x0 = c * cellW;
-                    const y0 = r * cellH;
-                    const idx = (r * cols + c) % bufferLength;
-                    const val = active ? (freqData[idx] / 255) : 0.05;
-
-                    const shift = Math.sin(animationPhase + (c + r) * 0.4) * (cellH * 0.25 * val);
-                    const hue = (animationPhase * 20 + (c * 15) + (r * 25)) % 360;
-
-                    // Triangolo 1
-                    ctx.beginPath();
-                    ctx.moveTo(x0, y0 + shift);
-                    ctx.lineTo(x0 + cellW, y0);
-                    ctx.lineTo(x0, y0 + cellH);
-                    ctx.closePath();
-                    ctx.fillStyle = `hsla(${hue}, 85%, ${20 + val * 45}%, 0.75)`;
-                    ctx.fill();
-                    ctx.strokeStyle = `hsla(${hue}, 90%, 75%, 0.3)`;
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-
-                    // Triangolo 2
-                    ctx.beginPath();
-                    ctx.moveTo(x0 + cellW, y0);
-                    ctx.lineTo(x0 + cellW, y0 + cellH - shift);
-                    ctx.lineTo(x0, y0 + cellH);
-                    ctx.closePath();
-                    ctx.fillStyle = `hsla(${(hue + 30) % 360}, 90%, ${15 + val * 50}%, 0.85)`;
-                    ctx.fill();
-                    ctx.strokeStyle = `hsla(${(hue + 30) % 360}, 95%, 80%, 0.3)`;
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                }
-            }
-        }
-
-        // 4. ONDA CLASSICA
+        // 1. ONDA CLASSICA
         function renderOscilloscope(ctx, canvas, dataArray, bufferLength, strokeColor) {
             ctx.lineWidth = 2.5;
             ctx.strokeStyle = strokeColor;
@@ -1494,7 +1173,7 @@
             ctx.stroke();
         }
 
-        // 5. SPECTRUM BARS
+        // 2. SPECTRUM BARS
         function renderSpectrumBars(ctx, canvas, freqData, bufferLength, active) {
             const barCount = 32;
             const barWidth = (canvas.width / barCount) - 2;
@@ -1515,7 +1194,7 @@
             }
         }
 
-        // 6. RADIAL MANDALA
+        // 3. RADIAL MANDALA
         function renderRadialMandala(ctx, canvas, timeData, freqData, bufferLength, active) {
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
@@ -1554,7 +1233,7 @@
             ctx.restore();
         }
 
-        // 7. COSMIC NEBULA
+        // 4. COSMIC NEBULA
         function renderCosmicNebula(ctx, canvas, freqData, bufferLength, active) {
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
@@ -1575,6 +1254,7 @@
             ctx.arc(cx, cy, baseR * 1.6, 0, Math.PI * 2);
             ctx.fill();
 
+            // Particelle orbitali
             const orbits = 8;
             for (let i = 0; i < orbits; i++) {
                 const angle = animationPhase * (0.8 + i * 0.2) + (i * Math.PI / 4);
@@ -1702,7 +1382,6 @@
 
         window.addEventListener('resize', resizeCanvases);
         window.addEventListener('DOMContentLoaded', () => {
-            setupCollapsibleSections();
             initWebMIDI();
             loadDefaultDemoPlaylist();
             resizeCanvases();

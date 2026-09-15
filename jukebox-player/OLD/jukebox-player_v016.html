@@ -43,9 +43,9 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">ZEN JUKEBOX PLAYER</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 4 v1.5</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 4 v1.6</span>
                 </div>
-                <p class="text-xs text-zinc-400">Esecutore Continuo per Studio/Focus, Auto-Patch Switch & Visualizer ad Aree Piene</p>
+                <p class="text-xs text-zinc-400">Esecutore Continuo per Studio/Focus, Auto-Patch Switch & True Fullscreen Edge-to-Edge</p>
             </div>
         </div>
 
@@ -231,7 +231,7 @@
 
                     <div class="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800">
                         <button id="openZenBtn" class="w-full py-2 bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 shadow">
-                            <i class="fa-solid fa-expand text-indigo-400"></i> Modalità Zen (Fullscreen Visualizer)
+                            <i class="fa-solid fa-expand text-indigo-400"></i> Modalità Zen (Fullscreen Edge-to-Edge)
                         </button>
                     </div>
                 </div>
@@ -315,57 +315,64 @@
 
     </main>
 
-    <!-- Zen Mode Fullscreen Modal Overlay -->
-    <div id="zenOverlay" class="fixed inset-0 bg-zinc-950 z-50 hidden flex flex-col justify-between p-4 sm:p-8 select-none">
-        <div class="flex items-center justify-between w-full flex-wrap gap-2">
-            <div class="flex items-center gap-2 text-xs font-mono-code text-zinc-500">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 led-active"></span>
-                <span>MODALITÀ ZEN ATTIVA</span>
+    <!-- Zen Mode True Border-to-Border Edge Fullscreen Overlay -->
+    <div id="zenOverlay" class="fixed inset-0 w-screen h-screen bg-black z-50 hidden select-none overflow-hidden">
+        
+        <!-- Background Fullscreen Visualizer Canvas (Zero Borders) -->
+        <canvas id="zenCanvas" class="absolute inset-0 w-full h-full block z-0"></canvas>
+
+        <!-- Floating HUD Header (Top Overlay) -->
+        <div id="zenTopHUD" class="absolute top-0 left-0 right-0 p-3 sm:p-5 flex items-center justify-between z-10 bg-gradient-to-b from-black/80 via-black/30 to-transparent transition-opacity duration-300">
+            <div class="flex items-center gap-2 text-xs font-mono-code text-zinc-300 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 led-active"></span>
+                <span class="hidden sm:inline">ZEN MODE</span>
             </div>
 
-            <!-- Zen Mode Visualizer Selector -->
-            <div class="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800 rounded-lg p-1 text-xs flex-wrap justify-center">
-                <button class="zen-vis-btn px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition" data-mode="landscape">Paesaggio</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="fluid">Onde Fluide</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="geometric">Geometria</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="oscilloscope">Onda</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="bars">Spettro</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="mandala">Mandala</button>
-                <button class="zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="nebula">Nebula</button>
+            <!-- Zen Mode Visualizer Selector Floating -->
+            <div class="flex items-center gap-1 bg-black/60 backdrop-blur-md border border-zinc-800 rounded-xl p-1 text-xs flex-wrap justify-center">
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition" data-mode="landscape">Paesaggio</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="fluid">Onde</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="geometric">Geometria</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="oscilloscope">Onda</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="bars">Spettro</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="mandala">Mandala</button>
+                <button class="zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition" data-mode="nebula">Nebula</button>
             </div>
 
-            <div class="flex items-center gap-3">
-                <span id="zenTimerDisplay" class="font-mono-code text-sm font-bold text-amber-400 bg-zinc-900/80 px-3 py-1 rounded-full border border-zinc-800">25:00</span>
-                <button id="closeZenBtn" class="w-9 h-9 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 flex items-center justify-center border border-zinc-800 transition">
-                    <i class="fa-solid fa-compress text-sm"></i>
+            <div class="flex items-center gap-2">
+                <span id="zenTimerDisplay" class="font-mono-code text-xs sm:text-sm font-bold text-amber-400 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800">25:00</span>
+                <button id="toggleZenUiBtn" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md hover:bg-zinc-800 text-zinc-300 flex items-center justify-center border border-zinc-800 transition" title="Nascondi / Mostra UI (Tasto H)">
+                    <i id="toggleZenUiIcon" class="fa-solid fa-eye-slash text-xs"></i>
+                </button>
+                <button id="closeZenBtn" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 flex items-center justify-center border border-zinc-800 transition" title="Esci da Zen Mode">
+                    <i class="fa-solid fa-compress text-xs"></i>
                 </button>
             </div>
         </div>
 
-        <div class="w-full flex-grow flex flex-col items-center justify-center relative my-2 min-h-0">
-            <canvas id="zenCanvas" class="w-full h-full max-w-5xl block"></canvas>
-            <div class="text-center absolute bottom-2 pointer-events-none bg-zinc-950/60 backdrop-blur px-4 py-1.5 rounded-xl border border-zinc-800/60">
-                <h2 id="zenTrackTitle" class="text-lg sm:text-2xl font-black text-zinc-100 tracking-wider">Nessun Brano</h2>
-                <p id="zenTrackSub" class="text-xs sm:text-sm font-mono-code text-orange-400">-- BPM • OSC: --</p>
-            </div>
+        <!-- Floating Now Playing Tag (Bottom-Left) -->
+        <div id="zenInfoHUD" class="absolute bottom-4 left-4 z-10 pointer-events-none bg-black/50 backdrop-blur-md px-3.5 py-2 rounded-xl border border-zinc-800/80 transition-opacity duration-300 max-w-[70vw]">
+            <h2 id="zenTrackTitle" class="text-sm sm:text-lg font-black text-zinc-100 tracking-wider truncate">Nessun Brano</h2>
+            <p id="zenTrackSub" class="text-[10px] sm:text-xs font-mono-code text-orange-400">-- BPM • OSC: --</p>
         </div>
 
-        <div class="max-w-md mx-auto w-full flex items-center justify-center gap-4 bg-zinc-900/60 backdrop-blur border border-zinc-800/80 p-2.5 rounded-2xl shadow-2xl">
-            <button id="zenPrevBtn" class="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 flex items-center justify-center transition">
-                <i class="fa-solid fa-backward-step"></i>
+        <!-- Floating Transport Dock (Bottom-Center) -->
+        <div id="zenDockHUD" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-black/60 backdrop-blur-md border border-zinc-800/80 p-2 rounded-2xl shadow-2xl transition-opacity duration-300">
+            <button id="zenPrevBtn" class="w-9 h-9 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 flex items-center justify-center transition border border-zinc-800">
+                <i class="fa-solid fa-backward-step text-xs"></i>
             </button>
-            <button id="zenPlayPauseBtn" class="w-12 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center text-lg transition shadow-lg">
+            <button id="zenPlayPauseBtn" class="w-11 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center text-base transition shadow-lg">
                 <i id="zenPlayPauseIcon" class="fa-solid fa-play"></i>
             </button>
-            <button id="zenNextBtn" class="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 flex items-center justify-center transition">
-                <i class="fa-solid fa-forward-step"></i>
+            <button id="zenNextBtn" class="w-9 h-9 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 flex items-center justify-center transition border border-zinc-800">
+                <i class="fa-solid fa-forward-step text-xs"></i>
             </button>
         </div>
     </div>
 
     <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p>Korg NTS-1 Suite • Zen Jukebox Player (Prototipo 4)</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.5.0</span>
+        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.6.0</span>
     </footer>
 
     <!-- Application Script Logic -->
@@ -385,6 +392,7 @@
         let trackDurationInterval = null;
         let currentVisualizerMode = 'landscape';
         let animationPhase = 0;
+        let isZenUiVisible = true;
 
         const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         const BASE_NOTE_MAP = { 'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11 };
@@ -1226,9 +1234,9 @@
                 mainCanvas.width = mainCanvas.parentElement.clientWidth;
                 mainCanvas.height = mainCanvas.parentElement.clientHeight;
             }
-            if (zenCanvas && zenCanvas.parentElement) {
-                zenCanvas.width = zenCanvas.parentElement.clientWidth;
-                zenCanvas.height = zenCanvas.parentElement.clientHeight;
+            if (zenCanvas) {
+                zenCanvas.width = window.innerWidth;
+                zenCanvas.height = window.innerHeight;
             }
         }
 
@@ -1601,8 +1609,8 @@
             document.querySelectorAll('.zen-vis-btn').forEach(btn => {
                 const isActive = btn.dataset.mode === mode;
                 btn.className = isActive
-                    ? 'zen-vis-btn px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition'
-                    : 'zen-vis-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition';
+                    ? 'zen-vis-btn px-2 sm:px-2.5 py-1 rounded bg-zinc-800 text-emerald-400 font-bold transition'
+                    : 'zen-vis-btn px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 transition';
             });
         }
 
@@ -1612,14 +1620,46 @@
             });
         });
 
-        // --- ZEN MODE TOGGLE ---
+        // --- ZEN MODE TOGGLE & UI VISIBILITY CONTROLLER ---
         const zenOverlay = document.getElementById('zenOverlay');
+        const toggleZenUiBtn = document.getElementById('toggleZenUiBtn');
+        const toggleZenUiIcon = document.getElementById('toggleZenUiIcon');
+
+        function toggleZenUi() {
+            isZenUiVisible = !isZenUiVisible;
+            const opacityClass = isZenUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none';
+            
+            document.getElementById('zenTopHUD').className = `absolute top-0 left-0 right-0 p-3 sm:p-5 flex items-center justify-between z-10 bg-gradient-to-b from-black/80 via-black/30 to-transparent transition-opacity duration-300 ${isZenUiVisible ? 'opacity-100' : 'opacity-20 hover:opacity-100'}`;
+            document.getElementById('zenInfoHUD').className = `absolute bottom-4 left-4 z-10 pointer-events-none bg-black/50 backdrop-blur-md px-3.5 py-2 rounded-xl border border-zinc-800/80 transition-opacity duration-300 max-w-[70vw] ${opacityClass}`;
+            document.getElementById('zenDockHUD').className = `absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-black/60 backdrop-blur-md border border-zinc-800/80 p-2 rounded-2xl shadow-2xl transition-opacity duration-300 ${opacityClass}`;
+
+            toggleZenUiIcon.className = isZenUiVisible ? 'fa-solid fa-eye-slash text-xs' : 'fa-solid fa-eye text-xs';
+        }
+
+        toggleZenUiBtn.addEventListener('click', toggleZenUi);
+
         document.getElementById('openZenBtn').addEventListener('click', () => {
             zenOverlay.classList.remove('hidden');
             resizeCanvases();
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
         });
+
         document.getElementById('closeZenBtn').addEventListener('click', () => {
             zenOverlay.classList.add('hidden');
+            if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (!zenOverlay.classList.contains('hidden')) {
+                if (e.key === 'h' || e.key === 'H') toggleZenUi();
+                if (e.key === 'Escape') {
+                    zenOverlay.classList.add('hidden');
+                }
+            }
         });
 
         // --- BUTTONS & CONTROLS BINDING ---
