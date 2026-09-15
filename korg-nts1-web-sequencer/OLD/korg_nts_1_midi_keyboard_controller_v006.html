@@ -1,0 +1,2901 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Korg NTS-1 Text MIDI Sequencer & Synthesizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Piano styling */
+        .white-key {
+            background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 75%, #d1d5db 100%);
+            box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.15);
+            transition: transform 0.04s ease, background 0.04s ease;
+        }
+        .white-key.active {
+            background: linear-gradient(180deg, #f97316 0%, #ea580c 100%) !important;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 14px rgba(249, 115, 22, 0.75) !important;
+            color: #ffffff !important;
+            transform: translateY(2px);
+        }
+        .black-key {
+            background: linear-gradient(180deg, #27272a 0%, #18181b 80%, #09090b 100%);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            transition: transform 0.04s ease, background 0.04s ease;
+        }
+        .black-key.active {
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%) !important;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 14px rgba(56, 189, 248, 0.8) !important;
+            color: #ffffff !important;
+            transform: translateY(2px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+        .led-active {
+            box-shadow: 0 0 8px #22c55e, inset 0 0 4px #4ade80;
+        }
+        .led-danger {
+            box-shadow: 0 0 8px #ef4444;
+        }
+        .led-orange {
+            box-shadow: 0 0 8px #f97316, inset 0 0 4px #fb923c;
+        }
+        .led-rec {
+            animation: pulse-rec 1.2s infinite ease-in-out;
+            box-shadow: 0 0 10px #ef4444, inset 0 0 5px #f87171;
+        }
+        @keyframes pulse-rec {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.92); }
+        }
+        .text-token.active-token {
+            background-color: #ea580c !important;
+            color: #ffffff !important;
+            border-radius: 3px;
+            padding: 1px 3px;
+            box-shadow: 0 0 8px rgba(234, 88, 12, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-3 md:p-5 select-none overflow-x-hidden">
+
+    <header class="max-w-7xl mx-auto w-full mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-500 shadow-lg">
+                <i class="fa-solid fa-compact-disc text-xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">KORG NTS-1</h1>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">TEXT SEQUENCER & SYNTH</span>
+                </div>
+                <p class="text-xs text-zinc-400">Componi in notazione (ABC/MML), riproduci su Korg NTS-1 o con il Synth Interno, registra ed esporta in .MID</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Audio Output Selector (MIDI vs Internal Synth) -->
+            <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-xl text-xs">
+                <label for="soundTargetSelect" class="text-zinc-400 font-semibold flex items-center gap-1 text-[11px]">
+                    <i class="fa-solid fa-volume-high text-orange-400"></i> Uscita:
+                </label>
+                <select id="soundTargetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-medium">
+                    <option value="both">Entrambi (MIDI + Casse)</option>
+                    <option value="internal">Solo Casse PC / Mobile</option>
+                    <option value="midi">Solo Korg NTS-1 (MIDI)</option>
+                </select>
+            </div>
+
+            <!-- Connection status badge -->
+            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium">
+                <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"></span>
+                <span id="statusText" class="text-zinc-300">Inizializzazione...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full flex flex-col gap-4 flex-grow">
+        
+        <!-- Hardware Settings & Internal Synth Quickbar -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 bg-zinc-900/90 border border-zinc-800 p-3.5 rounded-xl shadow-lg">
+            
+            <div class="lg:col-span-3 flex flex-col gap-1">
+                <label for="midiOutputSelect" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-plug mr-1.5 text-orange-400"></i>Porta MIDI</span>
+                    <button id="refreshMidiBtn" class="text-[11px] text-orange-400 hover:text-orange-300 flex items-center gap-1 transition">
+                        <i class="fa-solid fa-rotate-right"></i> Ricarica
+                    </button>
+                </label>
+                <div class="relative">
+                    <select id="midiOutputSelect" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-orange-500 transition appearance-none cursor-pointer">
+                        <option value="">Rilevamento dispositivi...</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-400">
+                        <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 flex flex-col gap-1">
+                <label for="midiChannelSelect" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-hashtag mr-1 text-zinc-400"></i>Canale MIDI
+                </label>
+                <select id="midiChannelSelect" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-orange-500 transition cursor-pointer font-mono-code">
+                </select>
+            </div>
+
+            <!-- Built-in Synth Waveform & Filter Controls -->
+            <div class="lg:col-span-2 flex flex-col gap-1">
+                <label for="synthWaveform" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-wave-square mr-1 text-cyan-400"></i>Onda Synth
+                </label>
+                <select id="synthWaveform" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-500 transition cursor-pointer">
+                    <option value="sawtooth" selected>Sawtooth (NTS-1 Style)</option>
+                    <option value="square">Square / Pulse</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="sine">Sine</option>
+                </select>
+            </div>
+
+            <div class="lg:col-span-2 flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                    <label for="synthCutoff" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                        <i class="fa-solid fa-sliders mr-1 text-cyan-400"></i>Filtro Cutoff
+                    </label>
+                    <span id="cutoffVal" class="text-xs font-mono-code text-cyan-400">4200Hz</span>
+                </div>
+                <input id="synthCutoff" type="range" min="200" max="10000" step="100" value="4200" class="w-full accent-cyan-500 bg-zinc-800 rounded-lg cursor-pointer h-2 mt-1">
+            </div>
+
+            <div class="lg:col-span-3 flex items-center gap-2 justify-end pt-1 sm:pt-4">
+                <button id="panicBtn" class="w-full px-3 py-1.5 bg-red-950/50 hover:bg-red-900/70 active:bg-red-800 text-red-300 border border-red-800/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-triangle-exclamation text-red-400"></i> PANIC (All Off)
+                </button>
+            </div>
+        </section>
+
+        <!-- NTS-1 Complete Hardware Synthesis & FX Rack with Physical Mappings & Presets -->
+        <section class="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl flex flex-col gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-orange-500/20 text-orange-400 border border-orange-500/40 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-microchip"></i>
+                    </span>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xs sm:text-sm font-bold text-zinc-100 uppercase tracking-wider">Simulatore Hardware Korg NTS-1 (DSP & CC Engine)</h2>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-orange-950/80 text-orange-300 font-mono-code border border-orange-800/50">LIVE MIDI CC TRANSMITTER</span>
+                        </div>
+                        <p class="text-[10px] text-zinc-400">Modifica parametri, ascolta la simulazione audio e vedi esattamente come impostarli fisicamente sull'NTS-1</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <!-- Factory Sound Presets -->
+                    <select id="hardwarePresetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer">
+                        <option value="preset_init">⚙️ Iniziale / Default</option>
+                        <option value="preset_bladerunner" selected>🌆 Blade Runner CS-80 Lead</option>
+                        <option value="preset_acid303">🧪 Acid 303 Resonance Bass</option>
+                        <option value="preset_ambientcloud">🌌 Dreamy Ambient Cloud (Huge Reverb)</option>
+                        <option value="preset_chiptune">👾 8-Bit Chiptune Arp Pluck</option>
+                        <option value="preset_spacedrone">🛸 Sci-Fi Phaser Space Drone</option>
+                    </select>
+
+                    <button id="saveHwPresetBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded flex items-center gap-1 transition">
+                        <i class="fa-solid fa-floppy-disk text-orange-400"></i> Salva (.json)
+                    </button>
+                    <button id="loadHwPresetBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded flex items-center gap-1 transition">
+                        <i class="fa-solid fa-folder-open text-orange-400"></i> Carica (.json)
+                    </button>
+                    <input type="file" id="hwPresetFileInput" accept=".json" class="hidden">
+                    
+                    <button id="toggleHwGuideBtn" class="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-300 border border-zinc-700 rounded flex items-center gap-1 transition" title="Mostra/Nascondi Guida Manopole Fisiche">
+                        <i class="fa-solid fa-circle-question"></i> <span id="hwGuideLabel">Guida Fisico</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Interactive Hardware Modules Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 pt-1">
+                
+                <!-- 1. OSC Module -->
+                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                        <span class="text-xs font-bold text-orange-400 uppercase flex items-center gap-1">
+                            <i class="fa-solid fa-wave-square"></i> 1. OSC
+                        </span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code" title="Premi tasto [OSC] sul Korg">[OSC] + TYPE</span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-zinc-400 flex justify-between">
+                            <span>Tipo Onda</span>
+                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 53</span>
+                        </label>
+                        <select id="oscShapeType" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-orange-500">
+                            <option value="sawtooth" selected>Sawtooth (Lead/Bass)</option>
+                            <option value="square">Square (Chiptune/Hollow)</option>
+                            <option value="triangle">Triangle (Soft Warm)</option>
+                            <option value="sine">Sine (Pure Sub)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob A (Shape)</span>
+                            <span id="oscShapeVal" class="text-orange-400 font-mono-code">64</span>
+                        </div>
+                        <input id="oscShapeSlider" type="range" min="0" max="127" value="64" class="w-full accent-orange-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob A</span>
+                            <span>CC 54</span>
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob B (Alt / Sub)</span>
+                            <span id="oscAltVal" class="text-orange-400 font-mono-code">32</span>
+                        </div>
+                        <input id="oscAltSlider" type="range" min="0" max="127" value="32" class="w-full accent-orange-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob B</span>
+                            <span>CC 55</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 2. FILTER Module -->
+                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                        <span class="text-xs font-bold text-emerald-400 uppercase flex items-center gap-1">
+                            <i class="fa-solid fa-filter"></i> 2. FILTER
+                        </span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code" title="Premi tasto [FILTER] sul Korg">[FILTER]</span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-zinc-400 flex justify-between">
+                            <span>Tipo Filtro</span>
+                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 42</span>
+                        </label>
+                        <select id="filterTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500">
+                            <option value="lowpass" selected>LPF 2-Pole (12dB Warm)</option>
+                            <option value="lowpass4">LPF 4-Pole (24dB Steep)</option>
+                            <option value="highpass">HPF (Taglia Bassi)</option>
+                            <option value="bandpass">BPF (Passa Banda)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob A (Cutoff)</span>
+                            <span id="filterCutoffHwVal" class="text-emerald-400 font-mono-code">3600 Hz</span>
+                        </div>
+                        <input id="filterCutoffHwSlider" type="range" min="100" max="10000" step="50" value="3600" class="w-full accent-emerald-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob A</span>
+                            <span>CC 43</span>
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob B (Resonance)</span>
+                            <span id="filterResoHwVal" class="text-emerald-400 font-mono-code">3.5</span>
+                        </div>
+                        <input id="filterResoHwSlider" type="range" min="0.5" max="15" step="0.5" value="3.5" class="w-full accent-emerald-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob B</span>
+                            <span>CC 44</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 3. EG (Envelope Generator) Module -->
+                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                        <span class="text-xs font-bold text-yellow-400 uppercase flex items-center gap-1">
+                            <i class="fa-solid fa-chart-line"></i> 3. EG (Inviluppo)
+                        </span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[EG]</span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-zinc-400 flex justify-between">
+                            <span>Tipo EG</span>
+                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 14</span>
+                        </label>
+                        <select id="egTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-yellow-500">
+                            <option value="adsr" selected>ADSR (Standard Synth)</option>
+                            <option value="ahr">AHR (Attack-Hold-Release)</option>
+                            <option value="ar">AR (Pluck / Percussivo)</option>
+                            <option value="open">Open (Drone continuo)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob A (Attack)</span>
+                            <span id="egAttackVal" class="text-yellow-400 font-mono-code">0.03s</span>
+                        </div>
+                        <input id="egAttackSlider" type="range" min="0.005" max="2.0" step="0.01" value="0.03" class="w-full accent-yellow-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob A</span>
+                            <span>CC 16</span>
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob B (Release/Decay)</span>
+                            <span id="egReleaseVal" class="text-yellow-400 font-mono-code">0.25s</span>
+                        </div>
+                        <input id="egReleaseSlider" type="range" min="0.03" max="3.5" step="0.02" value="0.25" class="w-full accent-yellow-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob B</span>
+                            <span>CC 19</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 4. MOD FX Module -->
+                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                        <span class="text-xs font-bold text-purple-400 uppercase flex items-center gap-1">
+                            <i class="fa-solid fa-clone"></i> 4. MOD FX
+                        </span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[MOD] + TYPE</span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-zinc-400 flex justify-between">
+                            <span>Tipo Modulazione</span>
+                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 88</span>
+                        </label>
+                        <select id="modTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-purple-500">
+                            <option value="off">Spento (Dry)</option>
+                            <option value="chorus" selected>Chorus (Ampiezza stereo)</option>
+                            <option value="ensemble">Ensemble (Polifonico)</option>
+                            <option value="flanger">Flanger (Jet Sweep)</option>
+                            <option value="phaser">Phaser (Rotativo cosmico)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob A (Speed/Rate)</span>
+                            <span id="modSpeedVal" class="text-purple-400 font-mono-code">1.5 Hz</span>
+                        </div>
+                        <input id="modSpeedSlider" type="range" min="0.1" max="8.0" step="0.1" value="1.5" class="w-full accent-purple-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob A</span>
+                            <span>CC 28</span>
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob B (Depth)</span>
+                            <span id="modDepthVal" class="text-purple-400 font-mono-code">45%</span>
+                        </div>
+                        <input id="modDepthSlider" type="range" min="0" max="100" value="45" class="w-full accent-purple-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob B</span>
+                            <span>CC 29</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 5. DELAY Module -->
+                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                        <span class="text-xs font-bold text-cyan-400 uppercase flex items-center gap-1">
+                            <i class="fa-solid fa-clock-rotate-left"></i> 5. DELAY
+                        </span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[DELAY] + TYPE</span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-zinc-400 flex justify-between">
+                            <span>Tipo Ritardo</span>
+                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 89</span>
+                        </label>
+                        <select id="delayTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-cyan-500">
+                            <option value="off">Spento</option>
+                            <option value="stereo" selected>Stereo Echo</option>
+                            <option value="mono">Mono Tape Delay</option>
+                            <option value="pingpong">Ping-Pong</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob A (Time)</span>
+                            <span id="delayTimeVal" class="text-cyan-400 font-mono-code">240 ms</span>
+                        </div>
+                        <input id="delayTimeSlider" type="range" min="40" max="800" step="10" value="240" class="w-full accent-cyan-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob A</span>
+                            <span>CC 30</span>
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob B (Depth / Feedback)</span>
+                            <span id="delayFeedbackVal" class="text-cyan-400 font-mono-code">38%</span>
+                        </div>
+                        <input id="delayFeedbackSlider" type="range" min="0" max="85" value="38" class="w-full accent-cyan-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob B</span>
+                            <span>CC 31</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 6. REVERB Module -->
+                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 relative">
+                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                        <span class="text-xs font-bold text-sky-400 uppercase flex items-center gap-1">
+                            <i class="fa-solid fa-water"></i> 6. REVERB
+                        </span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 font-mono-code">[REVERB] + TYPE</span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-zinc-400 flex justify-between">
+                            <span>Tipo Riverbero</span>
+                            <span class="text-[9px] text-zinc-500 font-mono-code">CC 90</span>
+                        </label>
+                        <select id="reverbTypeSelect" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-sky-500">
+                            <option value="off">Spento</option>
+                            <option value="hall" selected>Hall (Grande Sala)</option>
+                            <option value="plate">Plate (Vintage Lucido)</option>
+                            <option value="space">Space (Sconfinato Sci-Fi)</option>
+                            <option value="submarine">Submarine (Cupo / Warm)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob A (Time / Decay)</span>
+                            <span id="reverbTimeVal" class="text-sky-400 font-mono-code">2.8s</span>
+                        </div>
+                        <input id="reverbTimeSlider" type="range" min="0.4" max="6.0" step="0.2" value="2.8" class="w-full accent-sky-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob A</span>
+                            <span>CC 34</span>
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-zinc-400">Knob B (Depth / Mix)</span>
+                            <span id="reverbMixVal" class="text-sky-400 font-mono-code">40%</span>
+                        </div>
+                        <input id="reverbMixSlider" type="range" min="0" max="90" value="40" class="w-full accent-sky-500 bg-zinc-800 rounded h-1 cursor-pointer">
+                        <span class="text-[9px] text-zinc-500 font-mono-code flex justify-between">
+                            <span>Korg: Knob B</span>
+                            <span>CC 35</span>
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Detailed Hardware Mapping Reference Guide Accordion -->
+            <div id="hwGuideSection" class="hidden bg-zinc-950 p-3 rounded-lg border border-zinc-800 text-[11px] text-zinc-300 flex flex-col gap-2">
+                <div class="flex items-center justify-between text-orange-400 font-bold border-b border-zinc-800/80 pb-1">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-book-open"></i> Come impostare i suoni sul Korg NTS-1 fisico a casa:</span>
+                    <span class="text-[10px] text-zinc-500 font-mono-code">Guida Logue-SDK / MIDI CC</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono-code text-[10px] text-zinc-400">
+                    <div class="bg-zinc-900/60 p-2 rounded border border-zinc-800">
+                        <p class="text-orange-300 font-bold mb-1">1. [OSC] & [FILTER]:</p>
+                        <p>• <strong>OSC Type</strong>: Tieni premuto <code>[OSC]</code> e gira la manopola <code>[TYPE]</code>.</p>
+                        <p>• <strong>Shape & Alt</strong>: Gira <code>Knob A</code> (Shape) e <code>Knob B</code> (Alt).</p>
+                        <p>• <strong>FILTER</strong>: Premi <code>[FILTER]</code>. <code>Knob A</code> = Cutoff (CC 43), <code>Knob B</code> = Resonance (CC 44).</p>
+                    </div>
+                    <div class="bg-zinc-900/60 p-2 rounded border border-zinc-800">
+                        <p class="text-yellow-300 font-bold mb-1">2. [EG] & [MOD]:</p>
+                        <p>• <strong>EG Type</strong>: Tieni premuto <code>[EG]</code> e gira <code>[TYPE]</code> per ADSR / AHR / AR.</p>
+                        <p>• <strong>Attack & Release</strong>: <code>Knob A</code> = Attack (CC 16), <code>Knob B</code> = Release (CC 19).</p>
+                        <p>• <strong>MOD</strong>: Tieni <code>[MOD]</code> per Chorus/Ensemble/Phaser; <code>Knob A</code> = Speed (CC 28), <code>Knob B</code> = Depth (CC 29).</p>
+                    </div>
+                    <div class="bg-zinc-900/60 p-2 rounded border border-zinc-800">
+                        <p class="text-cyan-300 font-bold mb-1">3. [DELAY], [REVERB] & [ARP]:</p>
+                        <p>• <strong>DELAY</strong>: Tieni <code>[DELAY]</code> per Stereo/Mono; <code>Knob A</code> = Time (CC 30), <code>Knob B</code> = Depth (CC 31).</p>
+                        <p>• <strong>REVERB</strong>: Tieni <code>[REVERB]</code> per Hall/Plate/Space; <code>Knob A</code> = Time (CC 34), <code>Knob B</code> = Depth (CC 35).</p>
+                        <p>• <strong>ARP</strong>: Premi <code>[ARP]</code>, usa <code>[TYPE]</code> per Up/Down/Bounce; <code>Knob A</code> = Pattern, <code>Knob B</code> = Length.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            
+            <!-- Text Notation Editor Column -->
+            <div class="lg:col-span-7 flex flex-col gap-2.5 bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl">
+                <!-- Poetic Text-to-Music (Linguo-Music) Generator Section -->
+                <div class="bg-gradient-to-br from-purple-950/40 via-zinc-950/80 to-zinc-900 border border-purple-500/30 rounded-xl p-3 shadow-md flex flex-col gap-2.5">
+                    <div class="flex items-center justify-between border-b border-purple-500/20 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-md bg-purple-600/30 text-purple-300 border border-purple-500/40 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </span>
+                            <div>
+                                <h3 class="text-xs font-bold text-purple-200 uppercase tracking-wider">Generatore Poesia & Testo in Note</h3>
+                                <p class="text-[10px] text-zinc-400">Analizza fonemi e punteggiatura per creare melodie armoniche per il Korg NTS-1</p>
+                            </div>
+                        </div>
+                        <button id="toggleTextGenBtn" class="text-xs text-purple-300 hover:text-purple-200 bg-purple-950/60 border border-purple-700/50 px-2 py-1 rounded transition flex items-center gap-1">
+                            <i class="fa-solid fa-chevron-down text-[10px]" id="textGenIcon"></i> <span id="textGenBtnLabel">Chiudi</span>
+                        </button>
+                    </div>
+
+                    <div id="textGenBody" class="flex flex-col gap-2.5">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <!-- Literary & Lyric Sample Presets -->
+                            <div class="flex items-center gap-1.5 text-xs">
+                                <label for="textSampleSelect" class="text-zinc-400 text-[11px] font-semibold">Testi Esempio:</label>
+                                <select id="textSampleSelect" class="bg-zinc-950 border border-zinc-700 text-purple-300 text-xs rounded px-2 py-1 focus:outline-none focus:border-purple-500 cursor-pointer">
+                                    <option value="dante">📖 Dante - Inferno (Canto I)</option>
+                                    <option value="leopardi">🌌 Leopardi - L'Infinito</option>
+                                    <option value="shakespeare">🎭 Shakespeare - Hamlet</option>
+                                    <option value="synthwave_poetry">⚡ Cyberpunk / Synthwave Poetry</option>
+                                    <option value="blank">✏️ Testo Personalizzato</option>
+                                </select>
+                            </div>
+
+                            <div class="flex items-center gap-2 text-xs">
+                                <!-- Language -->
+                                <div class="flex items-center gap-1 bg-zinc-950 px-2 py-1 rounded border border-zinc-800">
+                                    <label class="text-[11px] text-zinc-400 font-medium mr-1">Lingua:</label>
+                                    <label class="inline-flex items-center gap-1 cursor-pointer">
+                                        <input type="radio" name="poetryLang" value="it" checked class="accent-purple-500">
+                                        <span class="text-zinc-200 text-[11px]">Italiano</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1 cursor-pointer ml-1.5">
+                                        <input type="radio" name="poetryLang" value="en" class="accent-purple-500">
+                                        <span class="text-zinc-200 text-[11px]">Inglese</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Source Poetry / Lyrics Input Area -->
+                        <div class="relative">
+                            <textarea id="poetrySourceText" rows="3" class="w-full bg-zinc-950 font-sans text-xs text-zinc-200 border border-zinc-700/80 rounded-lg p-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 leading-relaxed custom-scrollbar resize-y shadow-inner placeholder-zinc-600" placeholder="Incolla o scrivi qui qualsiasi poesia, canzone o frase... La punteggiatura definirà il ritmo e i respiri!"></textarea>
+                        </div>
+
+                        <!-- Musical Harmonization Settings & Generator Action -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                            <div class="flex flex-col gap-1">
+                                <label for="poetryScaleSelect" class="text-[11px] font-semibold text-zinc-400">
+                                    <i class="fa-solid fa-sliders text-purple-400 mr-1"></i>Scala Armonica
+                                </label>
+                                <select id="poetryScaleSelect" class="bg-zinc-950 border border-zinc-700 text-zinc-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-purple-500 cursor-pointer">
+                                    <option value="minor_pentatonic" selected>Pentatonica Minore (Synthwave)</option>
+                                    <option value="dorian">Modo Dorico (Daft Punk / Nostalgia)</option>
+                                    <option value="eolian">Eolio / Minore Naturale (Intimo)</option>
+                                    <option value="major_pentatonic">Pentatonica Maggiore (Luminosa)</option>
+                                    <option value="hirajoshi">Hirajoshi (Giapponese Esotica)</option>
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col gap-1">
+                                <label for="poetryRootSelect" class="text-[11px] font-semibold text-zinc-400">
+                                    <i class="fa-solid fa-music text-purple-400 mr-1"></i>Tonica di Base
+                                </label>
+                                <select id="poetryRootSelect" class="bg-zinc-950 border border-zinc-700 text-zinc-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-purple-500 cursor-pointer">
+                                    <option value="C3" selected>C3 (Centrale synth)</option>
+                                    <option value="A2">A2 (Basso profondo)</option>
+                                    <option value="D3">D3 (Dorian standard)</option>
+                                    <option value="F3">F3 (Lead brillante)</option>
+                                    <option value="G2">G2 (Basso Korg)</option>
+                                </select>
+                            </div>
+
+                            <div class="flex items-end gap-1.5">
+                                <button id="generateMusicFromTextBtn" class="w-full py-1.5 px-3 bg-purple-700 hover:bg-purple-600 active:bg-purple-800 text-white font-bold rounded text-xs transition flex items-center justify-center gap-1.5 shadow-md border border-purple-500/50">
+                                    <i class="fa-solid fa-bolt text-yellow-300"></i>
+                                    <span>Genera & Invia</span>
+                                </button>
+                                <button id="generateAndPlayTextBtn" title="Genera e avvia subito il sequencer" class="py-1.5 px-2.5 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold rounded text-xs transition flex items-center justify-center shadow-md">
+                                    <i class="fa-solid fa-circle-play"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-[10px] text-zinc-400 bg-zinc-950/60 px-2 py-1 rounded border border-zinc-800/80">
+                            <span class="flex items-center gap-1">
+                                <i class="fa-solid fa-circle-info text-purple-400"></i>
+                                <span>Vocali U, O = basse | A = centro | E, I = acute.</span>
+                            </span>
+                            <span>Virgola = respiro | Punto = cadenza risolutiva | A capo = misura</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-file-code text-orange-400 text-sm"></i>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Editor Notazione Sequenza</span>
+                    </div>
+
+                    <!-- Preset Selector -->
+                    <div class="flex items-center gap-2">
+                        <label for="presetSelect" class="text-[11px] font-medium text-zinc-400">Preset:</label>
+                        <select id="presetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-orange-500 cursor-pointer">
+                            <option value="preset_synthwave">🎸 Synthwave Bassline (NTS-1)</option>
+                            <option value="preset_arpeggio">⚡ Arpeggio Elettronico (MML)</option>
+                            <option value="preset_techno">🕹️ Acid Rave Sequence</option>
+                            <option value="preset_abc_melody">🎼 Melodia ABC Standard</option>
+                            <option value="preset_ambient">🌌 Ambient Chords & Lead</option>
+                            <option value="preset_blank">📝 Vuoto (Scrivi o Registra)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Recording & Notation Toolstrip -->
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-800">
+                    <div class="flex items-center gap-2">
+                        <button id="recBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-2 border border-zinc-700 transition">
+                            <span id="recIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-500"></span>
+                            <span id="recLabel">REC OFF</span>
+                        </button>
+
+                        <div class="flex items-center gap-1.5 text-xs">
+                            <label for="recordStepLength" class="text-zinc-400 text-[11px] font-semibold">Passo:</label>
+                            <select id="recordStepLength" class="bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs rounded px-2 py-1 focus:outline-none focus:border-orange-500">
+                                <option value="16">1/16</option>
+                                <option value="8" selected>1/8</option>
+                                <option value="4">1/4</option>
+                                <option value="2">1/2</option>
+                            </select>
+                        </div>
+
+                        <button id="insertRestBtn" title="Inserisci una Pausa (oppure premi SPAZIO con REC attivo)" class="text-xs px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 text-orange-300 border border-zinc-700 rounded flex items-center gap-1 transition">
+                            <i class="fa-solid fa-moon text-xs"></i> Pausa [Space]
+                        </button>
+                        <button id="clearEditorBtn" title="Svuota il testo nell'editor" class="text-xs px-2 py-1 text-zinc-400 hover:text-red-400 hover:bg-zinc-900 rounded transition">
+                            <i class="fa-solid fa-eraser"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-xs">
+                        <div class="flex items-center gap-2 border-r border-zinc-800 pr-2">
+                            <label class="inline-flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="syntaxMode" value="abc" checked class="accent-orange-500">
+                                <span class="text-zinc-300 text-xs font-mono-code font-bold">ABC</span>
+                            </label>
+                            <label class="inline-flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="syntaxMode" value="mml" class="accent-orange-500">
+                                <span class="text-zinc-300 text-xs font-mono-code font-bold">MML</span>
+                            </label>
+                        </div>
+
+                        <button id="importBtn" class="text-[11px] text-zinc-400 hover:text-zinc-200 px-2 py-1 bg-zinc-900 rounded border border-zinc-800 flex items-center gap-1">
+                            <i class="fa-solid fa-file-import text-orange-400"></i> Import
+                        </button>
+                        <button id="exportBtn" class="text-[11px] text-zinc-400 hover:text-zinc-200 px-2 py-1 bg-zinc-900 rounded border border-zinc-800 flex items-center gap-1">
+                            <i class="fa-solid fa-file-lines text-orange-400"></i> .ABC
+                        </button>
+                        <button id="exportMidiBtn" class="text-[11px] text-emerald-300 font-semibold hover:text-emerald-200 px-2.5 py-1 bg-emerald-950/60 hover:bg-emerald-900/80 rounded border border-emerald-700/60 flex items-center gap-1.5 shadow-sm transition">
+                            <i class="fa-solid fa-file-audio text-emerald-400"></i> Scarica .MID
+                        </button>
+                        <input type="file" id="fileInput" accept=".abc,.txt,.mml" class="hidden">
+                    </div>
+                </div>
+
+                <!-- Textarea Editor -->
+                <div class="relative w-full">
+                    <textarea id="sequenceEditor" rows="9" spellcheck="false" class="w-full bg-zinc-950 font-mono-code text-xs text-orange-100 border border-zinc-800 rounded-lg p-3 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 leading-relaxed custom-scrollbar resize-y shadow-inner" placeholder="Inserisci o registra qui le note musicali..."></textarea>
+                </div>
+
+                <!-- Live Visual Step Tracker -->
+                <div class="flex flex-col gap-1.5 bg-zinc-950/70 border border-zinc-800 p-2.5 rounded-lg">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-zinc-400 font-medium flex items-center gap-1.5">
+                            <i class="fa-solid fa-bars-staggered text-orange-400"></i> Tracker Note Live:
+                        </span>
+                        <span id="stepCounter" class="font-mono-code text-zinc-400">Passo: 0 / 0</span>
+                    </div>
+                    <div id="tokenVisualizer" class="h-12 overflow-x-auto overflow-y-hidden whitespace-nowrap flex items-center gap-1.5 px-2 bg-zinc-950 border border-zinc-800/80 rounded font-mono-code text-xs text-zinc-400 custom-scrollbar">
+                        <span class="text-zinc-600 italic">Premi Play per visualizzare i passi del sequencer...</span>
+                    </div>
+                </div>
+
+                <!-- Quick Help Accordion -->
+                <details class="bg-zinc-950/50 border border-zinc-800/60 rounded-lg text-xs text-zinc-400 p-2.5">
+                    <summary class="font-semibold text-zinc-300 cursor-pointer flex items-center justify-between">
+                        <span><i class="fa-solid fa-book-open text-orange-400 mr-1.5"></i> Guida rapida tastiera e Web Audio</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500"></i>
+                    </summary>
+                    <div class="mt-2.5 grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-mono-code text-zinc-300 border-t border-zinc-800/60 pt-2">
+                        <div>
+                            <p class="font-bold text-orange-400 mb-0.5">Tastiera PC (QWERTY):</p>
+                            <p>• Riga Bassa: <code>Z X C V B N M</code> (C..B), <code>S D G H J</code> (Diesis #)</p>
+                            <p>• Riga Alta: <code>Q W E R T Y U</code> (C..B), <code>2 3 5 6 7</code> (Diesis #)</p>
+                            <p>• Con <strong>REC attivo</strong>, suonare i tasti aggiunge le note nel testo.</p>
+                            <p>• Premi <strong>Spazio</strong> con REC attivo per inserire una pausa.</p>
+                        </div>
+                        <div>
+                            <p class="font-bold text-cyan-400 mb-0.5">Ascolto senza MIDI:</p>
+                            <p>• Seleziona <strong>"Solo Casse PC / Mobile"</strong> in alto per comporre in cuffia o sul telefono ovunque ti trovi.</p>
+                            <p>• Puoi modificare l'onda e il filtro in cima alla pagina per testare il timbro desiderato.</p>
+                        </div>
+                    </div>
+                </details>
+
+            </div>
+
+            <div class="lg:col-span-5 flex flex-col gap-3">
+                
+                <!-- Playback & Transport Controls -->
+                <div class="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl flex flex-col gap-3">
+                    <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+                            <i class="fa-solid fa-play mr-1.5 text-emerald-400"></i>Controlli Playback
+                        </span>
+                        <div class="flex items-center gap-1.5">
+                            <span id="playbackLed" class="w-2 h-2 rounded-full bg-zinc-600"></span>
+                            <span id="playbackStatusLabel" class="text-xs text-zinc-400 font-medium">Fermo</span>
+                        </div>
+                    </div>
+
+                    <!-- Transport Buttons -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <button id="playBtn" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 shadow-lg transition">
+                            <i class="fa-solid fa-play text-sm"></i>
+                            <span>PLAY</span>
+                        </button>
+                        <button id="pauseBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 border border-zinc-700 transition">
+                            <i class="fa-solid fa-pause text-sm"></i>
+                            <span>PAUSA</span>
+                        </button>
+                        <button id="stopBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 border border-zinc-700 transition">
+                            <i class="fa-solid fa-stop text-sm"></i>
+                            <span>STOP</span>
+                        </button>
+                        <button id="loopToggleBtn" class="py-2.5 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/50 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition">
+                            <i class="fa-solid fa-repeat text-sm"></i>
+                            <span id="loopLabel">LOOP ON</span>
+                        </button>
+                    </div>
+
+                    <!-- BPM and Gate Sliders -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div class="flex flex-col gap-1 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-zinc-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1 text-orange-400"></i>Tempo (BPM)</span>
+                                <span id="bpmValue" class="font-mono-code font-bold text-orange-400">128</span>
+                            </div>
+                            <input id="bpmSlider" type="range" min="40" max="240" value="128" class="w-full accent-orange-500 bg-zinc-800 rounded h-1.5 cursor-pointer mt-1">
+                        </div>
+
+                        <div class="flex flex-col gap-1 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-zinc-400 font-semibold"><i class="fa-solid fa-wave-square mr-1 text-cyan-400"></i>Gate (Durata %)</span>
+                                <span id="gateValue" class="font-mono-code font-bold text-cyan-400">80%</span>
+                            </div>
+                            <input id="gateSlider" type="range" min="10" max="100" value="80" class="w-full accent-cyan-500 bg-zinc-800 rounded h-1.5 cursor-pointer mt-1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Mini Keyboard -->
+                <div class="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl flex flex-col gap-2">
+                    <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+                            <i class="fa-solid fa-keyboard mr-1.5 text-orange-400"></i>Tastiera (2 Ottave + PC QWERTY)
+                        </span>
+                        <div class="flex items-center gap-1.5">
+                            <button id="octaveMinusBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-xs rounded border border-zinc-700 font-bold">-</button>
+                            <span id="octaveDisplay" class="text-xs font-mono-code text-orange-400 font-bold px-1.5">C3-B4</span>
+                            <button id="octavePlusBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-xs rounded border border-zinc-700 font-bold">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Visual Keyboard -->
+                    <div class="relative w-full overflow-x-auto py-1">
+                        <div id="pianoContainer" class="relative flex min-w-[340px] h-36 rounded-lg overflow-hidden bg-zinc-950 p-1 border border-zinc-800 shadow-inner">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-zinc-400 text-center flex items-center justify-center gap-2">
+                        <span><kbd class="px-1 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 font-mono-code">Z-M</kbd> Bassa</span>
+                        <span>•</span>
+                        <span><kbd class="px-1 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 font-mono-code">Q-U</kbd> Alta</span>
+                    </p>
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="bg-zinc-900/80 border border-zinc-800 rounded-xl p-3.5 flex flex-col gap-2 shadow-lg">
+            <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-terminal text-xs text-cyan-400"></i>
+                    <span class="text-xs font-bold text-zinc-300 uppercase tracking-wider">Monitor Eventi Audio & MIDI</span>
+                    <span id="logCounter" class="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded font-mono-code">0 eventi</span>
+                </div>
+                <button id="clearLogBtn" class="text-xs text-zinc-400 hover:text-zinc-200 transition">
+                    <i class="fa-solid fa-trash-can mr-1"></i>Pulisci Log
+                </button>
+            </div>
+            <div id="midiLogContainer" class="h-28 bg-zinc-950 border border-zinc-800/80 rounded-lg p-2.5 font-mono-code text-xs overflow-y-auto custom-scrollbar flex flex-col gap-1 text-zinc-300">
+                <div class="text-zinc-500 italic">In attesa di eventi... Premi PLAY, tocca i tasti o attiva REC.</div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto w-full mt-3 text-center text-xs text-zinc-500 border-t border-zinc-900 pt-2.5">
+        <p>Progettato per Korg NTS-1 & Web Audio / Web MIDI. Pronto per GitHub Pages.</p>
+    </footer>
+
+    <script>
+        const PRESETS = {
+            preset_synthwave: `// Synthwave Bassline per Korg NTS-1
+Q: 125
+L: 1/16
+K: Cmin
+
+C, C, C C,   C, C, _E C,   F, F, F, F,   _G, _G, G, G,
+C, C, C C,   C, C, _E C,   _B,, _B,, _B, _B,,   _A,, _A,, G,, G,,`,
+
+            preset_arpeggio: `// Arpeggio Elettronico (MML)
+t132 o3 l16
+c e g > c < g e c e   d f a > d < a f d f
+e g b > e < b g e g   f a > c f c < a f a
+g b > d g d < b g b   > c e g > c < g e c < g`,
+
+            preset_techno: `// Acid Rave Sequence
+t138 o2 l16
+c c > c < c   _e _e > _e < _e   f f > f < f   _g f _e c
+c c > c < c   _e _e > _e < _e   _b _b > _b < _b   _b _a g _e`,
+
+            preset_abc_melody: `X: 1
+T: Korg NTS-1 Lead Theme
+M: 4/4
+L: 1/8
+Q: 120
+K: C
+C D E G | A2 G E | D C D E | D4 |
+C D E G | A2 c2 | A G E D | C4 |`,
+
+            preset_ambient: `// Ambient Chord & Arp
+t90 o4 l8
+[c e g]2 [d f a]2 [e g b]2 [f a > c]2
+> c e g e < b d g d < a c f c < g b > d < b
+[c e g]4`,
+
+            preset_blank: `// Scrivi qui o premi REC per registrare con i tasti del PC!
+Q: 128
+L: 1/8
+`
+        };
+
+        const POETRY_SAMPLES = {
+            dante: `Nel mezzo del cammin di nostra vita,
+mi ritrovai per una selva oscura,
+ché la diritta via era smarrita.`,
+
+            leopardi: `Sempre caro mi fu quest'ermo colle,
+e questa siepe, che da tanta parte
+dell'ultimo orizzonte il guardo esclude.`,
+
+            shakespeare: `To be, or not to be, that is the question:
+whether 'tis nobler in the mind to suffer
+the slings and arrows of outrageous fortune,
+or to take arms against a sea of troubles.`,
+
+            synthwave_poetry: `Neon reflections in midnight rain,
+electric pulse through human veins,
+distant sirens call the night,
+lost into the cathode light.`,
+
+            blank: ``
+        };
+
+        const HARMONIC_SCALES = {
+            minor_pentatonic: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24],
+            dorian: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19, 21, 22, 24],
+            eolian: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22, 24],
+            major_pentatonic: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24],
+            hirajoshi: [0, 2, 3, 7, 8, 12, 14, 15, 19, 20, 24]
+        };
+
+        const ROOT_NOTES = {
+            'C3': 48,
+            'A2': 45,
+            'D3': 50,
+            'F3': 53,
+            'G2': 43
+        };
+
+        const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const BASE_NOTE_MAP = { 'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11 };
+
+        const KEYBOARD_MAP = {
+            'KeyZ': 0,  'KeyS': 1,  'KeyX': 2,  'KeyD': 3,  'KeyC': 4,  'KeyV': 5,
+            'KeyG': 6,  'KeyB': 7,  'KeyH': 8,  'KeyN': 9,  'KeyJ': 10, 'KeyM': 11,
+            'KeyQ': 12, 'Digit2': 13, 'KeyW': 14, 'Digit3': 15, 'KeyE': 16, 'KeyR': 17,
+            'Digit5': 18, 'KeyT': 19, 'Digit6': 20, 'KeyY': 21, 'Digit7': 22, 'KeyU': 23,
+        };
+
+        const KEY_LABELS = {
+            0: 'Z', 1: 'S', 2: 'X', 3: 'D', 4: 'C', 5: 'V', 6: 'G', 7: 'B', 8: 'H', 9: 'N', 10: 'J', 11: 'M',
+            12: 'Q', 13: '2', 14: 'W', 15: '3', 16: 'E', 17: 'R', 18: '5', 19: 'T', 20: '6', 21: 'Y', 22: '7', 23: 'U'
+        };
+
+        let audioCtx = null;
+        const activeVoices = new Map();
+
+        let globalFxInput = null;
+        let modDelayNode = null;
+        let modLfoOsc = null;
+        let modLfoGain = null;
+        let modDryGain = null;
+        let modWetGain = null;
+
+        let delayFeedbackNode = null;
+        let delayCoreNode = null;
+        let delayDryGain = null;
+        let delayWetGain = null;
+
+        let reverbConvolverNode = null;
+        let reverbDryGain = null;
+        let reverbWetGain = null;
+        let masterGainNode = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                    setupAudioDspChain();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function createImpulseResponse(durationSec, decayRate) {
+            const ctx = getAudioContext();
+            if (!ctx) return null;
+            const rate = ctx.sampleRate;
+            const length = rate * Math.max(0.1, durationSec);
+            const impulse = ctx.createBuffer(2, length, rate);
+            const left = impulse.getChannelData(0);
+            const right = impulse.getChannelData(1);
+
+            for (let i = 0; i < length; i++) {
+                const t = i / length;
+                const env = Math.exp(-t * decayRate);
+                left[i] = (Math.random() * 2 - 1) * env;
+                right[i] = (Math.random() * 2 - 1) * env;
+            }
+            return impulse;
+        }
+
+        function setupAudioDspChain() {
+            if (!audioCtx) return;
+
+            globalFxInput = audioCtx.createGain();
+
+            // 1. MOD FX (Chorus / Flanger with LFO)
+            modDryGain = audioCtx.createGain();
+            modWetGain = audioCtx.createGain();
+            modDelayNode = audioCtx.createDelay();
+            modDelayNode.delayTime.value = 0.015;
+
+            modLfoOsc = audioCtx.createOscillator();
+            modLfoGain = audioCtx.createGain();
+            modLfoOsc.frequency.value = parseFloat(document.getElementById('modSpeedSlider')?.value || 1.5);
+            modLfoGain.gain.value = 0.003;
+            modLfoOsc.connect(modDelayNode.delayTime);
+            modLfoOsc.start();
+
+            globalFxInput.connect(modDryGain);
+            globalFxInput.connect(modDelayNode);
+            modDelayNode.connect(modWetGain);
+
+            const modMixNode = audioCtx.createGain();
+            modDryGain.connect(modMixNode);
+            modWetGain.connect(modMixNode);
+
+            // 2. DELAY FX
+            delayDryGain = audioCtx.createGain();
+            delayWetGain = audioCtx.createGain();
+            delayCoreNode = audioCtx.createDelay(2.0);
+            delayFeedbackNode = audioCtx.createGain();
+
+            delayCoreNode.delayTime.value = (parseFloat(document.getElementById('delayTimeSlider')?.value || 240)) / 1000;
+            delayFeedbackNode.gain.value = (parseFloat(document.getElementById('delayFeedbackSlider')?.value || 38)) / 100;
+
+            modMixNode.connect(delayDryGain);
+            modMixNode.connect(delayCoreNode);
+            delayCoreNode.connect(delayFeedbackNode);
+            delayFeedbackNode.connect(delayCoreNode);
+            delayCoreNode.connect(delayWetGain);
+
+            const delayMixNode = audioCtx.createGain();
+            delayDryGain.connect(delayMixNode);
+            delayWetGain.connect(delayMixNode);
+
+            // 3. REVERB FX
+            reverbDryGain = audioCtx.createGain();
+            reverbWetGain = audioCtx.createGain();
+            reverbConvolverNode = audioCtx.createConvolver();
+            const revTime = parseFloat(document.getElementById('reverbTimeSlider')?.value || 2.8);
+            reverbConvolverNode.buffer = createImpulseResponse(revTime, 3.2);
+
+            delayMixNode.connect(reverbDryGain);
+            delayMixNode.connect(reverbConvolverNode);
+            reverbConvolverNode.connect(reverbWetGain);
+
+            // Master Output
+            masterGainNode = audioCtx.createGain();
+            masterGainNode.gain.value = 0.85;
+
+            reverbDryGain.connect(masterGainNode);
+            reverbWetGain.connect(masterGainNode);
+            masterGainNode.connect(audioCtx.destination);
+
+            updateFxNodesFromSliders();
+        }
+
+        function updateFxNodesFromSliders() {
+            if (!audioCtx) return;
+
+            // Mod
+            const modType = document.getElementById('modTypeSelect').value;
+            const modDepth = (parseFloat(document.getElementById('modDepthSlider').value) / 100);
+            const modSpeed = parseFloat(document.getElementById('modSpeedSlider').value);
+
+            if (modLfoOsc) modLfoOsc.frequency.setValueAtTime(modSpeed, audioCtx.currentTime);
+
+            if (modType === 'off') {
+                modDryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                modWetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+            } else {
+                modDryGain.gain.setValueAtTime(1.0 - modDepth * 0.4, audioCtx.currentTime);
+                modWetGain.gain.setValueAtTime(modDepth * 0.8, audioCtx.currentTime);
+                if (modLfoGain) modLfoGain.gain.setValueAtTime(0.001 + (modDepth * 0.005), audioCtx.currentTime);
+            }
+
+            // Delay
+            const delayType = document.getElementById('delayTypeSelect').value;
+            const delayTimeSec = parseFloat(document.getElementById('delayTimeSlider').value) / 1000;
+            const delayFeedback = parseFloat(document.getElementById('delayFeedbackSlider').value) / 100;
+
+            if (delayCoreNode) delayCoreNode.delayTime.setValueAtTime(delayTimeSec, audioCtx.currentTime);
+            if (delayFeedbackNode) delayFeedbackNode.gain.setValueAtTime(delayFeedback, audioCtx.currentTime);
+
+            if (delayType === 'off') {
+                delayDryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                delayWetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+            } else {
+                delayDryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                delayWetGain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+            }
+
+            // Reverb
+            const reverbType = document.getElementById('reverbTypeSelect').value;
+            const reverbMix = parseFloat(document.getElementById('reverbMixSlider').value) / 100;
+
+            if (reverbType === 'off') {
+                reverbDryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                reverbWetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+            } else {
+                reverbDryGain.gain.setValueAtTime(1.0 - reverbMix * 0.5, audioCtx.currentTime);
+                reverbWetGain.gain.setValueAtTime(reverbMix * 0.85, audioCtx.currentTime);
+            }
+        }
+
+        function midiToFreq(midiNote) {
+            return 440 * Math.pow(2, (midiNote - 69) / 12);
+        }
+
+        function playInternalSynthNoteOn(midiNote, vel = 100) {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+
+            stopInternalSynthNoteOff(midiNote);
+
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            const filterNode = ctx.createBiquadFilter();
+
+            const waveType = document.getElementById('oscShapeType')?.value || 'sawtooth';
+            const filtType = document.getElementById('filterTypeSelect')?.value || 'lowpass';
+            const cutoffFreq = parseFloat(document.getElementById('filterCutoffHwSlider')?.value) || 3600;
+            const resonanceQ = parseFloat(document.getElementById('filterResoHwSlider')?.value) || 3.5;
+
+            const attackTime = Math.max(0.005, parseFloat(document.getElementById('egAttackSlider')?.value) || 0.03);
+
+            osc.type = (waveType === 'lowpass4') ? 'sawtooth' : waveType;
+            osc.frequency.setValueAtTime(midiToFreq(midiNote), ctx.currentTime);
+
+            filterNode.type = (filtType === 'lowpass4') ? 'lowpass' : filtType;
+            filterNode.frequency.setValueAtTime(cutoffFreq, ctx.currentTime);
+            filterNode.Q.setValueAtTime(resonanceQ, ctx.currentTime);
+
+            const normalizedVel = Math.min(1, Math.max(0.1, vel / 127));
+            const peakGain = 0.24 * normalizedVel;
+
+            gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(peakGain, ctx.currentTime + attackTime);
+
+            osc.connect(filterNode);
+            filterNode.connect(gainNode);
+
+            if (globalFxInput) {
+                gainNode.connect(globalFxInput);
+            } else {
+                gainNode.connect(ctx.destination);
+            }
+
+            osc.start();
+            activeVoices.set(midiNote, { osc, gainNode, filterNode });
+        }
+
+        function stopInternalSynthNoteOff(midiNote) {
+            if (!activeVoices.has(midiNote)) return;
+            const ctx = getAudioContext();
+            const voice = activeVoices.get(midiNote);
+            activeVoices.delete(midiNote);
+
+            if (!ctx || !voice) return;
+
+            const { osc, gainNode } = voice;
+            const releaseTime = Math.max(0.03, parseFloat(document.getElementById('egReleaseSlider')?.value) || 0.25);
+
+            try {
+                gainNode.gain.cancelScheduledValues(ctx.currentTime);
+                gainNode.gain.setValueAtTime(Math.max(0.0001, gainNode.gain.value), ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + releaseTime);
+                setTimeout(() => {
+                    try {
+                        osc.stop();
+                        osc.disconnect();
+                        gainNode.disconnect();
+                    } catch (e) {}
+                }, releaseTime * 1000 + 40);
+            } catch (err) {
+                try { osc.stop(); } catch (e) {}
+            }
+        }
+
+        function stopAllInternalVoices() {
+            for (const midiNote of activeVoices.keys()) {
+                stopInternalSynthNoteOff(midiNote);
+            }
+            activeVoices.clear();
+        }
+
+        let midiAccess = null;
+        let selectedOutput = null;
+        let midiChannel = 0;
+        let baseVelocity = 105;
+        let isLooping = true;
+        let bpm = 128;
+        let gatePercentage = 0.80;
+        let keyboardBaseOctave = 3;
+        let isPlaying = false;
+        let isPaused = false;
+        let isRecording = false;
+        let parsedEvents = [];
+        let currentStepIndex = 0;
+        let playbackTimer = null;
+        let noteOffTimers = [];
+        let currentlyPlayingMidiNotes = new Set();
+        let pressedKeyboardCodes = new Set();
+        let logEventsCount = 0;
+        let lastRecordedMmlOctave = 3;
+
+        const midiOutputSelect = document.getElementById('midiOutputSelect');
+        const midiChannelSelect = document.getElementById('midiChannelSelect');
+        const soundTargetSelect = document.getElementById('soundTargetSelect');
+        const synthCutoff = document.getElementById('synthCutoff');
+        const cutoffVal = document.getElementById('cutoffVal');
+        const refreshMidiBtn = document.getElementById('refreshMidiBtn');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const panicBtn = document.getElementById('panicBtn');
+
+        function sendMidiCC(ccNumber, value7Bit) {
+            if (selectedOutput && (soundTargetSelect.value === 'midi' || soundTargetSelect.value === 'both')) {
+                try {
+                    const status = 0xB0 | (midiChannel & 0x0F);
+                    selectedOutput.send([status, ccNumber & 0x7F, value7Bit & 0x7F]);
+                } catch (e) {
+                    console.error('Error sending CC:', e);
+                }
+            }
+        }
+
+        // Hardware Sliders Elements
+        const oscShapeType = document.getElementById('oscShapeType');
+        const oscShapeSlider = document.getElementById('oscShapeSlider');
+        const oscShapeVal = document.getElementById('oscShapeVal');
+        const oscAltSlider = document.getElementById('oscAltSlider');
+        const oscAltVal = document.getElementById('oscAltVal');
+
+        const filterTypeSelect = document.getElementById('filterTypeSelect');
+        const filterCutoffHwSlider = document.getElementById('filterCutoffHwSlider');
+        const filterCutoffHwVal = document.getElementById('filterCutoffHwVal');
+        const filterResoHwSlider = document.getElementById('filterResoHwSlider');
+        const filterResoHwVal = document.getElementById('filterResoHwVal');
+
+        const egTypeSelect = document.getElementById('egTypeSelect');
+        const egAttackSlider = document.getElementById('egAttackSlider');
+        const egAttackVal = document.getElementById('egAttackVal');
+        const egReleaseSlider = document.getElementById('egReleaseSlider');
+        const egReleaseVal = document.getElementById('egReleaseVal');
+
+        const modTypeSelect = document.getElementById('modTypeSelect');
+        const modSpeedSlider = document.getElementById('modSpeedSlider');
+        const modSpeedVal = document.getElementById('modSpeedVal');
+        const modDepthSlider = document.getElementById('modDepthSlider');
+        const modDepthVal = document.getElementById('modDepthVal');
+
+        const delayTypeSelect = document.getElementById('delayTypeSelect');
+        const delayTimeSlider = document.getElementById('delayTimeSlider');
+        const delayTimeVal = document.getElementById('delayTimeVal');
+        const delayFeedbackSlider = document.getElementById('delayFeedbackSlider');
+        const delayFeedbackVal = document.getElementById('delayFeedbackVal');
+
+        const reverbTypeSelect = document.getElementById('reverbTypeSelect');
+        const reverbTimeSlider = document.getElementById('reverbTimeSlider');
+        const reverbTimeVal = document.getElementById('reverbTimeVal');
+        const reverbMixSlider = document.getElementById('reverbMixSlider');
+        const reverbMixVal = document.getElementById('reverbMixVal');
+
+        const hardwarePresetSelect = document.getElementById('hardwarePresetSelect');
+        const saveHwPresetBtn = document.getElementById('saveHwPresetBtn');
+        const loadHwPresetBtn = document.getElementById('loadHwPresetBtn');
+        const hwPresetFileInput = document.getElementById('hwPresetFileInput');
+        const toggleHwGuideBtn = document.getElementById('toggleHwGuideBtn');
+        const hwGuideSection = document.getElementById('hwGuideSection');
+
+        toggleHwGuideBtn.addEventListener('click', () => {
+            hwGuideSection.classList.toggle('hidden');
+        });
+
+        // Event listeners with dual action: update DSP & send NTS-1 MIDI CC
+        oscShapeType.addEventListener('change', (e) => {
+            const mapCC = { 'sawtooth': 0, 'square': 32, 'triangle': 64, 'sine': 96 };
+            sendMidiCC(53, mapCC[e.target.value] || 0);
+            addLog('Korg OSC', `Tipo onda impostato: ${e.target.value} (CC 53)`, 'text-orange-400');
+        });
+
+        oscShapeSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            oscShapeVal.textContent = val;
+            sendMidiCC(54, val);
+        });
+
+        oscAltSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            oscAltVal.textContent = val;
+            sendMidiCC(55, val);
+        });
+
+        filterTypeSelect.addEventListener('change', (e) => {
+            const mapCC = { 'lowpass': 0, 'lowpass4': 32, 'highpass': 64, 'bandpass': 96 };
+            sendMidiCC(42, mapCC[e.target.value] || 0);
+            addLog('Korg FILTER', `Tipo Filtro: ${e.target.value} (CC 42)`, 'text-emerald-400');
+        });
+
+        filterCutoffHwSlider.addEventListener('input', (e) => {
+            const freq = parseInt(e.target.value, 10);
+            filterCutoffHwVal.textContent = `${freq} Hz`;
+            synthCutoff.value = freq;
+            cutoffVal.textContent = `${freq}Hz`;
+            const ccVal = Math.round((freq / 10000) * 127);
+            sendMidiCC(43, ccVal);
+            for (let v of activeVoices.values()) {
+                if (v.filterNode) v.filterNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            }
+        });
+
+        filterResoHwSlider.addEventListener('input', (e) => {
+            const q = parseFloat(e.target.value);
+            filterResoHwVal.textContent = q.toFixed(1);
+            const ccVal = Math.round((q / 15) * 127);
+            sendMidiCC(44, ccVal);
+            for (let v of activeVoices.values()) {
+                if (v.filterNode) v.filterNode.Q.setValueAtTime(q, audioCtx.currentTime);
+            }
+        });
+
+        egTypeSelect.addEventListener('change', (e) => {
+            const mapCC = { 'adsr': 0, 'ahr': 42, 'ar': 84, 'open': 127 };
+            sendMidiCC(14, mapCC[e.target.value] || 0);
+        });
+
+        egAttackSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            egAttackVal.textContent = `${val.toFixed(2)}s`;
+            const ccVal = Math.round((val / 2.0) * 127);
+            sendMidiCC(16, ccVal);
+        });
+
+        egReleaseSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            egReleaseVal.textContent = `${val.toFixed(2)}s`;
+            const ccVal = Math.round((val / 3.5) * 127);
+            sendMidiCC(19, ccVal);
+        });
+
+        modTypeSelect.addEventListener('change', (e) => {
+            const mapCC = { 'off': 0, 'chorus': 30, 'ensemble': 60, 'flanger': 90, 'phaser': 120 };
+            sendMidiCC(88, mapCC[e.target.value] || 0);
+            updateFxNodesFromSliders();
+        });
+
+        modSpeedSlider.addEventListener('input', (e) => {
+            const spd = parseFloat(e.target.value);
+            modSpeedVal.textContent = `${spd.toFixed(1)} Hz`;
+            const ccVal = Math.round((spd / 8.0) * 127);
+            sendMidiCC(28, ccVal);
+            updateFxNodesFromSliders();
+        });
+
+        modDepthSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            modDepthVal.textContent = `${val}%`;
+            const ccVal = Math.round((val / 100) * 127);
+            sendMidiCC(29, ccVal);
+            updateFxNodesFromSliders();
+        });
+
+        delayTypeSelect.addEventListener('change', (e) => {
+            const mapCC = { 'off': 0, 'stereo': 40, 'mono': 80, 'pingpong': 120 };
+            sendMidiCC(89, mapCC[e.target.value] || 0);
+            updateFxNodesFromSliders();
+        });
+
+        delayTimeSlider.addEventListener('input', (e) => {
+            const ms = parseInt(e.target.value, 10);
+            delayTimeVal.textContent = `${ms} ms`;
+            const ccVal = Math.round((ms / 800) * 127);
+            sendMidiCC(30, ccVal);
+            updateFxNodesFromSliders();
+        });
+
+        delayFeedbackSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            delayFeedbackVal.textContent = `${val}%`;
+            const ccVal = Math.round((val / 85) * 127);
+            sendMidiCC(31, ccVal);
+            updateFxNodesFromSliders();
+        });
+
+        reverbTypeSelect.addEventListener('change', (e) => {
+            const mapCC = { 'off': 0, 'hall': 30, 'plate': 60, 'space': 90, 'submarine': 120 };
+            sendMidiCC(90, mapCC[e.target.value] || 0);
+            updateFxNodesFromSliders();
+        });
+
+        reverbTimeSlider.addEventListener('input', (e) => {
+            const t = parseFloat(e.target.value);
+            reverbTimeVal.textContent = `${t.toFixed(1)}s`;
+            const ccVal = Math.round((t / 6.0) * 127);
+            sendMidiCC(34, ccVal);
+            if (audioCtx && reverbConvolverNode) {
+                reverbConvolverNode.buffer = createImpulseResponse(t, 3.2);
+            }
+            updateFxNodesFromSliders();
+        });
+
+        reverbMixSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            reverbMixVal.textContent = `${val}%`;
+            const ccVal = Math.round((val / 90) * 127);
+            sendMidiCC(35, ccVal);
+            updateFxNodesFromSliders();
+        });
+
+        const HARDWARE_PRESETS = {
+            preset_init: {
+                osc: { type: 'sawtooth', shape: 64, alt: 32 },
+                filter: { type: 'lowpass', cutoff: 5000, resonance: 2.0 },
+                eg: { type: 'adsr', attack: 0.02, release: 0.20 },
+                mod: { type: 'off', speed: 1.0, depth: 0 },
+                delay: { type: 'off', time: 240, feedback: 20 },
+                reverb: { type: 'off', time: 1.5, mix: 15 }
+            },
+            preset_bladerunner: {
+                osc: { type: 'sawtooth', shape: 88, alt: 45 },
+                filter: { type: 'lowpass4', cutoff: 2400, resonance: 4.5 },
+                eg: { type: 'adsr', attack: 0.18, release: 1.10 },
+                mod: { type: 'chorus', speed: 0.8, depth: 65 },
+                delay: { type: 'stereo', time: 380, feedback: 45 },
+                reverb: { type: 'space', time: 4.2, mix: 55 }
+            },
+            preset_acid303: {
+                osc: { type: 'square', shape: 110, alt: 75 },
+                filter: { type: 'lowpass4', cutoff: 1800, resonance: 12.0 },
+                eg: { type: 'ar', attack: 0.005, release: 0.16 },
+                mod: { type: 'off', speed: 2.0, depth: 0 },
+                delay: { type: 'mono', time: 180, feedback: 30 },
+                reverb: { type: 'plate', time: 1.2, mix: 20 }
+            },
+            preset_ambientcloud: {
+                osc: { type: 'triangle', shape: 30, alt: 20 },
+                filter: { type: 'lowpass', cutoff: 1900, resonance: 1.5 },
+                eg: { type: 'adsr', attack: 0.80, release: 2.40 },
+                mod: { type: 'ensemble', speed: 1.2, depth: 70 },
+                delay: { type: 'pingpong', time: 450, feedback: 60 },
+                reverb: { type: 'space', time: 5.5, mix: 75 }
+            },
+            preset_chiptune: {
+                osc: { type: 'square', shape: 64, alt: 10 },
+                filter: { type: 'lowpass', cutoff: 7500, resonance: 1.0 },
+                eg: { type: 'ar', attack: 0.005, release: 0.08 },
+                mod: { type: 'off', speed: 3.0, depth: 0 },
+                delay: { type: 'stereo', time: 130, feedback: 25 },
+                reverb: { type: 'off', time: 0.5, mix: 10 }
+            },
+            preset_spacedrone: {
+                osc: { type: 'sawtooth', shape: 95, alt: 80 },
+                filter: { type: 'bandpass', cutoff: 3100, resonance: 7.0 },
+                eg: { type: 'open', attack: 0.35, release: 1.80 },
+                mod: { type: 'phaser', speed: 0.5, depth: 85 },
+                delay: { type: 'stereo', time: 520, feedback: 55 },
+                reverb: { type: 'submarine', time: 4.8, mix: 65 }
+            }
+        };
+
+        function applyHardwarePreset(p) {
+            if (!p) return;
+            getAudioContext();
+
+            // OSC
+            if (p.osc) {
+                oscShapeType.value = p.osc.type || 'sawtooth';
+                oscShapeSlider.value = p.osc.shape !== undefined ? p.osc.shape : 64;
+                oscShapeVal.textContent = oscShapeSlider.value;
+                oscAltSlider.value = p.osc.alt !== undefined ? p.osc.alt : 32;
+                oscAltVal.textContent = oscAltSlider.value;
+                sendMidiCC(53, (p.osc.type === 'square' ? 32 : p.osc.type === 'triangle' ? 64 : 0));
+                sendMidiCC(54, oscShapeSlider.value);
+                sendMidiCC(55, oscAltSlider.value);
+            }
+
+            // FILTER
+            if (p.filter) {
+                filterTypeSelect.value = p.filter.type || 'lowpass';
+                filterCutoffHwSlider.value = p.filter.cutoff || 3600;
+                filterCutoffHwVal.textContent = `${filterCutoffHwSlider.value} Hz`;
+                filterResoHwSlider.value = p.filter.resonance || 3.5;
+                filterResoHwVal.textContent = parseFloat(filterResoHwSlider.value).toFixed(1);
+                synthCutoff.value = filterCutoffHwSlider.value;
+                cutoffVal.textContent = `${filterCutoffHwSlider.value}Hz`;
+                sendMidiCC(42, (p.filter.type === 'lowpass4' ? 32 : p.filter.type === 'highpass' ? 64 : 0));
+                sendMidiCC(43, Math.round((filterCutoffHwSlider.value / 10000) * 127));
+                sendMidiCC(44, Math.round((filterResoHwSlider.value / 15) * 127));
+            }
+
+            // EG
+            if (p.eg) {
+                egTypeSelect.value = p.eg.type || 'adsr';
+                egAttackSlider.value = p.eg.attack || 0.03;
+                egAttackVal.textContent = `${parseFloat(egAttackSlider.value).toFixed(2)}s`;
+                egReleaseSlider.value = p.eg.release || 0.25;
+                egReleaseVal.textContent = `${parseFloat(egReleaseSlider.value).toFixed(2)}s`;
+                sendMidiCC(14, (p.eg.type === 'ahr' ? 42 : p.eg.type === 'ar' ? 84 : 0));
+                sendMidiCC(16, Math.round((egAttackSlider.value / 2.0) * 127));
+                sendMidiCC(19, Math.round((egReleaseSlider.value / 3.5) * 127));
+            }
+
+            // MOD
+            if (p.mod) {
+                modTypeSelect.value = p.mod.type || 'off';
+                modSpeedSlider.value = p.mod.speed || 1.5;
+                modSpeedVal.textContent = `${parseFloat(modSpeedSlider.value).toFixed(1)} Hz`;
+                modDepthSlider.value = p.mod.depth || 45;
+                modDepthVal.textContent = `${modDepthSlider.value}%`;
+                sendMidiCC(88, (p.mod.type === 'chorus' ? 30 : p.mod.type === 'ensemble' ? 60 : 0));
+                sendMidiCC(28, Math.round((modSpeedSlider.value / 8.0) * 127));
+                sendMidiCC(29, Math.round((modDepthSlider.value / 100) * 127));
+            }
+
+            // DELAY
+            if (p.delay) {
+                delayTypeSelect.value = p.delay.type || 'off';
+                delayTimeSlider.value = p.delay.time || 240;
+                delayTimeVal.textContent = `${delayTimeSlider.value} ms`;
+                delayFeedbackSlider.value = p.delay.feedback || 38;
+                delayFeedbackVal.textContent = `${delayFeedbackSlider.value}%`;
+                sendMidiCC(89, (p.delay.type === 'stereo' ? 40 : p.delay.type === 'mono' ? 80 : 0));
+                sendMidiCC(30, Math.round((delayTimeSlider.value / 800) * 127));
+                sendMidiCC(31, Math.round((delayFeedbackSlider.value / 85) * 127));
+            }
+
+            // REVERB
+            if (p.reverb) {
+                reverbTypeSelect.value = p.reverb.type || 'off';
+                reverbTimeSlider.value = p.reverb.time || 2.8;
+                reverbTimeVal.textContent = `${parseFloat(reverbTimeSlider.value).toFixed(1)}s`;
+                reverbMixSlider.value = p.reverb.mix || 40;
+                reverbMixVal.textContent = `${reverbMixSlider.value}%`;
+                sendMidiCC(90, (p.reverb.type === 'hall' ? 30 : p.reverb.type === 'space' ? 90 : 0));
+                sendMidiCC(34, Math.round((reverbTimeSlider.value / 6.0) * 127));
+                sendMidiCC(35, Math.round((reverbMixSlider.value / 90) * 127));
+            }
+
+            updateFxNodesFromSliders();
+            addLog('Korg Preset', 'Caricato preset hardware & trasmessi comandi MIDI CC', 'text-orange-400 font-bold');
+        }
+
+        hardwarePresetSelect.addEventListener('change', (e) => {
+            const p = HARDWARE_PRESETS[e.target.value];
+            if (p) applyHardwarePreset(p);
+        });
+
+        saveHwPresetBtn.addEventListener('click', () => {
+            const presetData = {
+                generator: 'Korg NTS-1 Web Sequencer & DSP Simulator',
+                timestamp: new Date().toISOString(),
+                bpm: bpm,
+                preset: {
+                    osc: { type: oscShapeType.value, shape: parseInt(oscShapeSlider.value, 10), alt: parseInt(oscAltSlider.value, 10) },
+                    filter: { type: filterTypeSelect.value, cutoff: parseInt(filterCutoffHwSlider.value, 10), resonance: parseFloat(filterResoHwSlider.value) },
+                    eg: { type: egTypeSelect.value, attack: parseFloat(egAttackSlider.value), release: parseFloat(egReleaseSlider.value) },
+                    mod: { type: modTypeSelect.value, speed: parseFloat(modSpeedSlider.value), depth: parseInt(modDepthSlider.value, 10) },
+                    delay: { type: delayTypeSelect.value, time: parseInt(delayTimeSlider.value, 10), feedback: parseInt(delayFeedbackSlider.value, 10) },
+                    reverb: { type: reverbTypeSelect.value, time: parseFloat(reverbTimeSlider.value), mix: parseInt(reverbMixSlider.value, 10) }
+                },
+                sequenceText: sequenceEditor.value
+            };
+
+            const jsonStr = JSON.stringify(presetData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `korg_nts1_patch_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            addLog('Patch', 'Preset salvato su file .json', 'text-emerald-400 font-bold');
+        });
+
+        loadHwPresetBtn.addEventListener('click', () => hwPresetFileInput.click());
+
+        hwPresetFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const parsed = JSON.parse(ev.target.result);
+                    if (parsed.preset) {
+                        applyHardwarePreset(parsed.preset);
+                    }
+                    if (parsed.bpm) {
+                        bpm = parsed.bpm;
+                        bpmSlider.value = bpm;
+                        bpmValue.textContent = bpm;
+                    }
+                    if (parsed.sequenceText) {
+                        sequenceEditor.value = parsed.sequenceText;
+                        const notParsed = parseNotationText(sequenceEditor.value);
+                        renderVisualizerTokens(notParsed.events);
+                    }
+                    addLog('Patch', `Caricato preset da file: ${file.name}`, 'text-cyan-400 font-bold');
+                } catch (err) {
+                    addLog('Errore', 'File JSON non valido o corrotto', 'text-red-400');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // Initialize default preset on start
+        window.addEventListener('DOMContentLoaded', () => {
+            applyHardwarePreset(HARDWARE_PRESETS.preset_bladerunner);
+        });
+
+        const presetSelect = document.getElementById('presetSelect');
+        const sequenceEditor = document.getElementById('sequenceEditor');
+        const tokenVisualizer = document.getElementById('tokenVisualizer');
+        const stepCounter = document.getElementById('stepCounter');
+        const recBtn = document.getElementById('recBtn');
+        const recIndicator = document.getElementById('recIndicator');
+        const recLabel = document.getElementById('recLabel');
+        const recordStepLength = document.getElementById('recordStepLength');
+        const insertRestBtn = document.getElementById('insertRestBtn');
+        const clearEditorBtn = document.getElementById('clearEditorBtn');
+
+        const importBtn = document.getElementById('importBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const exportMidiBtn = document.getElementById('exportMidiBtn');
+        const fileInput = document.getElementById('fileInput');
+
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const loopToggleBtn = document.getElementById('loopToggleBtn');
+        const loopLabel = document.getElementById('loopLabel');
+        const playbackLed = document.getElementById('playbackLed');
+        const playbackStatusLabel = document.getElementById('playbackStatusLabel');
+        const bpmSlider = document.getElementById('bpmSlider');
+        const bpmValue = document.getElementById('bpmValue');
+        const gateSlider = document.getElementById('gateSlider');
+        const gateValue = document.getElementById('gateValue');
+
+        const pianoContainer = document.getElementById('pianoContainer');
+        const octaveMinusBtn = document.getElementById('octaveMinusBtn');
+        const octavePlusBtn = document.getElementById('octavePlusBtn');
+        const octaveDisplay = document.getElementById('octaveDisplay');
+
+        const midiLogContainer = document.getElementById('midiLogContainer');
+        const logCounter = document.getElementById('logCounter');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+
+        const toggleTextGenBtn = document.getElementById('toggleTextGenBtn');
+        const textGenBody = document.getElementById('textGenBody');
+        const textGenIcon = document.getElementById('textGenIcon');
+        const textGenBtnLabel = document.getElementById('textGenBtnLabel');
+        const textSampleSelect = document.getElementById('textSampleSelect');
+        const poetrySourceText = document.getElementById('poetrySourceText');
+        const poetryScaleSelect = document.getElementById('poetryScaleSelect');
+        const poetryRootSelect = document.getElementById('poetryRootSelect');
+        const generateMusicFromTextBtn = document.getElementById('generateMusicFromTextBtn');
+        const generateAndPlayTextBtn = document.getElementById('generateAndPlayTextBtn');
+
+        for (let i = 1; i <= 16; i++) {
+            const opt = document.createElement('option');
+            opt.value = i - 1;
+            opt.textContent = `Canale ${i} (Korg CH ${i})`;
+            midiChannelSelect.appendChild(opt);
+        }
+
+        synthCutoff.addEventListener('input', (e) => {
+            cutoffVal.textContent = `${e.target.value}Hz`;
+        });
+
+        async function initWebMIDI() {
+            if (!navigator.requestMIDIAccess) {
+                updateStatus(true, 'Synth Interno Attivo');
+                soundTargetSelect.value = 'internal';
+                addLog('Audio', 'Web MIDI non disponibile: attivato Synth Interno (Casse PC/Mobile)', 'text-cyan-400');
+                return;
+            }
+
+            try {
+                midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+                updateStatus(true, 'MIDI & Audio Pronti');
+                populateOutputDevices();
+
+                midiAccess.onstatechange = () => {
+                    populateOutputDevices();
+                };
+            } catch (err) {
+                updateStatus(true, 'Synth Interno Attivo');
+                soundTargetSelect.value = 'internal';
+                addLog('Audio', 'Nessun accesso MIDI (o eseguito da file://): puoi usare il Synth Interno!', 'text-yellow-400');
+            }
+        }
+
+        function updateStatus(connected, text) {
+            statusText.textContent = text;
+            if (connected) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+            } else {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-red-500 led-danger';
+            }
+        }
+
+        function populateOutputDevices() {
+            if (!midiAccess) return;
+
+            const outputs = Array.from(midiAccess.outputs.values());
+            midiOutputSelect.innerHTML = '';
+
+            if (outputs.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'Nessun dispositivo MIDI rilevato';
+                midiOutputSelect.appendChild(opt);
+                selectedOutput = null;
+                return;
+            }
+
+            let korgDevice = null;
+            outputs.forEach(output => {
+                const opt = document.createElement('option');
+                opt.value = output.id;
+                opt.textContent = `${output.name} (${output.manufacturer || 'MIDI Out'})`;
+                midiOutputSelect.appendChild(opt);
+
+                const nameLower = (output.name || '').toLowerCase();
+                if (nameLower.includes('nts') || nameLower.includes('korg')) {
+                    korgDevice = output;
+                }
+            });
+
+            if (korgDevice) {
+                midiOutputSelect.value = korgDevice.id;
+                selectedOutput = korgDevice;
+                updateStatus(true, `Connesso: ${korgDevice.name}`);
+                addLog('MIDI', `Sintetizzatore Korg rilevato: ${korgDevice.name}`, 'text-orange-400');
+            } else {
+                selectedOutput = outputs[0];
+                midiOutputSelect.value = outputs[0].id;
+                updateStatus(true, `Connesso: ${outputs[0].name}`);
+            }
+        }
+
+        midiOutputSelect.addEventListener('change', (e) => {
+            if (!midiAccess) return;
+            selectedOutput = midiAccess.outputs.get(e.target.value) || null;
+            if (selectedOutput) {
+                updateStatus(true, `Connesso: ${selectedOutput.name}`);
+                addLog('MIDI', `Uscita selezionata: ${selectedOutput.name}`, 'text-cyan-400');
+            }
+        });
+
+        midiChannelSelect.addEventListener('change', (e) => {
+            midiChannel = parseInt(e.target.value, 10);
+            addLog('MIDI', `Canale NTS-1 impostato su: CH ${midiChannel + 1}`, 'text-zinc-400');
+        });
+
+        refreshMidiBtn.addEventListener('click', () => {
+            populateOutputDevices();
+            addLog('Sistema', 'Elenco porte MIDI aggiornato', 'text-zinc-400');
+        });
+
+        function sendMidiNoteOn(noteNumber, vel = baseVelocity) {
+            const target = soundTargetSelect.value;
+
+            // Internal Web Audio
+            if (target === 'internal' || target === 'both') {
+                playInternalSynthNoteOn(noteNumber, vel);
+            }
+
+            // Hardware MIDI
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    const status = 0x90 | (midiChannel & 0x0F);
+                    selectedOutput.send([status, noteNumber, vel]);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            highlightPianoKey(noteNumber, true);
+            const name = getNoteName(noteNumber);
+            addLog('Note On', `${name} (MIDI ${noteNumber}) | Vel: ${vel}`, 'text-emerald-400');
+        }
+
+        function sendMidiNoteOff(noteNumber) {
+            const target = soundTargetSelect.value;
+
+            if (target === 'internal' || target === 'both') {
+                stopInternalSynthNoteOff(noteNumber);
+            }
+
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    const status = 0x80 | (midiChannel & 0x0F);
+                    selectedOutput.send([status, noteNumber, 0]);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            highlightPianoKey(noteNumber, false);
+            const name = getNoteName(noteNumber);
+            addLog('Note Off', `${name} (MIDI ${noteNumber})`, 'text-zinc-500');
+        }
+
+        function panicAllNotesOff() {
+            clearAllTimers();
+            stopAllInternalVoices();
+
+            if (selectedOutput) {
+                try {
+                    const ccStatus = 0xB0 | (midiChannel & 0x0F);
+                    selectedOutput.send([ccStatus, 120, 0]);
+                    selectedOutput.send([ccStatus, 123, 0]);
+                    selectedOutput.send([ccStatus, 64, 0]);
+                    for (let n = 0; n < 128; n++) {
+                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n, 0]);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            currentlyPlayingMidiNotes.clear();
+            document.querySelectorAll('.piano-key').forEach(el => el.classList.remove('active'));
+            addLog('PANIC', 'Inviato ALL NOTES OFF (Reset totale note Korg NTS-1 & Synth Interno)', 'text-red-400 font-bold');
+        }
+
+        panicBtn.addEventListener('click', () => {
+            stopPlayback();
+            panicAllNotesOff();
+        });
+
+        function getNoteName(midiNote) {
+            const name = NOTE_NAMES[midiNote % 12];
+            const oct = Math.floor(midiNote / 12) - 1;
+            return `${name}${oct}`;
+        }
+
+        function toggleRecording() {
+            isRecording = !isRecording;
+            if (isRecording) {
+                recBtn.className = 'px-3 py-1.5 bg-red-900/50 hover:bg-red-900 text-red-200 rounded-lg text-xs font-bold flex items-center gap-2 border border-red-600 transition shadow-lg';
+                recIndicator.className = 'w-2.5 h-2.5 rounded-full bg-red-500 led-rec';
+                recLabel.textContent = 'REC ON';
+                lastRecordedMmlOctave = keyboardBaseOctave;
+                addLog('REC', 'Registrazione attiva: suona con la tastiera PC (QWERTY) o clicca sui tasti', 'text-red-400 font-bold');
+            } else {
+                recBtn.className = 'px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-2 border border-zinc-700 transition';
+                recIndicator.className = 'w-2.5 h-2.5 rounded-full bg-zinc-500';
+                recLabel.textContent = 'REC OFF';
+                addLog('REC', 'Registrazione terminata', 'text-zinc-400');
+            }
+        }
+
+        recBtn.addEventListener('click', toggleRecording);
+
+        function recordNoteToText(midiNote) {
+            if (!isRecording) return;
+
+            const mode = document.querySelector('input[name="syntaxMode"]:checked').value;
+            const stepLen = recordStepLength.value;
+            let token = (mode === 'mml') ? midiNoteToMML(midiNote, stepLen) : midiNoteToABC(midiNote, stepLen);
+
+            appendTokenToEditor(token);
+        }
+
+        function recordRestToText() {
+            if (!isRecording) return;
+            const mode = document.querySelector('input[name="syntaxMode"]:checked').value;
+            const stepLen = recordStepLength.value;
+            let token = (mode === 'mml') ? `r${stepLen}` : (stepLen === '4') ? 'z2' : (stepLen === '2') ? 'z4' : (stepLen === '16') ? 'z/2' : 'z';
+
+            appendTokenToEditor(token);
+            addLog('REC', `Inserita Pausa: ${token}`, 'text-orange-300');
+        }
+
+        insertRestBtn.addEventListener('click', recordRestToText);
+
+        function appendTokenToEditor(token) {
+            let currentText = sequenceEditor.value;
+            if (currentText.length > 0 && !currentText.endsWith(' ') && !currentText.endsWith('\n')) {
+                currentText += ' ';
+            }
+            sequenceEditor.value = currentText + token + ' ';
+            sequenceEditor.scrollTop = sequenceEditor.scrollHeight;
+
+            const parsed = parseNotationText(sequenceEditor.value);
+            renderVisualizerTokens(parsed.events);
+        }
+
+        function midiNoteToABC(midiNote, stepLen) {
+            const oct = Math.floor(midiNote / 12) - 1;
+            const semi = midiNote % 12;
+            const pitchNames = ['C', '^C', 'D', '^D', 'E', 'F', '^F', 'G', '^G', 'A', '^A', 'B'];
+            const p = pitchNames[semi];
+
+            let acc = '';
+            let noteLetter = p;
+            if (p.startsWith('^')) {
+                acc = '^';
+                noteLetter = p.substring(1);
+            }
+
+            let result = '';
+            if (oct === 4) result = `${acc}${noteLetter.toUpperCase()}`;
+            else if (oct === 5) result = `${acc}${noteLetter.toLowerCase()}`;
+            else if (oct < 4) result = `${acc}${noteLetter.toUpperCase()}${','.repeat(4 - oct)}`;
+            else result = `${acc}${noteLetter.toLowerCase()}${"'".repeat(oct - 5)}`;
+
+            if (stepLen === '16') result += '/2';
+            else if (stepLen === '4') result += '2';
+            else if (stepLen === '2') result += '4';
+
+            return result;
+        }
+
+        function midiNoteToMML(midiNote, stepLen) {
+            const oct = Math.floor(midiNote / 12) - 1;
+            const semi = midiNote % 12;
+            const mmlNames = ['c', 'c+', 'd', 'd+', 'e', 'f', 'f+', 'g', 'g+', 'a', 'a+', 'b'];
+            const pitchStr = mmlNames[semi];
+
+            let prefix = '';
+            if (oct !== lastRecordedMmlOctave) {
+                prefix = `o${oct} `;
+                lastRecordedMmlOctave = oct;
+            }
+
+            return `${prefix}${pitchStr}${stepLen}`;
+        }
+
+        clearEditorBtn.addEventListener('click', () => {
+            sequenceEditor.value = '';
+            stopPlayback();
+            renderVisualizerTokens([]);
+            addLog('Editor', 'Contenuto editor cancellato', 'text-zinc-400');
+        });
+
+        function convertTextToMelodicABC(text, lang = 'it', scaleKey = 'minor_pentatonic', rootKey = 'C3') {
+            if (!text || text.trim().length === 0) return '';
+
+            const baseMidi = ROOT_NOTES[rootKey] || 48;
+            const scaleIntervals = HARMONIC_SCALES[scaleKey] || HARMONIC_SCALES.minor_pentatonic;
+            const lines = text.split('\n');
+            const abcLines = [];
+
+            abcLines.push(`// Melodia generata da Testo/Poesia`);
+            abcLines.push(`Q: 120`);
+            abcLines.push(`L: 1/8`);
+            abcLines.push(`K: C`);
+
+            let currentScaleIdx = Math.floor(scaleIntervals.length / 2); // Start near middle
+            const vowelWeightsIt = { 'u': 0, 'o': 1, 'a': 2, 'e': 3, 'i': 4 };
+            const vowelWeightsEn = { 'u': 0, 'o': 1, 'a': 2, 'e': 3, 'y': 4, 'i': 4 };
+            const vowelMap = lang === 'en' ? vowelWeightsEn : vowelWeightsIt;
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+
+                // Tokenize into words while keeping punctuation attached
+                const tokens = line.match(/[a-zA-ZàèéìòùÀÈÉÌÒÙ']+|[.,;:!?]+/g) || [];
+                const lineNotes = [];
+
+                for (let i = 0; i < tokens.length; i++) {
+                    const token = tokens[i];
+                    
+                    // If punctuation token
+                    if (/^[.,;:!?]+$/.test(token)) {
+                        if (token.includes(',')) {
+                            // Breathe rest
+                            lineNotes.push('z');
+                        } else if (token.includes(';') || token.includes(':')) {
+                            lineNotes.push('z2');
+                        } else if (token.includes('.') || token.includes('!') || token.includes('?')) {
+                            // Cadential resolution: force root or fifth note + pause
+                            const resolutionMidi = baseMidi + (scaleIntervals[0] || 0);
+                            const resAbc = midiNoteToABC(resolutionMidi, '8');
+                            lineNotes.push(`${resAbc}2 z2 |`);
+                            currentScaleIdx = 0; // reset to tonic
+                        }
+                        continue;
+                    }
+
+                    // Word analysis: find vowels
+                    const cleanWord = token.toLowerCase();
+                    const vowels = [];
+                    let consonantDelta = 0;
+
+                    for (let char of cleanWord) {
+                        const normalizedChar = char === 'à' ? 'a' : char === 'è' || char === 'é' ? 'e' : char === 'ì' ? 'i' : char === 'ò' ? 'o' : char === 'ù' ? 'u' : char;
+                        if (vowelMap[normalizedChar] !== undefined) {
+                            vowels.push(vowelMap[normalizedChar]);
+                        } else if (['p', 't', 'k', 'c', 's', 'z', 'x'].includes(char)) {
+                            consonantDelta += 1; // sharper/percussive consonant
+                        } else if (['l', 'm', 'n', 'r'].includes(char)) {
+                            consonantDelta -= 1; // smooth liquid/nasal consonant
+                        }
+                    }
+
+                    if (vowels.length === 0) {
+                        vowels.push(2); // fallback neutral vowel
+                    }
+
+                    // Syllable/vowel mapping to scale steps
+                    for (let vIdx = 0; vIdx < vowels.length; vIdx++) {
+                        const vWeight = vowels[vIdx];
+                        
+                        // Map vowel formant (0..4) into scale range
+                        const targetStep = Math.round((vWeight / 4) * (scaleIntervals.length - 1));
+                        
+                        // Smooth step-wise voice leading
+                        const stepDiff = targetStep - currentScaleIdx;
+                        const direction = stepDiff === 0 ? (consonantDelta >= 0 ? 1 : -1) : Math.sign(stepDiff);
+                        const stepAmount = Math.min(2, Math.abs(stepDiff));
+                        
+                        currentScaleIdx = Math.max(0, Math.min(scaleIntervals.length - 1, currentScaleIdx + (direction * stepAmount)));
+                        
+                        const midiNote = baseMidi + scaleIntervals[currentScaleIdx];
+                        
+                        // Rhythm: single vowel in multi-syllable word = 1/8 note.
+                        // End of word or mono-syllable gets slight accent.
+                        let stepDur = '8';
+                        if (vowels.length > 2 && vIdx < vowels.length - 1) {
+                            stepDur = '16'; // 1/16 for rapid syllables
+                        }
+
+                        const noteAbc = midiNoteToABC(midiNote, stepDur);
+                        lineNotes.push(noteAbc);
+                    }
+                }
+
+                if (lineNotes.length > 0) {
+                    abcLines.push(lineNotes.join(' ') + ' |');
+                }
+            }
+
+            return abcLines.join('\n');
+        }
+
+        // Toggle Text Sonification Panel Visibility
+        let isTextGenOpen = true;
+        toggleTextGenBtn.addEventListener('click', () => {
+            isTextGenOpen = !isTextGenOpen;
+            if (isTextGenOpen) {
+                textGenBody.classList.remove('hidden');
+                textGenIcon.className = 'fa-solid fa-chevron-down text-[10px]';
+                textGenBtnLabel.textContent = 'Chiudi';
+            } else {
+                textGenBody.classList.add('hidden');
+                textGenIcon.className = 'fa-solid fa-chevron-right text-[10px]';
+                textGenBtnLabel.textContent = 'Apri';
+            }
+        });
+
+        // Sample Text Selection Handler
+        textSampleSelect.addEventListener('change', (e) => {
+            const key = e.target.value;
+            if (POETRY_SAMPLES[key] !== undefined) {
+                poetrySourceText.value = POETRY_SAMPLES[key];
+                if (key === 'shakespeare' || key === 'synthwave_poetry') {
+                    document.querySelector('input[name="poetryLang"][value="en"]').checked = true;
+                } else if (key !== 'blank') {
+                    document.querySelector('input[name="poetryLang"][value="it"]').checked = true;
+                }
+            }
+        });
+
+        // Generate Music from Text Handler
+        function executeTextToMusicGeneration(andPlay = false) {
+            const text = poetrySourceText.value;
+            if (!text || text.trim().length === 0) {
+                addLog('Linguo-Musica', 'Inserisci o incolla del testo prima di generare la melodia', 'text-yellow-400');
+                return;
+            }
+
+            const lang = document.querySelector('input[name="poetryLang"]:checked')?.value || 'it';
+            const scale = poetryScaleSelect.value;
+            const root = poetryRootSelect.value;
+
+            const abcOutput = convertTextToMelodicABC(text, lang, scale, root);
+            sequenceEditor.value = abcOutput;
+            stopPlayback();
+
+            // Set syntax mode to ABC
+            const abcRadio = document.querySelector('input[name="syntaxMode"][value="abc"]');
+            if (abcRadio) abcRadio.checked = true;
+
+            const parsed = parseNotationText(sequenceEditor.value);
+            renderVisualizerTokens(parsed.events);
+
+            addLog('Linguo-Musica', `Generata melodia da testo (${parsed.events.length} note/respiri, Scala: ${scale}, Tonica: ${root})`, 'text-purple-300 font-bold');
+
+            if (andPlay) {
+                startPlayback();
+            }
+        }
+
+        generateMusicFromTextBtn.addEventListener('click', () => executeTextToMusicGeneration(false));
+        generateAndPlayTextBtn.addEventListener('click', () => executeTextToMusicGeneration(true));
+
+        function parseNotationText(text) {
+            const lines = text.split('\n');
+            const cleanLines = [];
+            let bpmFromHeader = null;
+            let unitLength = 1 / 16;
+            let isAbcHeaderPresent = false;
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line || line.startsWith('//') || line.startsWith(';')) continue;
+                if (line.startsWith('%')) continue;
+
+                if (line.startsWith('Q:')) {
+                    const m = line.match(/Q:\s*(\d+)/i);
+                    if (m) bpmFromHeader = parseInt(m[1], 10);
+                    isAbcHeaderPresent = true;
+                    continue;
+                }
+                if (line.startsWith('L:')) {
+                    const m = line.match(/L:\s*1\/(\d+)/i);
+                    if (m) unitLength = 1 / parseInt(m[1], 10);
+                    isAbcHeaderPresent = true;
+                    continue;
+                }
+                if (line.startsWith('T:') || line.startsWith('M:') || line.startsWith('K:') || line.startsWith('X:')) {
+                    isAbcHeaderPresent = true;
+                    continue;
+                }
+
+                cleanLines.push(line);
+            }
+
+            const cleanText = cleanLines.join(' ');
+            const selectedMode = document.querySelector('input[name="syntaxMode"]:checked').value;
+            const useMml = selectedMode === 'mml' || (!isAbcHeaderPresent && (cleanText.includes('o') || cleanText.includes('t') || cleanText.includes('l') || cleanText.includes('>')));
+
+            return useMml ? parseMML(cleanText, bpmFromHeader) : parseABC(cleanText, unitLength, bpmFromHeader);
+        }
+
+        function parseMML(text, bpmOverride) {
+            const events = [];
+            let currentOctave = 4;
+            let currentDefLength = 16;
+            let currentTempo = bpmOverride || bpm;
+
+            const tokens = text.match(/([toqlr><&])(\d+)?|\[[^\]]+\](\d+)?|([a-gA-G][+#-]?)(\d+)?|([|])/gi) || [];
+
+            for (let token of tokens) {
+                token = token.trim();
+                if (!token || token === '|') continue;
+
+                const lower = token.toLowerCase();
+
+                if (lower.startsWith('t')) {
+                    const val = parseInt(lower.substring(1), 10);
+                    if (!isNaN(val) && val > 20) {
+                        currentTempo = val;
+                        events.push({ type: 'tempo', bpm: val, token });
+                    }
+                    continue;
+                }
+
+                if (lower.startsWith('o')) {
+                    const val = parseInt(lower.substring(1), 10);
+                    if (!isNaN(val)) currentOctave = Math.max(0, Math.min(8, val));
+                    continue;
+                }
+
+                if (lower === '>') { currentOctave = Math.min(8, currentOctave + 1); continue; }
+                if (lower === '<') { currentOctave = Math.max(0, currentOctave - 1); continue; }
+
+                if (lower.startsWith('l')) {
+                    const val = parseInt(lower.substring(1), 10);
+                    if (!isNaN(val)) currentDefLength = val;
+                    continue;
+                }
+
+                if (lower.startsWith('r')) {
+                    const lenMatch = token.match(/\d+/);
+                    const lenVal = lenMatch ? parseInt(lenMatch[0], 10) : currentDefLength;
+                    events.push({ type: 'rest', duration: 4 / lenVal, token });
+                    continue;
+                }
+
+                if (token.startsWith('[')) {
+                    const chordContentMatch = token.match(/\[([^\]]+)\](\d+)?/);
+                    if (chordContentMatch) {
+                        const notesInChord = chordContentMatch[1].trim().split(/\s+/);
+                        const lenVal = chordContentMatch[2] ? parseInt(chordContentMatch[2], 10) : currentDefLength;
+                        const durationQuarter = 4 / lenVal;
+
+                        const midiNotes = [];
+                        let tempOctave = currentOctave;
+
+                        for (let n of notesInChord) {
+                            if (n === '>') { tempOctave++; continue; }
+                            if (n === '<') { tempOctave--; continue; }
+                            const nMatch = n.match(/([a-gA-G])([+#-])?/i);
+                            if (nMatch) {
+                                const pitch = nMatch[1].toLowerCase();
+                                const acc = nMatch[2];
+                                let semi = BASE_NOTE_MAP[pitch] || 0;
+                                if (acc === '#' || acc === '+') semi += 1;
+                                if (acc === '-') semi -= 1;
+                                midiNotes.push((tempOctave + 1) * 12 + semi);
+                            }
+                        }
+
+                        if (midiNotes.length > 0) {
+                            events.push({ type: 'note', midiNotes, duration: durationQuarter, token });
+                        }
+                    }
+                    continue;
+                }
+
+                const noteMatch = token.match(/([a-gA-G])([+#-])?(\d+)?/);
+                if (noteMatch) {
+                    const pitch = noteMatch[1].toLowerCase();
+                    const acc = noteMatch[2];
+                    const lenVal = noteMatch[3] ? parseInt(noteMatch[3], 10) : currentDefLength;
+                    let semi = BASE_NOTE_MAP[pitch] || 0;
+                    if (acc === '#' || acc === '+') semi += 1;
+                    if (acc === '-') semi -= 1;
+
+                    events.push({ type: 'note', midiNotes: [(currentOctave + 1) * 12 + semi], duration: 4 / lenVal, token });
+                }
+            }
+
+            return { events, initialBpm: bpmOverride || currentTempo };
+        }
+
+        function parseABC(text, unitLength, bpmOverride) {
+            const events = [];
+            const tokenRegex = /(\[[^\]]+\]|\^?[_]?[=]?[A-Ga-g][',]*[0-9]*\/?[0-9]*|z[0-9]*\/?[0-9]*|[|])/g;
+            const matches = text.match(tokenRegex) || [];
+
+            for (let token of matches) {
+                token = token.trim();
+                if (!token || token === '|') continue;
+
+                if (token.startsWith('z') || token.startsWith('Z')) {
+                    const mult = parseAbcDuration(token.substring(1));
+                    events.push({ type: 'rest', duration: mult * (unitLength * 4), token });
+                    continue;
+                }
+
+                if (token.startsWith('[')) {
+                    const m = token.match(/\[([^\]]+)\]([0-9]*\/?[0-9]*)?/);
+                    if (m) {
+                        const chordBody = m[1];
+                        const durationMultiplier = parseAbcDuration(m[2] || '');
+                        const singleNoteTokens = chordBody.match(/(\^?[_]?[=]?[A-Ga-g][',]*)/g) || [];
+                        const midiNotes = singleNoteTokens.map(t => parseAbcSinglePitch(t)).filter(n => n !== null);
+
+                        if (midiNotes.length > 0) {
+                            events.push({ type: 'note', midiNotes, duration: durationMultiplier * (unitLength * 4), token });
+                        }
+                    }
+                    continue;
+                }
+
+                const notePitchMatch = token.match(/(\^?[_]?[=]?[A-Ga-g][',]*)([0-9]*\/?[0-9]*)?/);
+                if (notePitchMatch) {
+                    const pitchPart = notePitchMatch[1];
+                    const durPart = notePitchMatch[2] || '';
+                    const midiNote = parseAbcSinglePitch(pitchPart);
+                    const durationMultiplier = parseAbcDuration(durPart);
+
+                    if (midiNote !== null) {
+                        events.push({ type: 'note', midiNotes: [midiNote], duration: durationMultiplier * (unitLength * 4), token });
+                    }
+                }
+            }
+
+            return { events, initialBpm: bpmOverride || bpm };
+        }
+
+        function parseAbcDuration(durStr) {
+            if (!durStr) return 1;
+            if (durStr === '/') return 0.5;
+            if (durStr.startsWith('/')) {
+                const denom = parseInt(durStr.substring(1), 10);
+                return isNaN(denom) || denom === 0 ? 0.5 : 1 / denom;
+            }
+            if (durStr.includes('/')) {
+                const parts = durStr.split('/');
+                const num = parseInt(parts[0], 10) || 1;
+                const den = parseInt(parts[1], 10) || 2;
+                return num / den;
+            }
+            const val = parseFloat(durStr);
+            return isNaN(val) ? 1 : val;
+        }
+
+        function parseAbcSinglePitch(pitchStr) {
+            const m = pitchStr.match(/(\^|_|=)?([A-Ga-g])([',]*)/);
+            if (!m) return null;
+
+            const accidental = m[1];
+            const letter = m[2];
+            const octaveMods = m[3] || '';
+
+            let octave = (letter === letter.toLowerCase()) ? 5 : 4;
+
+            for (let ch of octaveMods) {
+                if (ch === "'") octave++;
+                if (ch === ",") octave--;
+            }
+
+            let semi = BASE_NOTE_MAP[letter.toLowerCase()] || 0;
+            if (accidental === '^') semi += 1;
+            if (accidental === '_') semi -= 1;
+
+            return (octave + 1) * 12 + semi;
+        }
+
+        function createStandardMidiFile(events, targetBpm, targetChannel = midiChannel) {
+            const ticksPerQuarter = 480;
+            const microsecondsPerQuarter = Math.round(60000000 / targetBpm);
+            const trackBytes = [];
+
+            function writeVarLen(val) {
+                let buffer = val & 0x7F;
+                while ((val >>= 7)) {
+                    buffer <<= 8;
+                    buffer |= ((val & 0x7F) | 0x80);
+                }
+                while (true) {
+                    trackBytes.push(buffer & 0xFF);
+                    if (buffer & 0x80) buffer >>= 8;
+                    else break;
+                }
+            }
+
+            // Tempo Meta Event
+            trackBytes.push(0x00, 0xFF, 0x51, 0x03);
+            trackBytes.push((microsecondsPerQuarter >> 16) & 0xFF);
+            trackBytes.push((microsecondsPerQuarter >> 8) & 0xFF);
+            trackBytes.push(microsecondsPerQuarter & 0xFF);
+
+            let pendingDelta = 0;
+
+            for (const evt of events) {
+                if (evt.type === 'tempo') {
+                    const us = Math.round(60000000 / evt.bpm);
+                    writeVarLen(pendingDelta);
+                    pendingDelta = 0;
+                    trackBytes.push(0xFF, 0x51, 0x03, (us >> 16) & 0xFF, (us >> 8) & 0xFF, us & 0xFF);
+                } else if (evt.type === 'rest') {
+                    pendingDelta += Math.round((evt.duration || 0.25) * ticksPerQuarter);
+                } else if (evt.type === 'note') {
+                    const totalTicks = Math.round((evt.duration || 0.25) * ticksPerQuarter);
+                    const noteOnTicks = Math.max(1, Math.round(totalTicks * gatePercentage));
+                    const noteOffWait = totalTicks - noteOnTicks;
+                    const ch = targetChannel & 0x0F;
+
+                    evt.midiNotes.forEach((midi, idx) => {
+                        writeVarLen(idx === 0 ? pendingDelta : 0);
+                        if (idx === 0) pendingDelta = 0;
+                        trackBytes.push(0x90 | ch, midi, baseVelocity);
+                    });
+
+                    evt.midiNotes.forEach((midi, idx) => {
+                        writeVarLen(idx === 0 ? noteOnTicks : 0);
+                        trackBytes.push(0x80 | ch, midi, 0);
+                    });
+
+                    pendingDelta += noteOffWait;
+                }
+            }
+
+            writeVarLen(pendingDelta);
+            trackBytes.push(0xFF, 0x2F, 0x00);
+
+            const header = [
+                0x4D, 0x54, 0x68, 0x64,
+                0x00, 0x00, 0x00, 0x06,
+                0x00, 0x00,
+                0x00, 0x01,
+                (ticksPerQuarter >> 8) & 0xFF, ticksPerQuarter & 0xFF
+            ];
+
+            const trackLength = trackBytes.length;
+            const trackHeader = [
+                0x4D, 0x54, 0x72, 0x6B,
+                (trackLength >> 24) & 0xFF,
+                (trackLength >> 16) & 0xFF,
+                (trackLength >> 8) & 0xFF,
+                trackLength & 0xFF
+            ];
+
+            const fullBytes = new Uint8Array(header.length + trackHeader.length + trackBytes.length);
+            fullBytes.set(header, 0);
+            fullBytes.set(trackHeader, header.length);
+            fullBytes.set(trackBytes, header.length + trackHeader.length);
+
+            return fullBytes;
+        }
+
+        exportMidiBtn.addEventListener('click', () => {
+            const parsed = parseNotationText(sequenceEditor.value);
+            if (!parsed.events || parsed.events.length === 0) {
+                addLog('Export', 'Nessuna nota trovata per esportare il file MIDI', 'text-yellow-400');
+                return;
+            }
+
+            const targetTempo = parsed.initialBpm || bpm;
+            const midiBytes = createStandardMidiFile(parsed.events, targetTempo, midiChannel);
+            const blob = new Blob([midiBytes], { type: 'audio/midi' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'korg_nts1_sequence.mid';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            addLog('Export MIDI', `File MIDI scaricato con successo (korg_nts1_sequence.mid, ${parsed.events.length} passi @ ${targetTempo} BPM)`, 'text-emerald-400 font-bold');
+        });
+
+        function renderVisualizerTokens(events) {
+            tokenVisualizer.innerHTML = '';
+            if (events.length === 0) {
+                tokenVisualizer.innerHTML = '<span class="text-zinc-600 italic">Nessuna nota trovata nel testo.</span>';
+                stepCounter.textContent = 'Passi: 0 / 0';
+                return;
+            }
+
+            stepCounter.textContent = `Passi: 0 / ${events.length}`;
+
+            events.forEach((evt, idx) => {
+                const span = document.createElement('span');
+                span.className = 'text-token px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 font-mono-code transition-all';
+                span.dataset.stepIndex = idx;
+
+                if (evt.type === 'tempo') {
+                    span.textContent = `Tempo: ${evt.bpm}`;
+                    span.classList.add('text-cyan-400', 'border-cyan-800/40');
+                } else if (evt.type === 'rest') {
+                    span.textContent = `[Pausa ${evt.token}]`;
+                    span.classList.add('text-zinc-500');
+                } else if (evt.type === 'note') {
+                    const noteNames = evt.midiNotes.map(n => getNoteName(n)).join('+');
+                    span.textContent = `${noteNames}`;
+                    span.title = `Token: ${evt.token} (${evt.duration.toFixed(2)} q)`;
+                }
+
+                tokenVisualizer.appendChild(span);
+            });
+        }
+
+        function highlightVisualToken(index) {
+            document.querySelectorAll('.text-token').forEach(el => el.classList.remove('active-token'));
+            const target = document.querySelector(`.text-token[data-step-index="${index}"]`);
+            if (target) {
+                target.classList.add('active-token');
+                target.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+            if (parsedEvents.length > 0) {
+                stepCounter.textContent = `Passo: ${index + 1} / ${parsedEvents.length}`;
+            }
+        }
+
+        function startPlayback() {
+            getAudioContext();
+            const parsed = parseNotationText(sequenceEditor.value);
+            parsedEvents = parsed.events;
+
+            if (parsedEvents.length === 0) {
+                addLog('Sequencer', 'Nessuna nota valida trovata nel testo', 'text-yellow-400');
+                return;
+            }
+
+            if (parsed.initialBpm && parsed.initialBpm !== bpm) {
+                bpm = parsed.initialBpm;
+                bpmSlider.value = bpm;
+                bpmValue.textContent = bpm;
+            }
+
+            renderVisualizerTokens(parsedEvents);
+
+            isPlaying = true;
+            isPaused = false;
+            updatePlaybackStatusUI();
+            addLog('Sequencer', `Avvio playback (${parsedEvents.length} passi @ ${bpm} BPM)`, 'text-emerald-400');
+
+            if (currentStepIndex >= parsedEvents.length) {
+                currentStepIndex = 0;
+            }
+
+            scheduleNextStep();
+        }
+
+        function scheduleNextStep() {
+            if (!isPlaying || isPaused) return;
+
+            if (currentStepIndex >= parsedEvents.length) {
+                if (isLooping) {
+                    currentStepIndex = 0;
+                } else {
+                    stopPlayback();
+                    return;
+                }
+            }
+
+            const evt = parsedEvents[currentStepIndex];
+            highlightVisualToken(currentStepIndex);
+
+            const quarterNoteMs = (60000 / bpm);
+            const stepDurationMs = (evt.duration || 0.25) * quarterNoteMs;
+
+            if (evt.type === 'tempo') {
+                bpm = evt.bpm;
+                bpmSlider.value = bpm;
+                bpmValue.textContent = bpm;
+            } else if (evt.type === 'note') {
+                const noteDurationMs = Math.max(25, stepDurationMs * gatePercentage);
+
+                evt.midiNotes.forEach(midiNote => {
+                    sendMidiNoteOn(midiNote);
+                    currentlyPlayingMidiNotes.add(midiNote);
+
+                    const t = setTimeout(() => {
+                        sendMidiNoteOff(midiNote);
+                        currentlyPlayingMidiNotes.delete(midiNote);
+                    }, noteDurationMs);
+                    noteOffTimers.push(t);
+                });
+            }
+
+            currentStepIndex++;
+
+            playbackTimer = setTimeout(() => {
+                scheduleNextStep();
+            }, stepDurationMs);
+        }
+
+        function pausePlayback() {
+            if (!isPlaying) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                clearAllTimers();
+                silenceActiveNotes();
+                playbackStatusLabel.textContent = 'Pausa';
+                playbackLed.className = 'w-2 h-2 rounded-full bg-yellow-500 led-orange';
+                addLog('Sequencer', 'Playback in PAUSA', 'text-yellow-400');
+            } else {
+                isPlaying = true;
+                updatePlaybackStatusUI();
+                scheduleNextStep();
+                addLog('Sequencer', 'Playback RIPRESO', 'text-emerald-400');
+            }
+        }
+
+        function stopPlayback() {
+            clearAllTimers();
+            silenceActiveNotes();
+            isPlaying = false;
+            isPaused = false;
+            currentStepIndex = 0;
+            updatePlaybackStatusUI();
+            document.querySelectorAll('.text-token').forEach(el => el.classList.remove('active-token'));
+            if (parsedEvents.length > 0) {
+                stepCounter.textContent = `Passo: 0 / ${parsedEvents.length}`;
+            }
+            addLog('Sequencer', 'Playback FERMATO', 'text-zinc-400');
+        }
+
+        function clearAllTimers() {
+            if (playbackTimer) clearTimeout(playbackTimer);
+            playbackTimer = null;
+            noteOffTimers.forEach(t => clearTimeout(t));
+            noteOffTimers = [];
+        }
+
+        function silenceActiveNotes() {
+            currentlyPlayingMidiNotes.forEach(note => sendMidiNoteOff(note));
+            currentlyPlayingMidiNotes.clear();
+            stopAllInternalVoices();
+        }
+
+        function updatePlaybackStatusUI() {
+            if (isPlaying && !isPaused) {
+                playbackStatusLabel.textContent = 'In Riproduzione...';
+                playbackLed.className = 'w-2 h-2 rounded-full bg-emerald-500 led-active';
+                playBtn.classList.add('ring-2', 'ring-emerald-400');
+            } else if (isPaused) {
+                playbackStatusLabel.textContent = 'Pausa';
+                playbackLed.className = 'w-2 h-2 rounded-full bg-yellow-500 led-orange';
+                playBtn.classList.remove('ring-2', 'ring-emerald-400');
+            } else {
+                playbackStatusLabel.textContent = 'Fermo';
+                playbackLed.className = 'w-2 h-2 rounded-full bg-zinc-600';
+                playBtn.classList.remove('ring-2', 'ring-emerald-400');
+            }
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (isPlaying && !isPaused) {
+                stopPlayback();
+                startPlayback();
+            } else {
+                startPlayback();
+            }
+        });
+
+        pauseBtn.addEventListener('click', pausePlayback);
+        stopBtn.addEventListener('click', stopPlayback);
+
+        loopToggleBtn.addEventListener('click', () => {
+            isLooping = !isLooping;
+            if (isLooping) {
+                loopToggleBtn.className = 'py-2.5 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/50 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition';
+                loopLabel.textContent = 'LOOP ON';
+            } else {
+                loopToggleBtn.className = 'py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-zinc-700 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition';
+                loopLabel.textContent = 'LOOP OFF';
+            }
+        });
+
+        bpmSlider.addEventListener('input', (e) => {
+            bpm = parseInt(e.target.value, 10);
+            bpmValue.textContent = bpm;
+        });
+
+        gateSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            gatePercentage = val / 100;
+            gateValue.textContent = `${val}%`;
+        });
+
+        presetSelect.addEventListener('change', (e) => {
+            const key = e.target.value;
+            if (PRESETS[key] !== undefined) {
+                sequenceEditor.value = PRESETS[key];
+                stopPlayback();
+                const parsed = parseNotationText(sequenceEditor.value);
+                renderVisualizerTokens(parsed.events);
+                addLog('Preset', `Caricato preset: ${e.target.options[e.target.selectedIndex].text}`, 'text-orange-400');
+            }
+        });
+
+        sequenceEditor.addEventListener('input', () => {
+            if (!isPlaying) {
+                const parsed = parseNotationText(sequenceEditor.value);
+                renderVisualizerTokens(parsed.events);
+            }
+        });
+
+        importBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                sequenceEditor.value = ev.target.result;
+                stopPlayback();
+                const parsed = parseNotationText(sequenceEditor.value);
+                renderVisualizerTokens(parsed.events);
+                addLog('File', `Caricato file: ${file.name}`, 'text-emerald-400');
+            };
+            reader.readAsText(file);
+        });
+
+        exportBtn.addEventListener('click', () => {
+            const content = sequenceEditor.value;
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'nts1_sequence.abc';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            addLog('File', 'Sequenza esportata in nts1_sequence.abc', 'text-cyan-400');
+        });
+
+        function renderPianoKeyboard() {
+            pianoContainer.innerHTML = '';
+            const totalNotes = 24;
+            const whiteKeyIndices = [];
+            const blackKeyIndices = [];
+
+            for (let i = 0; i < totalNotes; i++) {
+                const noteInOct = i % 12;
+                if ([1, 3, 6, 8, 10].includes(noteInOct)) {
+                    blackKeyIndices.push(i);
+                } else {
+                    whiteKeyIndices.push(i);
+                }
+            }
+
+            const whiteContainer = document.createElement('div');
+            whiteContainer.className = 'w-full h-full flex relative z-10';
+
+            whiteKeyIndices.forEach(noteOffset => {
+                const midiNote = (keyboardBaseOctave + 1) * 12 + noteOffset;
+                const noteName = getNoteName(midiNote);
+                const qwertyKey = KEY_LABELS[noteOffset] || '';
+
+                const keyEl = document.createElement('div');
+                keyEl.className = 'white-key piano-key flex-1 h-full rounded-b-md border-r border-zinc-400 last:border-r-0 flex flex-col justify-end items-center pb-1 cursor-pointer select-none text-[10px] text-zinc-700 font-bold';
+                keyEl.dataset.midi = midiNote;
+                keyEl.dataset.offset = noteOffset;
+                keyEl.innerHTML = `
+                    <span class="text-[9px] text-zinc-500 font-mono-code">${qwertyKey}</span>
+                    <span class="text-[10px] leading-tight">${noteName}</span>
+                `;
+
+                attachKeyTouchEvents(keyEl, midiNote);
+                whiteContainer.appendChild(keyEl);
+            });
+
+            pianoContainer.appendChild(whiteContainer);
+
+            const totalWhite = whiteKeyIndices.length;
+            const whiteWidth = 100 / totalWhite;
+
+            blackKeyIndices.forEach(noteOffset => {
+                const midiNote = (keyboardBaseOctave + 1) * 12 + noteOffset;
+                const noteName = getNoteName(midiNote);
+                const qwertyKey = KEY_LABELS[noteOffset] || '';
+
+                const oct = Math.floor(noteOffset / 12);
+                const noteInOct = noteOffset % 12;
+
+                let whiteBefore = oct * 7;
+                if (noteInOct === 1) whiteBefore += 1;
+                else if (noteInOct === 3) whiteBefore += 2;
+                else if (noteInOct === 6) whiteBefore += 4;
+                else if (noteInOct === 8) whiteBefore += 5;
+                else if (noteInOct === 10) whiteBefore += 6;
+
+                const leftPercent = (whiteBefore * whiteWidth) - (whiteWidth * 0.32);
+
+                const blackKeyEl = document.createElement('div');
+                blackKeyEl.className = 'black-key piano-key absolute top-1 h-20 sm:h-24 rounded-b-md z-20 flex flex-col justify-end items-center pb-1 cursor-pointer select-none text-[9px] text-zinc-400 font-semibold';
+                blackKeyEl.style.width = `${whiteWidth * 0.65}%`;
+                blackKeyEl.style.left = `calc(${leftPercent}% + 4px)`;
+                blackKeyEl.dataset.midi = midiNote;
+                blackKeyEl.dataset.offset = noteOffset;
+                blackKeyEl.innerHTML = `
+                    <span class="text-[8px] text-zinc-400 font-mono-code">${qwertyKey}</span>
+                    <span class="text-[9px] leading-tight">${noteName}</span>
+                `;
+
+                attachKeyTouchEvents(blackKeyEl, midiNote);
+                pianoContainer.appendChild(blackKeyEl);
+            });
+
+            octaveDisplay.textContent = `C${keyboardBaseOctave}-B${keyboardBaseOctave + 1}`;
+        }
+
+        function highlightPianoKey(midiNote, isActive) {
+            const key = document.querySelector(`.piano-key[data-midi="${midiNote}"]`);
+            if (key) {
+                if (isActive) key.classList.add('active');
+                else key.classList.remove('active');
+            }
+        }
+
+        function attachKeyTouchEvents(el, midiNote) {
+            el.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                getAudioContext();
+                sendMidiNoteOn(midiNote);
+                recordNoteToText(midiNote);
+            });
+            el.addEventListener('mouseup', () => sendMidiNoteOff(midiNote));
+            el.addEventListener('mouseleave', () => sendMidiNoteOff(midiNote));
+
+            el.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                getAudioContext();
+                sendMidiNoteOn(midiNote);
+                recordNoteToText(midiNote);
+            }, { passive: false });
+
+            el.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                sendMidiNoteOff(midiNote);
+            }, { passive: false });
+        }
+
+        octaveMinusBtn.addEventListener('click', () => {
+            if (keyboardBaseOctave > 1) {
+                keyboardBaseOctave--;
+                renderPianoKeyboard();
+            }
+        });
+
+        octavePlusBtn.addEventListener('click', () => {
+            if (keyboardBaseOctave < 7) {
+                keyboardBaseOctave++;
+                renderPianoKeyboard();
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            const isTyping = ['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement?.tagName);
+
+            if (e.code === 'Space' && isRecording && !isTyping) {
+                e.preventDefault();
+                recordRestToText();
+                return;
+            }
+
+            if (isTyping || e.repeat) return;
+
+            if (KEYBOARD_MAP[e.code] !== undefined) {
+                e.preventDefault();
+                getAudioContext();
+                const noteOffset = KEYBOARD_MAP[e.code];
+                const midiNote = (keyboardBaseOctave + 1) * 12 + noteOffset;
+
+                pressedKeyboardCodes.add(e.code);
+                sendMidiNoteOn(midiNote);
+                recordNoteToText(midiNote);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const isTyping = ['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement?.tagName);
+            if (isTyping) return;
+
+            if (KEYBOARD_MAP[e.code] !== undefined) {
+                e.preventDefault();
+                const noteOffset = KEYBOARD_MAP[e.code];
+                const midiNote = (keyboardBaseOctave + 1) * 12 + noteOffset;
+
+                pressedKeyboardCodes.delete(e.code);
+                sendMidiNoteOff(midiNote);
+            }
+        });
+
+        function addLog(type, message, colorClass = 'text-zinc-300') {
+            logEventsCount++;
+            logCounter.textContent = `${logEventsCount} eventi`;
+
+            const now = new Date();
+            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+
+            const row = document.createElement('div');
+            row.className = `flex items-center gap-2 font-mono-code text-xs ${colorClass}`;
+            row.innerHTML = `
+                <span class="text-zinc-600 select-none">[${timeString}]</span>
+                <span class="font-bold px-1.5 py-0.2 bg-zinc-900 border border-zinc-800 rounded text-[10px] uppercase">${type}</span>
+                <span>${message}</span>
+            `;
+
+            midiLogContainer.appendChild(row);
+            midiLogContainer.scrollTop = midiLogContainer.scrollHeight;
+
+            if (midiLogContainer.children.length > 150) {
+                midiLogContainer.removeChild(midiLogContainer.children[0]);
+            }
+        }
+
+        clearLogBtn.addEventListener('click', () => {
+            midiLogContainer.innerHTML = '<div class="text-zinc-500 italic">Log cancellato. In attesa di nuovi eventi...</div>';
+            logEventsCount = 0;
+            logCounter.textContent = '0 eventi';
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            poetrySourceText.value = POETRY_SAMPLES.dante;
+            sequenceEditor.value = PRESETS.preset_synthwave;
+            renderPianoKeyboard();
+            const parsed = parseNotationText(sequenceEditor.value);
+            renderVisualizerTokens(parsed.events);
+            initWebMIDI();
+        });
+    </script>
+</body>
+</html>

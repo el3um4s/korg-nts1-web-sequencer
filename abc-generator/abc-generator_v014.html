@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Korg NTS-1 - ABC Song Arranger & Generator Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; touch-action: manipulation; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #09090b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        .led-active { box-shadow: 0 0 8px #22c55e, inset 0 0 4px #4ade80; }
+        .led-cyan { box-shadow: 0 0 8px #06b6d4, inset 0 0 4px #22d3ee; }
+        .led-orange { box-shadow: 0 0 8px #f97316, inset 0 0 4px #fb923c; }
+        .text-token.active-token {
+            background-color: #ea580c !important;
+            color: #ffffff !important;
+            border-radius: 3px;
+            padding: 1px 4px;
+            box-shadow: 0 0 8px rgba(234, 88, 12, 0.85);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-3 md:p-5 select-none overflow-x-hidden">
+
+    <!-- Header & Hardware Routing -->
+    <header class="max-w-7xl mx-auto w-full mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-500 shadow-lg">
+                <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">ABC SONG ARRANGER</h1>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">STUDIO PRO v1.4</span>
+                </div>
+                <p class="text-xs text-zinc-400">Generatore ABC con Metadati Completi, Import/Export ABC/JSON e Routing per Korg NTS-1</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap justify-end">
+            <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-xl text-xs">
+                <label for="soundTargetSelect" class="text-zinc-400 font-semibold flex items-center gap-1 text-[11px]">
+                    <i class="fa-solid fa-volume-high text-orange-400"></i> Uscita:
+                </label>
+                <select id="soundTargetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-medium">
+                    <option value="both">Entrambi (MIDI + Casse)</option>
+                    <option value="internal">Solo Casse PC / Mobile</option>
+                    <option value="midi">Solo Korg NTS-1 (MIDI)</option>
+                </select>
+            </div>
+
+            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium">
+                <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"></span>
+                <span id="statusText" class="text-zinc-300">Inizializzazione MIDI...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow">
+        
+        <!-- Left Column: Song Metadata & Composition Controls -->
+        <section class="lg:col-span-6 flex flex-col gap-3">
+            
+            <!-- Metadata & Composition Form -->
+            <div class="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl flex flex-col gap-3">
+                
+                <!-- Section 0: Metadata Info -->
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                    <span class="text-xs font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info"></i> Metadati del Brano (Header ABC)
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <button id="importAbcBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Carica file .abc">
+                            <i class="fa-solid fa-file-arrow-up text-orange-400"></i> Importa .ABC
+                        </button>
+                        <button id="importJsonBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-indigo-300 border border-zinc-700 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Carica pacchetto completo .json">
+                            <i class="fa-solid fa-folder-open text-indigo-400"></i> Importa .JSON
+                        </button>
+                        <input type="file" id="fileInputAbc" accept=".abc,.txt" class="hidden">
+                        <input type="file" id="fileInputJson" accept=".json" class="hidden">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div class="sm:col-span-2 flex flex-col gap-1">
+                        <label for="metaTitle" class="text-[10px] font-semibold text-zinc-400">Titolo del Brano (T:):</label>
+                        <input type="text" id="metaTitle" value="Nuova Composizione NTS-1" class="bg-zinc-950 border border-zinc-700 text-xs text-orange-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-orange-500 font-medium">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label for="metaComposer" class="text-[10px] font-semibold text-zinc-400">Autore / Compositore (C:):</label>
+                        <input type="text" id="metaComposer" value="Sam C. Tomasi" class="bg-zinc-950 border border-zinc-700 text-xs text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-orange-500">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label for="metaMeter" class="text-[10px] font-semibold text-zinc-400">Metro / Tempo (M:):</label>
+                        <select id="metaMeter" class="bg-zinc-950 border border-zinc-700 text-xs text-zinc-200 rounded px-2 py-1.5 focus:outline-none focus:border-orange-500 font-mono-code cursor-pointer">
+                            <option value="4/4" selected>4/4 (Tempo Standard)</option>
+                            <option value="3/4">3/4 (Valzer / Terzine)</option>
+                            <option value="6/8">6/8 (Ballata / Ondeggiante)</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2 flex flex-col gap-1">
+                        <label for="metaNotes" class="text-[10px] font-semibold text-zinc-400">Note / Commenti di Sintesi (%):</label>
+                        <input type="text" id="metaNotes" value="Ottimizzato per Korg NTS-1 Custom Oscillators" class="bg-zinc-950 border border-zinc-700 text-xs text-zinc-400 rounded px-2.5 py-1.5 focus:outline-none focus:border-orange-500">
+                    </div>
+                </div>
+
+                <!-- Section 1: Musical Parameters -->
+                <div class="flex items-center justify-between border-t border-b border-zinc-800 py-2 mt-1">
+                    <span class="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-sliders"></i> Parametri Strutturali & Armonici
+                    </span>
+                    <button id="autoMatchBtn" class="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded text-[10px] font-bold transition flex items-center gap-1.5" title="Imposta automaticamente l'oscillatore e la tonica ideale per genere e mood">
+                        <i class="fa-solid fa-wand-sparkles text-amber-400"></i> Auto-Match Consigliato
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <!-- Genere Musicale -->
+                    <div class="flex flex-col gap-1">
+                        <label for="genreStyleSelect" class="text-[11px] font-semibold text-zinc-400">1. Stile / Genere:</label>
+                        <select id="genreStyleSelect" class="bg-zinc-950 border border-zinc-700 text-purple-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-purple-500 cursor-pointer">
+                            <option value="synthwave">⚡ Synthwave / Retrowave</option>
+                            <option value="modal_jazz">🎷 Modal Jazz & Soul</option>
+                            <option value="lofi_study">☕ Chill Lo-Fi Study</option>
+                            <option value="ambient_cloud">🌌 Ambient Cloud & Meditation</option>
+                            <option value="classic_rock">🎸 Classic Rock Riff</option>
+                            <option value="punk_rock">⚡ Punk Rock High Energy</option>
+                            <option value="acid_groove">🧪 Acid 303 Groove</option>
+                            <option value="juno_pop">🎹 80s Synthpop (Juno Vibe)</option>
+                            <option value="chiptune">👾 8-Bit Arcade Chiptune</option>
+                            <option value="post_rock">🌧️ Post-Rock Atmosphere</option>
+                            <option value="space_drone">🪐 Sci-Fi Space Drone</option>
+                        </select>
+                    </div>
+
+                    <!-- Mood / Emotività -->
+                    <div class="flex flex-col gap-1">
+                        <label for="moodSelect" class="text-[11px] font-semibold text-zinc-400">2. Mood / Tonalità Emotiva:</label>
+                        <select id="moodSelect" class="bg-zinc-950 border border-zinc-700 text-amber-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer">
+                            <option value="cheerful">☀️ Allegro & Vivace (Maggiore)</option>
+                            <option value="melancholic" selected>🍂 Malinconico & Intimo (Minore/Dorico)</option>
+                            <option value="dark">🌑 Triste, Cupo & Freddo (Eolio/Locrio)</option>
+                            <option value="energetic">⚡ Veloce, Aggressivo & Martellante</option>
+                            <option value="dreamy">🌌 Spaziale, Sognante & Fluttuante</option>
+                            <option value="mysterious">🔮 Sospeso & Misterioso (Hirajoshi)</option>
+                        </select>
+                    </div>
+
+                    <!-- Struttura della Canzone -->
+                    <div class="flex flex-col gap-1 sm:col-span-2">
+                        <label for="songStructureSelect" class="text-[11px] font-semibold text-zinc-400 flex justify-between">
+                            <span>3. Struttura Formale del Brano:</span>
+                            <span id="structureHelpBadge" class="text-[10px] text-cyan-400 font-mono-code">Pop / Rock Standard</span>
+                        </label>
+                        <select id="songStructureSelect" class="bg-zinc-950 border border-zinc-700 text-cyan-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-cyan-500 cursor-pointer font-mono-code text-[11px]">
+                            <option value="radio_pop" selected>📻 Pop / Rock Radio Standard (Intro ➔ Strofa ➔ Coro ➔ Strofa ➔ Coro ➔ Bridge ➔ Coro ➔ Outro)</option>
+                            <option value="ballad_aaba">📜 Ballata / Folk Strofico (Intro ➔ Strofa ➔ Strofa ➔ Coro ➔ Strofa ➔ Outro)</option>
+                            <option value="nursery_rhyme">🎈 Filastrocca / Punk Rapido (AABB: Strofa ➔ Ritornello ➔ Strofa ➔ Ritornello)</option>
+                            <option value="blues_12bar">🎺 Blues / Jazz 12-Misure (Tema ➔ Variazione ➔ Solista ➔ Ripresa)</option>
+                            <option value="ambient_triad">🌌 Ambient Meditativo (A-B-A: Intro Eterea ➔ Sviluppo Pad ➔ Outro Drone)</option>
+                            <option value="continuous_groove">🔄 Continuous Groove / Loop Elettronico (Pattern 16esimi ad evoluzione continua)</option>
+                        </select>
+                    </div>
+
+                    <!-- Modello Metrico / Ritmico -->
+                    <div class="flex flex-col gap-1">
+                        <label for="rhythmModeSelect" class="text-[11px] font-semibold text-zinc-400">4. Metrica & Ritmo per Verso:</label>
+                        <select id="rhythmModeSelect" class="bg-zinc-950 border border-zinc-700 text-purple-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-purple-500 cursor-pointer">
+                            <option value="free" selected>🌊 Libero / Organico (Da punteggiatura)</option>
+                            <option value="syllabic_4">📐 Sillabico 4 Battiti (Filastrocca / Marcia)</option>
+                            <option value="syllabic_8">📜 Sillabico 8 Battiti (Ballata / Cantautorale)</option>
+                            <option value="syncopated_16">⚡ Sincopato 16esimi (Synthwave / Funk)</option>
+                            <option value="hendecasyllable">📖 Endecasillabo Classico (Respiro alla cesura)</option>
+                        </select>
+                    </div>
+
+                    <!-- Limite Durata Massima Note -->
+                    <div class="flex flex-col gap-1">
+                        <label for="maxNoteDurationSelect" class="text-[11px] font-semibold text-zinc-400">5. Durata Massima Singola Nota:</label>
+                        <select id="maxNoteDurationSelect" class="bg-zinc-950 border border-zinc-700 text-emerald-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-emerald-500 cursor-pointer">
+                            <option value="quarter">Max 1/4 (Nota da 1 Quarto - Asciutta)</option>
+                            <option value="half" selected>Max 2/4 (Nota da 2 Quarti - Cantabile)</option>
+                            <option value="whole">Max 4/4 (Nota da 1 Misura Intera)</option>
+                            <option value="unlimited">Senza Limite (Accordi prolungati)</option>
+                        </select>
+                    </div>
+
+                    <!-- Target di Durata -->
+                    <div class="flex flex-col gap-1 sm:col-span-2">
+                        <div class="flex items-center justify-between text-[11px] font-semibold text-zinc-400">
+                            <span>6. Vincolo di Durata Temporale della Canzone:</span>
+                            <span id="targetDurationDisplay" class="text-indigo-400 font-mono-code font-bold">~01:00</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="durationConstraintSelect" class="bg-zinc-950 border border-zinc-700 text-zinc-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-purple-500 cursor-pointer">
+                                <option value="exact" selected>🎯 Durata Esatta Richiesta (Adatta sezioni)</option>
+                                <option value="min">⏱️ Durata Minima (Almeno il tempo impostato)</option>
+                                <option value="max">⏳ Durata Massima (Non superare)</option>
+                                <option value="free">📝 Libera (Dipende solo dalla lunghezza testo)</option>
+                            </select>
+                            <select id="targetSecondsSelect" class="bg-zinc-950 border border-zinc-700 text-indigo-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer font-mono-code">
+                                <option value="30">30 Secondi</option>
+                                <option value="45">45 Secondi</option>
+                                <option value="60" selected>1 Minuto (60s)</option>
+                                <option value="90">1 Minuto e 30s (90s)</option>
+                                <option value="120">2 Minuti (120s)</option>
+                                <option value="180">3 Minuti (180s)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Oscillatore Principale -->
+                    <div class="flex flex-col gap-1">
+                        <label for="oscTargetSelect" class="text-[11px] font-semibold text-zinc-400">7. Oscillatore Strofa (Main):</label>
+                        <select id="oscTargetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-orange-500 cursor-pointer font-mono-code">
+                            <option value="0">SAW (Sawtooth - CC 53: 0)</option>
+                            <option value="16">TRI (Triangle - CC 53: 16)</option>
+                            <option value="32">SQR (Square - CC 53: 32)</option>
+                            <option value="48">VPM (FM Nativo - CC 53: 48)</option>
+                            <option value="64">WAVES (Wavetable - CC 53: 64)</option>
+                            <option value="76">Volca Bass (tweeeeeak - CC 53: 76)</option>
+                            <option value="88" selected>Chords (chord-osc - CC 53: 88)</option>
+                            <option value="100">Proba-B (tweeeeeak - CC 53: 100)</option>
+                            <option value="112">J6 (Juno-6 - CC 53: 112)</option>
+                        </select>
+                    </div>
+
+                    <!-- Tonica di Base -->
+                    <div class="flex flex-col gap-1">
+                        <label for="rootNoteSelect" class="text-[11px] font-semibold text-zinc-400">8. Tonica di Base:</label>
+                        <select id="rootNoteSelect" class="bg-zinc-950 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-purple-500 cursor-pointer font-mono-code">
+                            <option value="C3" selected>C3 (Do 3 - Centrale Standard)</option>
+                            <option value="A2">A2 (La 2 - Basso Incisivo)</option>
+                            <option value="D3">D3 (Re 3 - Dorico)</option>
+                            <option value="F3">F3 (Fa 3 - Luminoso)</option>
+                            <option value="G2">G2 (Sol 2 - Sub Basso)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Testo / Poesia Strofa -->
+                <div class="flex flex-col gap-1 mt-1">
+                    <div class="flex items-center justify-between text-xs">
+                        <label for="poetrySourceText" class="text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-align-left text-purple-400"></i> Testo di Ispirazione Strofa (Verse):
+                        </label>
+                        <select id="sampleTextSelect" class="bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-400 rounded px-1.5 py-0.5 focus:outline-none focus:border-purple-500 cursor-pointer">
+                            <option value="">Carica Esempio...</option>
+                            <option value="dante">Dante - Inferno Canto I</option>
+                            <option value="leopardi">Leopardi - L'Infinito</option>
+                            <option value="synth_poetry">Cyberpunk Poetry (EN)</option>
+                        </select>
+                    </div>
+                    <textarea id="poetrySourceText" rows="2" class="w-full bg-zinc-950 font-sans text-xs text-zinc-200 border border-zinc-700/80 rounded-lg p-2.5 focus:outline-none focus:border-purple-500 leading-relaxed custom-scrollbar resize-y placeholder-zinc-600 shadow-inner" placeholder="Inserisci il testo della strofa. I versi determineranno l'altezza e il ritmo..."></textarea>
+                </div>
+
+                <!-- Configurazione Ritornello -->
+                <div class="bg-zinc-950/80 border border-purple-500/40 rounded-lg p-2.5 flex flex-col gap-2 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-purple-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                            <i class="fa-solid fa-repeat text-purple-400"></i> Sezione Ritornello (Chorus)
+                        </span>
+                        <span class="text-[10px] text-zinc-500 font-mono-code">Apertura ad Ottava Superiore</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="flex flex-col gap-1">
+                            <label for="chorusOscSelect" class="text-[10px] text-zinc-400">Oscillatore Ritornello:</label>
+                            <select id="chorusOscSelect" class="bg-zinc-900 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-mono-code">
+                                <option value="112" selected>J6 (Juno-6 - CC 53: 112)</option>
+                                <option value="88">Chords (chord-osc - CC 53: 88)</option>
+                                <option value="76">Volca Bass (CC 53: 76)</option>
+                                <option value="0">SAW (CC 53: 0)</option>
+                                <option value="64">WAVES (CC 53: 64)</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label for="chorusTextSource" class="text-[10px] text-zinc-400">Testo Ritornello (Opzionale):</label>
+                            <input type="text" id="chorusTextSource" class="bg-zinc-900 border border-zinc-700 text-xs text-zinc-200 rounded px-2 py-1 focus:outline-none focus:border-purple-500 placeholder-zinc-600" placeholder="Lascia vuoto per melodia auto-generata">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Morphing Options -->
+                <div class="bg-zinc-950/60 border border-zinc-800 rounded-lg p-2.5 flex items-center justify-between text-xs">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="autoMorphPatchCheck" checked class="accent-orange-500 rounded">
+                        <span class="text-[11px] font-semibold text-zinc-300">
+                            🎲 Variazioni Timbriche Dinamiche tra le Sezioni (CC 54 / 55)
+                        </span>
+                    </label>
+                    <span class="text-[10px] text-zinc-500 font-mono-code">Shape/Alt Morphing</span>
+                </div>
+
+                <!-- Action Buttons: Generate & Force Recalculate -->
+                <div class="flex flex-wrap items-center gap-2 pt-1">
+                    <button id="generateAbcBtn" class="flex-1 py-2 px-3 bg-purple-700 hover:bg-purple-600 active:bg-purple-800 text-white font-bold rounded-lg text-xs transition flex items-center justify-center gap-2 shadow-md border border-purple-500/50">
+                        <i class="fa-solid fa-bolt text-yellow-300"></i>
+                        <span>Genera Canzone ABC</span>
+                    </button>
+                    <button id="forceRecalculateBtn" class="py-2 px-3 bg-amber-600/30 hover:bg-amber-600/40 text-amber-300 border border-amber-500/50 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow" title="Forza il ricalcolo e genera una nuova variazione melodica">
+                        <i class="fa-solid fa-dice text-amber-400"></i>
+                        <span>Ricalcola Variazione</span>
+                    </button>
+                    <button id="generateAndPlayBtn" class="py-2 px-3.5 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-md border border-emerald-500/50" title="Genera ed esegui all'istante">
+                        <i class="fa-solid fa-circle-play"></i>
+                        <span>Suona</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: ABC Text Editor & Live Mini-Player -->
+        <section class="lg:col-span-6 flex flex-col gap-3">
+            
+            <!-- ABC Notation Editor -->
+            <div class="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl flex flex-col gap-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+                    <span class="text-xs font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-code"></i> Editor Partitura ABC (Editabile a Mano)
+                    </span>
+                    <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                        <button id="clearEditorBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[11px] border border-zinc-700 transition" title="Svuota editor">
+                            <i class="fa-solid fa-eraser mr-1"></i>Pulisci
+                        </button>
+                        <button id="exportAbcBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-orange-300 rounded text-[11px] border border-zinc-700 transition" title="Scarica file .abc">
+                            <i class="fa-solid fa-download mr-1"></i>.ABC
+                        </button>
+                        <button id="exportJsonBtn" class="px-2 py-0.5 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 rounded text-[11px] border border-indigo-700/60 transition font-bold" title="Scarica pacchetto completo (.json) per Playlist e Suite">
+                            <i class="fa-solid fa-file-export mr-1"></i>Salva .JSON
+                        </button>
+                    </div>
+                </div>
+
+                <textarea id="abcEditor" rows="13" spellcheck="false" class="w-full bg-zinc-950 font-mono-code text-xs text-orange-100 border border-zinc-800 rounded-lg p-3 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 leading-relaxed custom-scrollbar resize-y shadow-inner" placeholder="Il codice ABC generato comparirà qui e potrà essere modificato liberamente..."></textarea>
+
+                <!-- Live Visual Tracker -->
+                <div class="flex flex-col gap-1.5 bg-zinc-950/80 border border-zinc-800 p-2.5 rounded-lg">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-zinc-400 font-medium flex items-center gap-1.5">
+                            <i class="fa-solid fa-bars-staggered text-orange-400"></i> Tracker Note Live:
+                        </span>
+                        <div class="flex items-center gap-2 font-mono-code text-xs">
+                            <span id="stepCounter" class="text-zinc-400">Passo: 0 / 0</span>
+                            <span class="text-zinc-600">|</span>
+                            <span id="durationDisplay" class="text-indigo-400 font-semibold flex items-center gap-1" title="Durata effettiva calcolata ai BPM attuali">
+                                <i class="fa-regular fa-clock text-[10px]"></i> Durata: <strong id="durationVal" class="text-zinc-100 font-mono-code">00:00</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <div id="tokenVisualizer" class="h-10 overflow-x-auto whitespace-nowrap flex items-center gap-1.5 px-2 bg-zinc-950 border border-zinc-800/80 rounded font-mono-code text-xs text-zinc-400 custom-scrollbar">
+                        <span class="text-zinc-600 italic">In attesa di esecuzione...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini-Player Controls -->
+            <div class="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-play"></i> Mini-Player & Hardware Transport
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <span id="playbackLed" class="w-2 h-2 rounded-full bg-zinc-600"></span>
+                        <span id="playbackStatus" class="text-xs text-zinc-400 font-medium font-mono-code">Fermo</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2">
+                    <button id="playBtn" class="py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 shadow-lg transition">
+                        <i class="fa-solid fa-play text-xs"></i>
+                        <span>PLAY</span>
+                    </button>
+                    <button id="pauseBtn" class="py-2 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 border border-zinc-700 transition">
+                        <i class="fa-solid fa-pause text-xs"></i>
+                        <span>PAUSA</span>
+                    </button>
+                    <button id="stopBtn" class="py-2 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 border border-zinc-700 transition">
+                        <i class="fa-solid fa-stop text-xs"></i>
+                        <span>STOP</span>
+                    </button>
+                    <button id="loopToggleBtn" class="py-2 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/50 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition">
+                        <i class="fa-solid fa-repeat text-xs"></i>
+                        <span id="loopLabel">LOOP ON</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div class="flex flex-col gap-1 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-zinc-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1 text-orange-400"></i>Tempo (BPM)</span>
+                            <span id="bpmValue" class="font-mono-code font-bold text-orange-400">120</span>
+                        </div>
+                        <input id="bpmSlider" type="range" min="40" max="220" value="120" class="w-full accent-orange-500 bg-zinc-800 rounded h-1.5 cursor-pointer mt-1">
+                    </div>
+
+                    <div class="flex flex-col gap-1 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-zinc-400 font-semibold"><i class="fa-solid fa-wave-square mr-1 text-cyan-400"></i>Gate (Durata %)</span>
+                            <span id="gateValue" class="font-mono-code font-bold text-cyan-400">75%</span>
+                        </div>
+                        <input id="gateSlider" type="range" min="10" max="100" value="75" class="w-full accent-cyan-500 bg-zinc-800 rounded h-1.5 cursor-pointer mt-1">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <button id="panicBtn" class="w-full py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-triangle-exclamation text-red-400"></i> PANIC (All Sound Off)
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>Korg NTS-1 Suite • ABC Song Arranger & Generator Studio</p>
+        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.4.0</span>
+    </footer>
+
+    <!-- Application Script Logic -->
+    <script>
+        const HARMONIC_SCALES = {
+            major_pentatonic: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24],
+            minor_pentatonic: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24],
+            dorian: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19, 21, 22, 24],
+            eolian: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22, 24],
+            hirajoshi: [0, 2, 3, 7, 8, 12, 14, 15, 19, 20, 24],
+            locrian: [0, 1, 3, 5, 6, 8, 10, 12, 13, 15, 17, 18, 20, 22, 24],
+            mixolydian: [0, 2, 4, 5, 7, 9, 10, 12, 14, 16, 17, 19, 21, 22, 24]
+        };
+
+        const ROOT_NOTES = { 'C3': 48, 'A2': 45, 'D3': 50, 'F3': 53, 'G2': 43 };
+        const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const BASE_NOTE_MAP = { 'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11 };
+
+        const BEST_MATCHES = {
+            synthwave: { osc: '76', chorusOsc: '112', root: 'C3', scale: 'minor_pentatonic', bpm: 125, rhythm: 'syncopated_16' },
+            modal_jazz: { osc: '88', chorusOsc: '16', root: 'D3', scale: 'dorian', bpm: 108, rhythm: 'free' },
+            lofi_study: { osc: '16', chorusOsc: '88', root: 'C3', scale: 'dorian', bpm: 78, rhythm: 'syllabic_8' },
+            ambient_cloud: { osc: '64', chorusOsc: '88', root: 'C3', scale: 'dorian', bpm: 68, rhythm: 'free' },
+            classic_rock: { osc: '0', chorusOsc: '76', root: 'A2', scale: 'minor_pentatonic', bpm: 118, rhythm: 'syllabic_4' },
+            punk_rock: { osc: '32', chorusOsc: '0', root: 'A2', scale: 'minor_pentatonic', bpm: 172, rhythm: 'syllabic_4' },
+            acid_groove: { osc: '76', chorusOsc: '32', root: 'C3', scale: 'minor_pentatonic', bpm: 136, rhythm: 'syncopated_16' },
+            juno_pop: { osc: '112', chorusOsc: '88', root: 'F3', scale: 'major_pentatonic', bpm: 122, rhythm: 'syllabic_8' },
+            chiptune: { osc: '32', chorusOsc: '32', root: 'C3', scale: 'major_pentatonic', bpm: 140, rhythm: 'syllabic_4' },
+            post_rock: { osc: '0', chorusOsc: '112', root: 'D3', scale: 'eolian', bpm: 85, rhythm: 'free' },
+            space_drone: { osc: '48', chorusOsc: '100', root: 'G2', scale: 'hirajoshi', bpm: 60, rhythm: 'free' }
+        };
+
+        const SAMPLE_TEXTS = {
+            dante: `Nel mezzo del cammin di nostra vita,\nmi ritrovai per una selva oscura,\nché la diritta via era smarrita.`,
+            leopardi: `Sempre caro mi fu quest'ermo colle,\ne questa siepe, che da tanta parte\ndell'ultimo orizzonte il guardo esclude.`,
+            synth_poetry: `Neon reflections in the midnight rain,\nelectric pulse across the wire,\nsilicon dreams that never die,\nawake the phantom in the choir.`
+        };
+
+        // --- WEB AUDIO ENGINE ---
+        let audioCtx = null;
+        let activeVoices = new Map();
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioClass) audioCtx = new AudioClass();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function playInternalNote(midiNote, vel = 100) {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            stopInternalNote(midiNote, true);
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
+
+            const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            osc.type = 'sawtooth';
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(3600, ctx.currentTime);
+            filter.Q.setValueAtTime(2.5, ctx.currentTime);
+
+            const peak = 0.20 * (vel / 127);
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(peak, ctx.currentTime + 0.015);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start();
+            activeVoices.set(midiNote, { osc, gain });
+        }
+
+        function stopInternalNote(midiNote, instant = false) {
+            if (!activeVoices.has(midiNote)) return;
+            const ctx = getAudioContext();
+            const voice = activeVoices.get(midiNote);
+            activeVoices.delete(midiNote);
+
+            if (ctx && voice) {
+                try {
+                    voice.gain.gain.cancelScheduledValues(ctx.currentTime);
+                    if (instant) {
+                        voice.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                        voice.osc.stop();
+                        voice.osc.disconnect();
+                    } else {
+                        voice.gain.gain.setValueAtTime(Math.max(0.0001, voice.gain.gain.value), ctx.currentTime);
+                        voice.gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
+                        setTimeout(() => {
+                            try { voice.osc.stop(); voice.osc.disconnect(); } catch (e) {}
+                        }, 60);
+                    }
+                } catch (e) {
+                    try { voice.osc.stop(); } catch (err) {}
+                }
+            }
+        }
+
+        function stopAllInternalNotes() {
+            for (const n of Array.from(activeVoices.keys())) {
+                stopInternalNote(n, true);
+            }
+            activeVoices.clear();
+        }
+
+        // --- WEB MIDI ACCESS ---
+        let midiAccess = null;
+        let selectedOutput = null;
+        let midiChannel = 0;
+        let currentlyPlayingMidiNotes = new Set();
+
+        async function initWebMIDI() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+
+            if (!navigator.requestMIDIAccess) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
+                statusText.textContent = 'Synth Interno (Casse)';
+                document.getElementById('soundTargetSelect').value = 'internal';
+                return;
+            }
+
+            try {
+                midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+                const outputs = Array.from(midiAccess.outputs.values());
+                let korg = outputs.find(o => (o.name || '').toLowerCase().includes('nts') || (o.name || '').toLowerCase().includes('korg'));
+                
+                if (korg) {
+                    selectedOutput = korg;
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `Connesso: ${korg.name}`;
+                } else if (outputs.length > 0) {
+                    selectedOutput = outputs[0];
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `MIDI: ${outputs[0].name}`;
+                } else {
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 led-orange';
+                    statusText.textContent = 'Synth Interno (Nessun MIDI)';
+                }
+            } catch (e) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
+                statusText.textContent = 'Synth Interno Attivo';
+            }
+        }
+
+        function sendMidiCC(cc, val) {
+            const target = document.getElementById('soundTargetSelect').value;
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    selectedOutput.send([0xB0 | (midiChannel & 0x0F), cc & 0x7F, val & 0x7F]);
+                } catch (e) {}
+            }
+        }
+
+        function sendNoteOn(midiNote, vel = 100) {
+            const target = document.getElementById('soundTargetSelect').value;
+            currentlyPlayingMidiNotes.add(midiNote);
+
+            if (target === 'internal' || target === 'both') playInternalNote(midiNote, vel);
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    selectedOutput.send([0x90 | (midiChannel & 0x0F), midiNote & 0x7F, vel & 0x7F]);
+                } catch (e) {}
+            }
+        }
+
+        function sendNoteOff(midiNote) {
+            const target = document.getElementById('soundTargetSelect').value;
+            currentlyPlayingMidiNotes.delete(midiNote);
+
+            if (target === 'internal' || target === 'both') stopInternalNote(midiNote, false);
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    selectedOutput.send([0x80 | (midiChannel & 0x0F), midiNote & 0x7F, 0]);
+                } catch (e) {}
+            }
+        }
+
+        function silenceActiveNotes() {
+            if (selectedOutput) {
+                try {
+                    const statusCC = 0xB0 | (midiChannel & 0x0F);
+                    selectedOutput.send([statusCC, 120, 0]);
+                    selectedOutput.send([statusCC, 123, 0]);
+                    selectedOutput.send([statusCC, 64, 0]);
+
+                    for (const n of currentlyPlayingMidiNotes) {
+                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n & 0x7F, 0]);
+                    }
+                } catch (e) {}
+            }
+            currentlyPlayingMidiNotes.clear();
+            stopAllInternalNotes();
+        }
+
+        function panic() {
+            stopPlayback();
+            silenceActiveNotes();
+            if (selectedOutput) {
+                try {
+                    for (let n = 0; n < 128; n++) {
+                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n, 0]);
+                    }
+                } catch (e) {}
+            }
+        }
+
+        // --- SMART AUTO-MATCH LOGIC ---
+        function applyAutoMatch() {
+            const genre = document.getElementById('genreStyleSelect').value;
+            const mood = document.getElementById('moodSelect').value;
+            const match = BEST_MATCHES[genre] || BEST_MATCHES.synthwave;
+
+            document.getElementById('oscTargetSelect').value = match.osc;
+            document.getElementById('chorusOscSelect').value = match.chorusOsc;
+            document.getElementById('rootNoteSelect').value = match.root;
+            document.getElementById('rhythmModeSelect').value = match.rhythm;
+
+            let targetBpm = match.bpm;
+            if (mood === 'energetic') targetBpm = Math.min(180, targetBpm + 18);
+            else if (mood === 'melancholic' || mood === 'dark') targetBpm = Math.max(60, targetBpm - 12);
+            else if (mood === 'dreamy') targetBpm = Math.max(55, targetBpm - 20);
+
+            document.getElementById('bpmSlider').value = targetBpm;
+            document.getElementById('bpmValue').textContent = targetBpm;
+        }
+
+        document.getElementById('autoMatchBtn').addEventListener('click', () => {
+            applyAutoMatch();
+            generateABCComposition();
+        });
+
+        // --- DURATION LIMITER (ANTI-DRONE) ---
+        function applyMaxDurationCap(durCode, maxCap) {
+            if (maxCap === 'unlimited') return durCode;
+            if (maxCap === 'quarter') {
+                if (durCode === '2' || durCode === '4' || durCode === '8') return '';
+            } else if (maxCap === 'half') {
+                if (durCode === '4' || durCode === '8') return '2';
+            } else if (maxCap === 'whole') {
+                if (durCode === '8') return '4';
+            }
+            return durCode;
+        }
+
+        function midiNoteToABC(midiNote, durationUnit = '8', maxCap = 'half') {
+            const oct = Math.floor(midiNote / 12) - 1;
+            const semi = midiNote % 12;
+            const pitchNames = ['C', '^C', 'D', '^D', 'E', 'F', '^F', 'G', '^G', 'A', '^A', 'B'];
+            const p = pitchNames[semi];
+
+            let acc = p.startsWith('^') ? '^' : '';
+            let letter = p.replace('^', '');
+            let result = '';
+
+            if (oct === 4) result = `${acc}${letter.toUpperCase()}`;
+            else if (oct === 5) result = `${acc}${letter.toLowerCase()}`;
+            else if (oct < 4) result = `${acc}${letter.toUpperCase()}${','.repeat(4 - oct)}`;
+            else result = `${acc}${letter.toLowerCase()}${"'".repeat(oct - 5)}`;
+
+            let durSuffix = '';
+            if (durationUnit === '16') durSuffix = '/2';
+            else if (durationUnit === '4') durSuffix = '2';
+            else if (durationUnit === '2') durSuffix = '4';
+
+            durSuffix = applyMaxDurationCap(durSuffix, maxCap);
+            return `${result}${durSuffix}`;
+        }
+
+        // --- SECTION PATTERN GENERATOR ---
+        function generateSectionPattern(type, scale, baseMidi, mood, genre, rhythmMode, maxCap, textSource = '') {
+            const lines = [];
+            const isSlow = (mood === 'dreamy' || mood === 'dark' || genre === 'ambient_cloud');
+
+            if (textSource && textSource.trim().length > 0) {
+                const vowelWeights = { 'u': 0, 'o': 1, 'a': 2, 'e': 3, 'i': 4, 'y': 4 };
+                const textLines = textSource.split('\n');
+                let currentIdx = Math.floor(scale.length / 2);
+
+                textLines.forEach(tLine => {
+                    tLine = tLine.trim();
+                    if (!tLine) return;
+                    const tokens = tLine.match(/[a-zA-ZàèéìòùÀÈÉÌÒÙ']+|[.,;:!?]+/g) || [];
+                    const lineNotes = [];
+                    let noteCountInLine = 0;
+
+                    tokens.forEach(tok => {
+                        if (/^[.,;:!?]+$/.test(tok)) {
+                            if (rhythmMode === 'syllabic_4' || rhythmMode === 'syllabic_8') {
+                                lineNotes.push('z');
+                            } else {
+                                if (tok.includes(',')) lineNotes.push('z');
+                                else if (tok.includes('.') || tok.includes('!')) {
+                                    const cadNote = midiNoteToABC(baseMidi + scale[0], isSlow ? '4' : '8', maxCap);
+                                    lineNotes.push(`${cadNote} z2 |`);
+                                    currentIdx = 0;
+                                }
+                            }
+                            return;
+                        }
+
+                        const clean = tok.toLowerCase();
+                        let vowels = [];
+                        for (let ch of clean) {
+                            const norm = ch === 'à' ? 'a' : (ch === 'è' || ch === 'é') ? 'e' : ch === 'ì' ? 'i' : ch === 'ò' ? 'o' : ch === 'ù' ? 'u' : ch;
+                            if (vowelWeights[norm] !== undefined) vowels.push(vowelWeights[norm]);
+                        }
+                        if (vowels.length === 0) vowels.push(2);
+
+                        vowels.forEach(v => {
+                            if (rhythmMode === 'syllabic_4' && noteCountInLine >= 4) return;
+                            if (rhythmMode === 'syllabic_8' && noteCountInLine >= 8) return;
+
+                            const targetStep = Math.round((v / 4) * (scale.length - 1));
+                            const diff = targetStep - currentIdx;
+                            currentIdx = Math.max(0, Math.min(scale.length - 1, currentIdx + Math.sign(diff || 1)));
+                            const midi = baseMidi + scale[currentIdx];
+
+                            let dur = '8';
+                            if (rhythmMode === 'syncopated_16') dur = '16';
+                            else if (rhythmMode === 'hendecasyllable' && noteCountInLine === 5) dur = '4';
+
+                            lineNotes.push(midiNoteToABC(midi, dur, maxCap));
+                            noteCountInLine++;
+                        });
+                    });
+
+                    if (lineNotes.length > 0) lines.push(lineNotes.join(' ') + ' |');
+                });
+            } else {
+                if (type === 'intro') {
+                    const r1 = midiNoteToABC(baseMidi, '4', maxCap);
+                    const r2 = midiNoteToABC(baseMidi + (scale[2] || 4), '4', maxCap);
+                    lines.push(`[${r1} ${r2}]2 z2 [${r1} ${r2}]2 z2 |`);
+                } else if (type === 'chorus') {
+                    const n1 = midiNoteToABC(baseMidi + 12, '8', maxCap);
+                    const n2 = midiNoteToABC(baseMidi + 12 + (scale[2] || 4), '8', maxCap);
+                    const n3 = midiNoteToABC(baseMidi + 12 + (scale[4] || 7), '8', maxCap);
+                    lines.push(`[${n1} ${n2} ${n3}]2 [${n1} ${n2} ${n3}]2 [${n1} ${n2} ${n3}]2 z2 |`);
+                    lines.push(`c' d' e' g' | a'2 g' e' | d' c' d' e' | c'2 z2 |`);
+                } else if (type === 'bridge') {
+                    const bNote = midiNoteToABC(baseMidi + (scale[1] || 3), '8', maxCap);
+                    lines.push(`${bNote}2 z2 ${bNote}2 z2 | _B,2 _A,2 G,2 _E,2 |`);
+                } else if (type === 'outro') {
+                    const endNote = midiNoteToABC(baseMidi, '4', maxCap);
+                    lines.push(`[${endNote}]4 z4 |`);
+                } else {
+                    if (rhythmMode === 'syncopated_16' || genre === 'synthwave') {
+                        lines.push(`C, C, C C,   C, C, _E C,   F, F, F, F,   _G, _G, G, G, |`);
+                        lines.push(`C, C, C C,   C, C, _E C,   _B,, _B,, _B, _B,,   _A,, _A,, G,, G,, |`);
+                    } else if (rhythmMode === 'syllabic_4') {
+                        lines.push(`C D E G | A G E C | D E D C | C2 z2 |`);
+                    } else {
+                        lines.push(`[D, F A c]2 z [D, F A c]   [E, G B d]2 z2 |`);
+                        lines.push(`[F, A c e]2 z [G, B d f]   [D, F A c]2 z2 |`);
+                    }
+                }
+            }
+
+            return lines;
+        }
+
+        // --- COMPOSER ENGINE WITH METADATA ---
+        function generateABCComposition() {
+            const title = document.getElementById('metaTitle').value.trim() || 'Senza Titolo';
+            const composer = document.getElementById('metaComposer').value.trim() || 'Sam C. Tomasi';
+            const meter = document.getElementById('metaMeter').value || '4/4';
+            const notes = document.getElementById('metaNotes').value.trim();
+
+            const genre = document.getElementById('genreStyleSelect').value;
+            const mood = document.getElementById('moodSelect').value;
+            const structureType = document.getElementById('songStructureSelect').value;
+            const rhythmMode = document.getElementById('rhythmModeSelect').value;
+            const maxCap = document.getElementById('maxNoteDurationSelect').value;
+            const durationConstraint = document.getElementById('durationConstraintSelect').value;
+            const targetSeconds = parseInt(document.getElementById('targetSecondsSelect').value, 10) || 60;
+            const mainOsc = document.getElementById('oscTargetSelect').value;
+            const chorusOsc = document.getElementById('chorusOscSelect').value;
+            const rootKey = document.getElementById('rootNoteSelect').value;
+            const verseText = document.getElementById('poetrySourceText').value.trim();
+            const chorusText = document.getElementById('chorusTextSource').value.trim();
+            const autoMorph = document.getElementById('autoMorphPatchCheck').checked;
+
+            const baseMidi = ROOT_NOTES[rootKey] || 48;
+
+            let scaleKey = 'minor_pentatonic';
+            if (mood === 'cheerful') scaleKey = 'major_pentatonic';
+            else if (mood === 'melancholic') scaleKey = (genre === 'modal_jazz') ? 'dorian' : 'minor_pentatonic';
+            else if (mood === 'dark') scaleKey = 'eolian';
+            else if (mood === 'dreamy') scaleKey = 'dorian';
+            else if (mood === 'mysterious') scaleKey = 'hirajoshi';
+
+            const scale = HARMONIC_SCALES[scaleKey] || HARMONIC_SCALES.minor_pentatonic;
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 120;
+
+            let sectionSequence = [];
+            if (structureType === 'radio_pop') {
+                sectionSequence = ['intro', 'verse', 'chorus', 'verse', 'chorus', 'bridge', 'chorus', 'outro'];
+            } else if (structureType === 'ballad_aaba') {
+                sectionSequence = ['intro', 'verse', 'verse', 'chorus', 'verse', 'outro'];
+            } else if (structureType === 'nursery_rhyme') {
+                sectionSequence = ['verse', 'chorus', 'verse', 'chorus'];
+            } else if (structureType === 'blues_12bar') {
+                sectionSequence = ['verse', 'bridge', 'verse', 'outro'];
+            } else if (structureType === 'ambient_triad') {
+                sectionSequence = ['intro', 'verse', 'outro'];
+            } else if (structureType === 'continuous_groove') {
+                sectionSequence = ['verse', 'verse', 'verse', 'verse'];
+            }
+
+            const secPerMeasure = (60 / bpm) * 4;
+            const estimatedSecPerSection = 2.5 * secPerMeasure;
+            const singlePassDuration = sectionSequence.length * estimatedSecPerSection;
+
+            let loopCount = 1;
+            if (durationConstraint === 'exact' || durationConstraint === 'min') {
+                if (singlePassDuration < targetSeconds) {
+                    loopCount = Math.max(1, Math.round(targetSeconds / singlePassDuration));
+                }
+            } else if (durationConstraint === 'max') {
+                if (singlePassDuration > targetSeconds && sectionSequence.length > 3) {
+                    sectionSequence = sectionSequence.slice(0, 3);
+                }
+            }
+
+            const lines = [];
+            lines.push(`X: 1`);
+            lines.push(`T: ${title}`);
+            lines.push(`C: ${composer}`);
+            lines.push(`M: ${meter}`);
+            lines.push(`L: 1/8`);
+            lines.push(`Q: ${bpm}`);
+            lines.push(`K: C`);
+            if (notes) lines.push(`% Note: ${notes}`);
+            lines.push(`%%MIDI control 53 ${mainOsc}   % OSC Iniziale`);
+            lines.push(`%%MIDI control 54 64   % Shape (Knob A)`);
+            lines.push(`%%MIDI control 55 32   % Alt (Knob B)`);
+            lines.push(``);
+
+            for (let pass = 0; pass < loopCount; pass++) {
+                sectionSequence.forEach(sec => {
+                    lines.push(`% --- SEZIONE: ${sec.toUpperCase()} ---`);
+                    if (sec === 'chorus') {
+                        lines.push(`%%MIDI control 53 ${chorusOsc}   % Cambio OSC Ritornello`);
+                        if (autoMorph) lines.push(`%%MIDI control 54 90\n%%MIDI control 55 60`);
+                        const chorusLines = generateSectionPattern('chorus', scale, baseMidi, mood, genre, rhythmMode, maxCap, chorusText);
+                        lines.push(...chorusLines);
+                    } else if (sec === 'intro') {
+                        lines.push(`%%MIDI control 53 ${mainOsc}`);
+                        if (autoMorph) lines.push(`%%MIDI control 54 45\n%%MIDI control 55 25`);
+                        const introLines = generateSectionPattern('intro', scale, baseMidi, mood, genre, rhythmMode, maxCap, '');
+                        lines.push(...introLines);
+                    } else if (sec === 'bridge') {
+                        if (autoMorph) lines.push(`%%MIDI control 54 105\n%%MIDI control 55 75`);
+                        const bridgeLines = generateSectionPattern('bridge', scale, baseMidi, mood, genre, rhythmMode, maxCap, '');
+                        lines.push(...bridgeLines);
+                    } else if (sec === 'outro') {
+                        const outroLines = generateSectionPattern('outro', scale, baseMidi, mood, genre, rhythmMode, maxCap, '');
+                        lines.push(...outroLines);
+                    } else {
+                        lines.push(`%%MIDI control 53 ${mainOsc}   % OSC Strofa`);
+                        if (autoMorph) lines.push(`%%MIDI control 54 64\n%%MIDI control 55 32`);
+                        const vLines = generateSectionPattern('verse', scale, baseMidi, mood, genre, rhythmMode, maxCap, verseText);
+                        lines.push(...vLines);
+                    }
+                    lines.push(``);
+                });
+            }
+
+            const output = lines.join('\n');
+            document.getElementById('abcEditor').value = output;
+            updateParsedTokens();
+        }
+
+        // --- ABC PARSER & DURATION CALCULATOR ---
+        function parseABC(text) {
+            const lines = text.split('\n');
+            const events = [];
+            let currentBpm = parseInt(document.getElementById('bpmSlider').value, 10) || 120;
+            let unitLength = 1 / 16;
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line || line.startsWith('%') && !line.startsWith('%%MIDI')) continue;
+
+                if (line.startsWith('Q:')) {
+                    const m = line.match(/Q:\s*(\d+)/i);
+                    if (m) currentBpm = parseInt(m[1], 10);
+                    continue;
+                }
+                if (line.startsWith('L:')) {
+                    const m = line.match(/L:\s*1\/(\d+)/i);
+                    if (m) unitLength = 1 / parseInt(m[1], 10);
+                    continue;
+                }
+                if (line.startsWith('%%MIDI control')) {
+                    const m = line.match(/%%MIDI\s+control\s+(\d+)\s+(\d+)/i);
+                    if (m) {
+                        events.push({ type: 'cc', cc: parseInt(m[1], 10), value: parseInt(m[2], 10), token: `CC${m[1]}:${m[2]}` });
+                    }
+                    continue;
+                }
+                if (line.startsWith('X:') || line.startsWith('T:') || line.startsWith('C:') || line.startsWith('M:') || line.startsWith('K:')) continue;
+
+                const matches = line.match(/(\[[^\]]+\]|\^?[_]?[=]?[A-Ga-g][',]*[0-9]*\/?[0-9]*|z[0-9]*\/?[0-9]*|[|])/g) || [];
+                for (let tok of matches) {
+                    tok = tok.trim();
+                    if (!tok || tok === '|') continue;
+
+                    if (tok.startsWith('z') || tok.startsWith('Z')) {
+                        const mult = parseDurationMultiplier(tok.substring(1));
+                        events.push({ type: 'rest', duration: mult * (unitLength * 4), token: tok });
+                        continue;
+                    }
+
+                    if (tok.startsWith('[')) {
+                        const m = tok.match(/\[([^\]]+)\]([0-9]*\/?[0-9]*)?/);
+                        if (m) {
+                            const mult = parseDurationMultiplier(m[2] || '');
+                            const notesStr = m[1].match(/(\^?[_]?[=]?[A-Ga-g][',]*)/g) || [];
+                            const midiNotes = notesStr.map(s => parseSinglePitch(s)).filter(n => n !== null);
+                            if (midiNotes.length > 0) {
+                                events.push({ type: 'note', midiNotes, duration: mult * (unitLength * 4), token: tok });
+                            }
+                        }
+                        continue;
+                    }
+
+                    const m = tok.match(/(\^?[_]?[=]?[A-Ga-g][',]*)([0-9]*\/?[0-9]*)?/);
+                    if (m) {
+                        const midi = parseSinglePitch(m[1]);
+                        const mult = parseDurationMultiplier(m[2] || '');
+                        if (midi !== null) {
+                            events.push({ type: 'note', midiNotes: [midi], duration: mult * (unitLength * 4), token: tok });
+                        }
+                    }
+                }
+            }
+
+            return { events, initialBpm: currentBpm };
+        }
+
+        function parseDurationMultiplier(durStr) {
+            if (!durStr) return 1;
+            if (durStr === '/') return 0.5;
+            if (durStr.startsWith('/')) {
+                const den = parseInt(durStr.substring(1), 10);
+                return isNaN(den) || den === 0 ? 0.5 : 1 / den;
+            }
+            if (durStr.includes('/')) {
+                const parts = durStr.split('/');
+                return (parseInt(parts[0], 10) || 1) / (parseInt(parts[1], 10) || 2);
+            }
+            const v = parseFloat(durStr);
+            return isNaN(v) ? 1 : v;
+        }
+
+        function parseSinglePitch(str) {
+            const m = str.match(/(\^|_|=)?([A-Ga-g])([',]*)/);
+            if (!m) return null;
+            const acc = m[1];
+            const letter = m[2];
+            const octMods = m[3] || '';
+            let oct = (letter === letter.toLowerCase()) ? 5 : 4;
+
+            for (let c of octMods) {
+                if (c === "'") oct++;
+                if (c === ",") oct--;
+            }
+
+            let semi = BASE_NOTE_MAP[letter.toLowerCase()] || 0;
+            if (acc === '^') semi += 1;
+            if (acc === '_') semi -= 1;
+            return (oct + 1) * 12 + semi;
+        }
+
+        // --- IMPORT ABC SMART EXTRACTOR ---
+        function parseAndSyncImportedABC(abcContent) {
+            const lines = abcContent.split('\n');
+            let foundTitle = null;
+            let foundComposer = null;
+            let foundMeter = null;
+            let foundBpm = null;
+            let foundOsc = null;
+
+            for (let line of lines) {
+                const tMatch = line.match(/^T:\s*(.+)$/i);
+                if (tMatch && !foundTitle) foundTitle = tMatch[1].trim();
+
+                const cMatch = line.match(/^C:\s*(.+)$/i);
+                if (cMatch && !foundComposer) foundComposer = cMatch[1].trim();
+
+                const mMatch = line.match(/^M:\s*(\d+\/\d+)$/i);
+                if (mMatch && !foundMeter) foundMeter = mMatch[1].trim();
+
+                const qMatch = line.match(/^Q:\s*(\d+)$/i);
+                if (qMatch && !foundBpm) foundBpm = parseInt(qMatch[1], 10);
+
+                const oscMatch = line.match(/^%%MIDI\s+control\s+53\s+(\d+)/i);
+                if (oscMatch && !foundOsc) foundOsc = oscMatch[1].trim();
+            }
+
+            if (foundTitle) document.getElementById('metaTitle').value = foundTitle;
+            if (foundComposer) document.getElementById('metaComposer').value = foundComposer;
+            if (foundMeter) document.getElementById('metaMeter').value = foundMeter;
+            if (foundBpm) {
+                document.getElementById('bpmSlider').value = foundBpm;
+                document.getElementById('bpmValue').textContent = foundBpm;
+            }
+            if (foundOsc) {
+                const oscSel = document.getElementById('oscTargetSelect');
+                if (Array.from(oscSel.options).some(opt => opt.value === foundOsc)) {
+                    oscSel.value = foundOsc;
+                }
+            }
+
+            document.getElementById('abcEditor').value = abcContent;
+            updateParsedTokens();
+        }
+
+        // --- TRANSPORT & PLAYBACK ENGINE ---
+        let isPlaying = false;
+        let isPaused = false;
+        let isLooping = true;
+        let playbackTimer = null;
+        let noteOffTimers = [];
+        let currentStepIndex = 0;
+        let parsedEvents = [];
+
+        function updateParsedTokens() {
+            const res = parseABC(document.getElementById('abcEditor').value);
+            parsedEvents = res.events;
+            const container = document.getElementById('tokenVisualizer');
+            container.innerHTML = '';
+
+            let totalSec = 0;
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 120;
+            const secPerQuarter = 60 / bpm;
+
+            if (parsedEvents.length === 0) {
+                container.innerHTML = '<span class="text-zinc-600 italic">Nessuna nota nel codice ABC.</span>';
+                document.getElementById('stepCounter').textContent = 'Passo: 0 / 0';
+                document.getElementById('durationVal').textContent = '00:00';
+                return;
+            }
+
+            parsedEvents.forEach((evt, idx) => {
+                const span = document.createElement('span');
+                span.className = 'text-token px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 font-mono-code transition-all text-[11px]';
+                span.dataset.step = idx;
+
+                if (evt.type === 'cc') {
+                    span.textContent = `[${evt.token}]`;
+                    span.classList.add('text-orange-400', 'border-orange-800/40');
+                } else if (evt.type === 'rest') {
+                    span.textContent = `[Pausa ${evt.token}]`;
+                    span.classList.add('text-zinc-500');
+                    totalSec += (evt.duration * secPerQuarter);
+                } else if (evt.type === 'note') {
+                    const names = evt.midiNotes.map(n => NOTE_NAMES[n % 12] + (Math.floor(n / 12) - 1)).join('+');
+                    span.textContent = names;
+                    totalSec += (evt.duration * secPerQuarter);
+                }
+                container.appendChild(span);
+            });
+
+            const m = Math.floor(totalSec / 60).toString().padStart(2, '0');
+            const s = Math.floor(totalSec % 60).toString().padStart(2, '0');
+            document.getElementById('durationVal').textContent = `${m}:${s}`;
+            document.getElementById('stepCounter').textContent = `Passo: 0 / ${parsedEvents.length}`;
+        }
+
+        function startPlayback() {
+            getAudioContext();
+            updateParsedTokens();
+            if (parsedEvents.length === 0) return;
+
+            isPlaying = true;
+            isPaused = false;
+            updateTransportUI();
+
+            if (currentStepIndex >= parsedEvents.length) currentStepIndex = 0;
+            scheduleStep();
+        }
+
+        function scheduleStep() {
+            if (!isPlaying || isPaused) return;
+
+            if (currentStepIndex >= parsedEvents.length) {
+                if (isLooping) {
+                    currentStepIndex = 0;
+                } else {
+                    stopPlayback();
+                    return;
+                }
+            }
+
+            const evt = parsedEvents[currentStepIndex];
+            highlightVisualToken(currentStepIndex);
+
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 120;
+            const gate = (parseInt(document.getElementById('gateSlider').value, 10) || 75) / 100;
+            const quarterMs = 60000 / bpm;
+
+            if (evt.type === 'cc') {
+                sendMidiCC(evt.cc, evt.value);
+                currentStepIndex++;
+                scheduleStep();
+                return;
+            }
+
+            const stepMs = (evt.duration || 0.25) * quarterMs;
+
+            if (evt.type === 'note') {
+                const noteMs = Math.max(20, stepMs * gate);
+                evt.midiNotes.forEach(n => {
+                    sendNoteOn(n, 100);
+                    const t = setTimeout(() => sendNoteOff(n), noteMs);
+                    noteOffTimers.push(t);
+                });
+            }
+
+            currentStepIndex++;
+            playbackTimer = setTimeout(() => scheduleStep(), stepMs);
+        }
+
+        function highlightVisualToken(idx) {
+            document.querySelectorAll('.text-token').forEach(el => el.classList.remove('active-token'));
+            const target = document.querySelector(`.text-token[data-step="${idx}"]`);
+            if (target) {
+                target.classList.add('active-token');
+                target.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+            document.getElementById('stepCounter').textContent = `Passo: ${idx + 1} / ${parsedEvents.length}`;
+        }
+
+        function pausePlayback() {
+            if (!isPlaying) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                clearTimeout(playbackTimer);
+                noteOffTimers.forEach(t => clearTimeout(t));
+                silenceActiveNotes();
+                updateTransportUI();
+            } else {
+                updateTransportUI();
+                scheduleStep();
+            }
+        }
+
+        function stopPlayback() {
+            clearTimeout(playbackTimer);
+            noteOffTimers.forEach(t => clearTimeout(t));
+            silenceActiveNotes();
+            isPlaying = false;
+            isPaused = false;
+            currentStepIndex = 0;
+            updateTransportUI();
+            document.querySelectorAll('.text-token').forEach(el => el.classList.remove('active-token'));
+            if (parsedEvents.length > 0) document.getElementById('stepCounter').textContent = `Passo: 0 / ${parsedEvents.length}`;
+        }
+
+        function updateTransportUI() {
+            const led = document.getElementById('playbackLed');
+            const status = document.getElementById('playbackStatus');
+            const playBtn = document.getElementById('playBtn');
+
+            if (isPlaying && !isPaused) {
+                led.className = 'w-2 h-2 rounded-full bg-emerald-500 led-active';
+                status.textContent = 'In Riproduzione...';
+                playBtn.classList.add('ring-2', 'ring-emerald-400');
+            } else if (isPaused) {
+                led.className = 'w-2 h-2 rounded-full bg-yellow-500 led-orange';
+                status.textContent = 'Pausa';
+                playBtn.classList.remove('ring-2', 'ring-emerald-400');
+            } else {
+                led.className = 'w-2 h-2 rounded-full bg-zinc-600';
+                status.textContent = 'Fermo';
+                playBtn.classList.remove('ring-2', 'ring-emerald-400');
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('generateAbcBtn').addEventListener('click', () => generateABCComposition());
+        document.getElementById('forceRecalculateBtn').addEventListener('click', () => generateABCComposition());
+        document.getElementById('generateAndPlayBtn').addEventListener('click', () => {
+            generateABCComposition();
+            startPlayback();
+        });
+
+        document.getElementById('playBtn').addEventListener('click', () => {
+            if (isPlaying && !isPaused) {
+                stopPlayback();
+                startPlayback();
+            } else startPlayback();
+        });
+
+        document.getElementById('pauseBtn').addEventListener('click', pausePlayback);
+        document.getElementById('stopBtn').addEventListener('click', stopPlayback);
+        document.getElementById('panicBtn').addEventListener('click', panic);
+
+        document.getElementById('loopToggleBtn').addEventListener('click', () => {
+            isLooping = !isLooping;
+            document.getElementById('loopLabel').textContent = isLooping ? 'LOOP ON' : 'LOOP OFF';
+            document.getElementById('loopToggleBtn').className = isLooping
+                ? 'py-2 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/50 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition'
+                : 'py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-zinc-700 rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-1 transition';
+        });
+
+        document.getElementById('bpmSlider').addEventListener('input', (e) => {
+            document.getElementById('bpmValue').textContent = e.target.value;
+            updateParsedTokens();
+        });
+
+        document.getElementById('gateSlider').addEventListener('input', (e) => {
+            document.getElementById('gateValue').textContent = `${e.target.value}%`;
+        });
+
+        document.getElementById('abcEditor').addEventListener('input', () => {
+            if (!isPlaying) updateParsedTokens();
+        });
+
+        document.getElementById('clearEditorBtn').addEventListener('click', () => {
+            document.getElementById('abcEditor').value = '';
+            stopPlayback();
+            updateParsedTokens();
+        });
+
+        document.getElementById('sampleTextSelect').addEventListener('change', (e) => {
+            if (SAMPLE_TEXTS[e.target.value]) {
+                document.getElementById('poetrySourceText').value = SAMPLE_TEXTS[e.target.value];
+            }
+        });
+
+        document.getElementById('targetSecondsSelect').addEventListener('change', (e) => {
+            const s = parseInt(e.target.value, 10);
+            const m = Math.floor(s / 60).toString().padStart(2, '0');
+            const sec = (s % 60).toString().padStart(2, '0');
+            document.getElementById('targetDurationDisplay').textContent = `~${m}:${sec}`;
+        });
+
+        document.getElementById('songStructureSelect').addEventListener('change', (e) => {
+            const val = e.target.value;
+            const badge = document.getElementById('structureHelpBadge');
+            if (val === 'radio_pop') badge.textContent = 'Pop / Rock Standard (8 sezioni)';
+            else if (val === 'ballad_aaba') badge.textContent = 'Ballata Strofica (6 sezioni)';
+            else if (val === 'nursery_rhyme') badge.textContent = 'Filastrocca Veloce (4 sezioni)';
+            else if (val === 'blues_12bar') badge.textContent = 'Jazz / Blues 12-Misure';
+            else if (val === 'ambient_triad') badge.textContent = 'Ambient Etereo (3 sezioni)';
+            else if (val === 'continuous_groove') badge.textContent = 'Groove Loop Continuo';
+        });
+
+        // --- IMPORT / EXPORT SYSTEM ---
+        const importAbcBtn = document.getElementById('importAbcBtn');
+        const fileInputAbc = document.getElementById('fileInputAbc');
+        const importJsonBtn = document.getElementById('importJsonBtn');
+        const fileInputJson = document.getElementById('fileInputJson');
+        const exportAbcBtn = document.getElementById('exportAbcBtn');
+        const exportJsonBtn = document.getElementById('exportJsonBtn');
+
+        importAbcBtn.addEventListener('click', () => fileInputAbc.click());
+        fileInputAbc.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                parseAndSyncImportedABC(ev.target.result);
+                stopPlayback();
+            };
+            reader.readAsText(file);
+        });
+
+        importJsonBtn.addEventListener('click', () => fileInputJson.click());
+        fileInputJson.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if (data.metadata) {
+                        if (data.metadata.title) document.getElementById('metaTitle').value = data.metadata.title;
+                        if (data.metadata.composer) document.getElementById('metaComposer').value = data.metadata.composer;
+                        if (data.metadata.meter) document.getElementById('metaMeter').value = data.metadata.meter;
+                        if (data.metadata.notes) document.getElementById('metaNotes').value = data.metadata.notes;
+                    }
+                    if (data.genre) document.getElementById('genreStyleSelect').value = data.genre;
+                    if (data.mood) document.getElementById('moodSelect').value = data.mood;
+                    if (data.structure) document.getElementById('songStructureSelect').value = data.structure;
+                    if (data.bpm) {
+                        document.getElementById('bpmSlider').value = data.bpm;
+                        document.getElementById('bpmValue').textContent = data.bpm;
+                    }
+                    if (data.mainOsc) document.getElementById('oscTargetSelect').value = data.mainOsc;
+                    if (data.chorusOsc) document.getElementById('chorusOscSelect').value = data.chorusOsc;
+                    if (data.rootNote) document.getElementById('rootNoteSelect').value = data.rootNote;
+                    if (data.abcCode) document.getElementById('abcEditor').value = data.abcCode;
+
+                    stopPlayback();
+                    updateParsedTokens();
+                } catch (err) {
+                    alert('File JSON non valido o non riconosciuto');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        exportAbcBtn.addEventListener('click', () => {
+            const title = document.getElementById('metaTitle').value.trim() || 'korg_song';
+            const cleanFilename = title.toLowerCase().replace(/[^a-z0-9_-]/gi, '_');
+            const blob = new Blob([document.getElementById('abcEditor').value], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${cleanFilename}.abc`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        exportJsonBtn.addEventListener('click', () => {
+            const title = document.getElementById('metaTitle').value.trim() || 'korg_song';
+            const cleanFilename = title.toLowerCase().replace(/[^a-z0-9_-]/gi, '_');
+            const bundle = {
+                generator: "Korg NTS-1 Suite - ABC Arranger",
+                version: "1.4.0",
+                timestamp: new Date().toISOString(),
+                metadata: {
+                    title: document.getElementById('metaTitle').value,
+                    composer: document.getElementById('metaComposer').value,
+                    meter: document.getElementById('metaMeter').value,
+                    notes: document.getElementById('metaNotes').value
+                },
+                genre: document.getElementById('genreStyleSelect').value,
+                mood: document.getElementById('moodSelect').value,
+                structure: document.getElementById('songStructureSelect').value,
+                rhythmMode: document.getElementById('rhythmModeSelect').value,
+                durationMode: document.getElementById('durationConstraintSelect').value,
+                targetSeconds: parseInt(document.getElementById('targetSecondsSelect').value, 10),
+                bpm: parseInt(document.getElementById('bpmSlider').value, 10),
+                mainOsc: document.getElementById('oscTargetSelect').value,
+                chorusOsc: document.getElementById('chorusOscSelect').value,
+                rootNote: document.getElementById('rootNoteSelect').value,
+                abcCode: document.getElementById('abcEditor').value
+            };
+
+            const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${cleanFilename}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyAutoMatch();
+            generateABCComposition();
+            initWebMIDI();
+        });
+    </script>
+</body>
+</html>
