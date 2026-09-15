@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Korg NTS-1 - Jukebox & Focus Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; touch-action: manipulation; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #09090b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        .led-active { box-shadow: 0 0 8px #22c55e, inset 0 0 4px #4ade80; }
+        .led-cyan { box-shadow: 0 0 8px #06b6d4, inset 0 0 4px #22d3ee; }
+        .led-orange { box-shadow: 0 0 8px #f97316, inset 0 0 4px #fb923c; }
+        .active-track-card {
+            border-color: #f97316 !important;
+            background: linear-gradient(90deg, rgba(249, 115, 22, 0.15), rgba(24, 24, 27, 0.95)) !important;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-3 md:p-5 select-none overflow-x-hidden">
+
+    <!-- Header & Hardware Routing -->
+    <header class="max-w-7xl mx-auto w-full mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-500 shadow-lg">
+                <i class="fa-solid fa-compact-disc text-xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">ZEN JUKEBOX PLAYER</h1>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 4 v1.0</span>
+                </div>
+                <p class="text-xs text-zinc-400">Esecutore Continuo per Studio/Focus, Auto-Patch Switch & Mutazioni Humanize</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap justify-end">
+            <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-xl text-xs">
+                <label for="soundTargetSelect" class="text-zinc-400 font-semibold flex items-center gap-1 text-[11px]">
+                    <i class="fa-solid fa-volume-high text-orange-400"></i> Uscita:
+                </label>
+                <select id="soundTargetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-medium">
+                    <option value="both">Entrambi (MIDI + Casse)</option>
+                    <option value="internal">Solo Casse PC / Mobile</option>
+                    <option value="midi">Solo Korg NTS-1 (MIDI)</option>
+                </select>
+            </div>
+
+            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium">
+                <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"></span>
+                <span id="statusText" class="text-zinc-300">Inizializzazione MIDI...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow">
+        
+        <!-- Left Column: Master Transport, Now Playing & Focus Timer -->
+        <section class="lg:col-span-5 flex flex-col gap-3">
+            
+            <!-- Now Playing & Hardware Display -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+                    <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span id="nowPlayingLed" class="w-2 h-2 rounded-full bg-zinc-600"></span> In Riproduzione
+                    </span>
+                    <span id="timeCounterDisplay" class="font-mono-code text-xs text-orange-400 font-bold">00:00 / 00:00</span>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <h2 id="nowPlayingTitle" class="text-base sm:text-lg font-black text-zinc-100 truncate">Nessun Brano</h2>
+                    <div class="flex items-center gap-2 text-xs font-mono-code text-zinc-400">
+                        <span id="nowPlayingGenre" class="text-purple-400 font-medium">Genere: -</span>
+                        <span>•</span>
+                        <span id="nowPlayingBpm" class="text-orange-400">0 BPM</span>
+                    </div>
+                </div>
+
+                <!-- Hardware Monitor Display -->
+                <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2 shadow-inner">
+                    <div class="flex items-center justify-between text-[11px] font-mono-code">
+                        <span class="text-zinc-400">Patch Hardware Attiva:</span>
+                        <span id="hwOscDisplay" class="text-orange-400 font-bold px-2 py-0.5 rounded bg-orange-950/40 border border-orange-800/40">OSC: SAW</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5 text-[10px] font-mono-code text-zinc-400 text-center">
+                        <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">Shape</span>
+                            <strong id="hwShapeVal" class="text-zinc-200">64</strong>
+                        </div>
+                        <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">Cutoff</span>
+                            <strong id="hwCutoffVal" class="text-cyan-400">80</strong>
+                        </div>
+                        <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">Release</span>
+                            <strong id="hwReleaseVal" class="text-emerald-400">45</strong>
+                        </div>
+                        <div class="bg-zinc-900/90 p-1.5 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">Reverb</span>
+                            <strong id="hwReverbVal" class="text-purple-400">30</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden border border-zinc-800">
+                    <div id="trackProgressBar" class="bg-orange-500 h-full w-0 transition-all duration-150"></div>
+                </div>
+
+                <!-- Global Transport Buttons -->
+                <div class="grid grid-cols-4 gap-2 pt-1">
+                    <button id="prevTrackBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center transition" title="Traccia Precedente">
+                        <i class="fa-solid fa-backward-step"></i>
+                    </button>
+                    <button id="playPauseBtn" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg" title="Play / Pausa">
+                        <i id="playPauseIcon" class="fa-solid fa-play"></i>
+                        <span id="playPauseLabel">PLAY</span>
+                    </button>
+                    <button id="stopTrackBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center transition" title="Stop">
+                        <i class="fa-solid fa-stop"></i>
+                    </button>
+                    <button id="nextTrackBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center transition" title="Traccia Successiva">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                </div>
+
+                <!-- Playback Mode Toggles -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button id="shuffleToggleBtn" class="py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 rounded-lg font-medium transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-shuffle text-xs"></i>
+                        <span id="shuffleLabel">Shuffle: OFF</span>
+                    </button>
+                    <button id="loopModeToggleBtn" class="py-1.5 bg-orange-600/20 text-orange-400 border border-orange-500/40 rounded-lg font-medium transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-repeat text-xs"></i>
+                        <span id="loopModeLabel">Loop: Playlist</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Focus Companion / Pomodoro Timer & Humanize -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                    <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-hourglass-half text-amber-400"></i> Timer Focus / Sessione
+                    </span>
+                    <span id="focusTimerDisplay" class="font-mono-code text-xs font-bold text-amber-400">25:00</span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <button class="timer-preset-btn py-1 px-2 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code" data-minutes="25">25 Min</button>
+                    <button class="timer-preset-btn py-1 px-2 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code" data-minutes="45">45 Min</button>
+                    <button class="timer-preset-btn py-1 px-2 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono-code" data-minutes="60">60 Min</button>
+                </div>
+
+                <div class="flex items-center justify-between gap-2">
+                    <button id="startTimerBtn" class="flex-1 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-play text-[10px]"></i> Avvia Timer
+                    </button>
+                    <button id="resetTimerBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-rotate-left text-[10px]"></i> Reset
+                    </button>
+                </div>
+
+                <!-- Modulo Humanize 🎲 -->
+                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-2.5 flex items-center justify-between gap-2 text-xs">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="humanizeToggle" checked class="accent-orange-500 rounded">
+                        <span class="text-[11px] font-semibold text-zinc-300">
+                            🎲 Dado Humanize (Micro-Variazioni Live)
+                        </span>
+                    </label>
+                    <span class="text-[10px] text-zinc-500 font-mono-code">Octave/Vel/Gate</span>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800">
+                    <button id="openZenBtn" class="w-full py-2 bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 shadow">
+                        <i class="fa-solid fa-expand text-indigo-400"></i> Modalità Zen (Fullscreen Visualizer)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panic Button -->
+            <button id="panicBtn" class="w-full py-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow">
+                <i class="fa-solid fa-triangle-exclamation text-red-400"></i> PANIC (All Sound & Notes Off)
+            </button>
+
+        </section>
+
+        <!-- Right Column: Visualizer Canvas & Scaletta Playlist -->
+        <section class="lg:col-span-7 flex flex-col gap-3">
+            
+            <!-- Real-time Oscilloscope / Visualizer -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 shadow-xl flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-zinc-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-wave-square text-cyan-400"></i> Oscilloscopio Vettoriale Reattivo
+                    </span>
+                    <span id="visualizerFpsBadge" class="text-[10px] font-mono-code text-zinc-500">60 FPS</span>
+                </div>
+                <div class="relative w-full h-32 sm:h-36 bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden">
+                    <canvas id="visualizerCanvas" class="w-full h-full block"></canvas>
+                </div>
+            </div>
+
+            <!-- Scaletta Playlist & Caricamento -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-3 flex-grow">
+                <div class="flex items-center justify-between flex-wrap gap-2 border-b border-zinc-800 pb-2">
+                    <div>
+                        <h3 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Scaletta del Jukebox</h3>
+                        <span id="playlistStatsBadge" class="text-[11px] text-zinc-400 font-mono-code">0 brani caricati</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="importPlaylistBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-indigo-300 border border-zinc-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-folder-open text-indigo-400"></i> Carica Scaletta (.JSON)
+                        </button>
+                        <input type="file" id="playlistFileInput" accept=".json,.abc,.txt" multiple class="hidden">
+                    </div>
+                </div>
+
+                <!-- Playlist Queue Cards -->
+                <div id="jukeboxTrackList" class="flex flex-col gap-2 min-h-[180px] max-h-[380px] overflow-y-auto custom-scrollbar pr-1">
+                    <!-- Tracce inserite dinamicamente -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Zen Mode Fullscreen Modal Overlay -->
+    <div id="zenOverlay" class="fixed inset-0 bg-zinc-950 z-50 hidden flex flex-col justify-between p-6 sm:p-10 select-none">
+        <div class="flex items-center justify-between w-full">
+            <div class="flex items-center gap-2 text-xs font-mono-code text-zinc-500">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 led-active"></span>
+                <span>MODALITÀ ZEN ATTIVA</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="zenTimerDisplay" class="font-mono-code text-sm font-bold text-amber-400 bg-zinc-900/80 px-3 py-1 rounded-full border border-zinc-800">25:00</span>
+                <button id="closeZenBtn" class="w-9 h-9 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 flex items-center justify-center border border-zinc-800 transition">
+                    <i class="fa-solid fa-compress text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="w-full flex-grow flex flex-col items-center justify-center relative my-4">
+            <canvas id="zenCanvas" class="w-full h-64 sm:h-80 max-w-4xl block"></canvas>
+            <div class="text-center mt-4">
+                <h2 id="zenTrackTitle" class="text-xl sm:text-3xl font-black text-zinc-100 tracking-wider">Nessun Brano</h2>
+                <p id="zenTrackSub" class="text-xs sm:text-sm font-mono-code text-orange-400 mt-1">-- BPM • OSC: --</p>
+            </div>
+        </div>
+
+        <div class="max-w-md mx-auto w-full flex items-center justify-center gap-4 bg-zinc-900/60 backdrop-blur border border-zinc-800/80 p-3 rounded-2xl shadow-2xl">
+            <button id="zenPrevBtn" class="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 flex items-center justify-center transition">
+                <i class="fa-solid fa-backward-step"></i>
+            </button>
+            <button id="zenPlayPauseBtn" class="w-12 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center text-lg transition shadow-lg">
+                <i id="zenPlayPauseIcon" class="fa-solid fa-play"></i>
+            </button>
+            <button id="zenNextBtn" class="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 flex items-center justify-center transition">
+                <i class="fa-solid fa-forward-step"></i>
+            </button>
+        </div>
+    </div>
+
+    <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>Korg NTS-1 Suite • Zen Jukebox Player (Prototipo 4)</p>
+        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.0.0</span>
+    </footer>
+
+    <!-- Application Script Logic -->
+    <script>
+        // --- DATA & STATE ---
+        let playlist = [];
+        let currentTrackIndex = 0;
+        let isPlaying = false;
+        let isPaused = false;
+        let isShuffle = false;
+        let loopMode = 'playlist'; // 'playlist' | 'single' | 'off'
+        let currentStepIndex = 0;
+        let parsedEvents = [];
+        let playbackTimer = null;
+        let noteOffTimers = [];
+        let trackElapsedSec = 0;
+        let trackDurationInterval = null;
+
+        const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const BASE_NOTE_MAP = { 'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11 };
+
+        // --- WEB AUDIO & ANALYSER ENGINE ---
+        let audioCtx = null;
+        let masterGainNode = null;
+        let analyserNode = null;
+        let activeVoices = new Map();
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioClass) {
+                    audioCtx = new AudioClass();
+                    analyserNode = audioCtx.createAnalyser();
+                    analyserNode.fftSize = 256;
+                    masterGainNode = audioCtx.createGain();
+                    masterGainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                    masterGainNode.connect(analyserNode);
+                    analyserNode.connect(audioCtx.destination);
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function playInternalNote(midiNote, vel = 100) {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            stopInternalNote(midiNote, true);
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
+
+            const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            osc.type = 'sawtooth';
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(3600, ctx.currentTime);
+            filter.Q.setValueAtTime(2.5, ctx.currentTime);
+
+            const peak = 0.20 * (vel / 127);
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(peak, ctx.currentTime + 0.015);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGainNode);
+
+            osc.start();
+            activeVoices.set(midiNote, { osc, gain });
+        }
+
+        function stopInternalNote(midiNote, instant = false) {
+            if (!activeVoices.has(midiNote)) return;
+            const ctx = getAudioContext();
+            const voice = activeVoices.get(midiNote);
+            activeVoices.delete(midiNote);
+
+            if (ctx && voice) {
+                try {
+                    voice.gain.gain.cancelScheduledValues(ctx.currentTime);
+                    if (instant) {
+                        voice.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                        voice.osc.stop();
+                        voice.osc.disconnect();
+                    } else {
+                        voice.gain.gain.setValueAtTime(Math.max(0.0001, voice.gain.gain.value), ctx.currentTime);
+                        voice.gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
+                        setTimeout(() => {
+                            try { voice.osc.stop(); voice.osc.disconnect(); } catch (e) {}
+                        }, 60);
+                    }
+                } catch (e) {
+                    try { voice.osc.stop(); } catch (err) {}
+                }
+            }
+        }
+
+        function stopAllInternalNotes() {
+            for (const n of Array.from(activeVoices.keys())) {
+                stopInternalNote(n, true);
+            }
+            activeVoices.clear();
+        }
+
+        // Sintesi Campana Tibetana per Fine Sessione Focus
+        function playTibetanBowlChime() {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const fundamental = 216; // A3 rilassante
+            const harmonics = [1, 2.76, 5.4, 8.9];
+            const gains = [0.4, 0.25, 0.12, 0.06];
+
+            harmonics.forEach((ratio, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(fundamental * ratio, ctx.currentTime);
+
+                gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(gains[idx], ctx.currentTime + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 4.5);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 4.6);
+            });
+        }
+
+        // --- WEB MIDI ACCESS ---
+        let midiAccess = null;
+        let selectedOutput = null;
+        let midiChannel = 0;
+        let currentlyPlayingMidiNotes = new Set();
+
+        async function initWebMIDI() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+
+            if (!navigator.requestMIDIAccess) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
+                statusText.textContent = 'Synth Interno (Casse)';
+                document.getElementById('soundTargetSelect').value = 'internal';
+                return;
+            }
+
+            try {
+                midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+                const outputs = Array.from(midiAccess.outputs.values());
+                let korg = outputs.find(o => (o.name || '').toLowerCase().includes('nts') || (o.name || '').toLowerCase().includes('korg'));
+                
+                if (korg) {
+                    selectedOutput = korg;
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `Connesso: ${korg.name}`;
+                } else if (outputs.length > 0) {
+                    selectedOutput = outputs[0];
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `MIDI: ${outputs[0].name}`;
+                } else {
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 led-orange';
+                    statusText.textContent = 'Synth Interno (Nessun MIDI)';
+                }
+            } catch (e) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
+                statusText.textContent = 'Synth Interno Attivo';
+            }
+        }
+
+        function sendMidiCC(cc, val) {
+            const target = document.getElementById('soundTargetSelect').value;
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    selectedOutput.send([0xB0 | (midiChannel & 0x0F), cc & 0x7F, val & 0x7F]);
+                } catch (e) {}
+            }
+        }
+
+        function sendNoteOn(midiNote, vel = 100) {
+            const target = document.getElementById('soundTargetSelect').value;
+            currentlyPlayingMidiNotes.add(midiNote);
+
+            if (target === 'internal' || target === 'both') playInternalNote(midiNote, vel);
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    selectedOutput.send([0x90 | (midiChannel & 0x0F), midiNote & 0x7F, vel & 0x7F]);
+                } catch (e) {}
+            }
+        }
+
+        function sendNoteOff(midiNote) {
+            const target = document.getElementById('soundTargetSelect').value;
+            currentlyPlayingMidiNotes.delete(midiNote);
+
+            if (target === 'internal' || target === 'both') stopInternalNote(midiNote, false);
+            if ((target === 'midi' || target === 'both') && selectedOutput) {
+                try {
+                    selectedOutput.send([0x80 | (midiChannel & 0x0F), midiNote & 0x7F, 0]);
+                } catch (e) {}
+            }
+        }
+
+        function silenceActiveNotes() {
+            if (selectedOutput) {
+                try {
+                    const statusCC = 0xB0 | (midiChannel & 0x0F);
+                    selectedOutput.send([statusCC, 120, 0]);
+                    selectedOutput.send([statusCC, 123, 0]);
+                    selectedOutput.send([statusCC, 64, 0]);
+
+                    for (const n of currentlyPlayingMidiNotes) {
+                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n & 0x7F, 0]);
+                    }
+                } catch (e) {}
+            }
+            currentlyPlayingMidiNotes.clear();
+            stopAllInternalNotes();
+        }
+
+        function panic() {
+            stopPlayback();
+            silenceActiveNotes();
+            if (selectedOutput) {
+                try {
+                    for (let n = 0; n < 128; n++) {
+                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n, 0]);
+                    }
+                } catch (e) {}
+            }
+        }
+
+        // Invia tutti i parametri CC della patch al Korg
+        function applyAutoPatchSwitch(track) {
+            if (!track || !track.patch) return;
+            const p = track.patch;
+            sendMidiCC(53, p.osc ?? 0);
+            sendMidiCC(54, p.shape ?? 64);
+            sendMidiCC(55, p.alt ?? 32);
+            sendMidiCC(43, p.cutoff ?? 80);
+            sendMidiCC(44, p.resonance ?? 20);
+            sendMidiCC(16, p.attack ?? 10);
+            sendMidiCC(19, p.release ?? 45);
+            sendMidiCC(30, p.delayTime ?? 25);
+            sendMidiCC(35, p.reverbMix ?? 30);
+
+            // Update UI Hardware Display
+            document.getElementById('hwOscDisplay').textContent = `OSC: ${getOscName(p.osc)}`;
+            document.getElementById('hwShapeVal').textContent = p.shape ?? 64;
+            document.getElementById('hwCutoffVal').textContent = p.cutoff ?? 80;
+            document.getElementById('hwReleaseVal').textContent = p.release ?? 45;
+            document.getElementById('hwReverbVal').textContent = p.reverbMix ?? 30;
+        }
+
+        function getOscName(oscVal) {
+            const map = {
+                '0': 'SAW', '16': 'TRI', '32': 'SQR', '48': 'VPM', '64': 'WAVES',
+                '76': 'Volca Bass', '88': 'Chords', '100': 'Proba-B', '112': 'J6'
+            };
+            return map[String(oscVal)] || `CC:${oscVal}`;
+        }
+
+        // --- ABC PARSER ---
+        function parseABC(text, fallbackBpm = 120) {
+            const lines = text.split('\n');
+            const events = [];
+            let currentBpm = fallbackBpm;
+            let unitLength = 1 / 16;
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line || (line.startsWith('%') && !line.startsWith('%%MIDI'))) continue;
+
+                if (line.startsWith('Q:')) {
+                    const m = line.match(/Q:\s*(\d+)/i);
+                    if (m) currentBpm = parseInt(m[1], 10);
+                    continue;
+                }
+                if (line.startsWith('L:')) {
+                    const m = line.match(/L:\s*1\/(\d+)/i);
+                    if (m) unitLength = 1 / parseInt(m[1], 10);
+                    continue;
+                }
+                if (line.startsWith('%%MIDI control')) {
+                    const m = line.match(/%%MIDI\s+control\s+(\d+)\s+(\d+)/i);
+                    if (m) {
+                        events.push({ type: 'cc', cc: parseInt(m[1], 10), value: parseInt(m[2], 10) });
+                    }
+                    continue;
+                }
+                if (line.startsWith('X:') || line.startsWith('T:') || line.startsWith('C:') || line.startsWith('M:') || line.startsWith('K:')) continue;
+
+                const matches = line.match(/(\[[^\]]+\]|\^?[_]?[=]?[A-Ga-g][',]*[0-9]*\/?[0-9]*|z[0-9]*\/?[0-9]*|[|])/g) || [];
+                for (let tok of matches) {
+                    tok = tok.trim();
+                    if (!tok || tok === '|') continue;
+
+                    if (tok.startsWith('z') || tok.startsWith('Z')) {
+                        const mult = parseDurationMultiplier(tok.substring(1));
+                        events.push({ type: 'rest', duration: mult * (unitLength * 4) });
+                        continue;
+                    }
+
+                    if (tok.startsWith('[')) {
+                        const m = tok.match(/\[([^\]]+)\]([0-9]*\/?[0-9]*)?/);
+                        if (m) {
+                            const mult = parseDurationMultiplier(m[2] || '');
+                            const notesStr = m[1].match(/(\^?[_]?[=]?[A-Ga-g][',]*)/g) || [];
+                            const midiNotes = notesStr.map(s => parseSinglePitch(s)).filter(n => n !== null);
+                            if (midiNotes.length > 0) {
+                                events.push({ type: 'note', midiNotes, duration: mult * (unitLength * 4) });
+                            }
+                        }
+                        continue;
+                    }
+
+                    const m = tok.match(/(\^?[_]?[=]?[A-Ga-g][',]*)([0-9]*\/?[0-9]*)?/);
+                    if (m) {
+                        const midi = parseSinglePitch(m[1]);
+                        const mult = parseDurationMultiplier(m[2] || '');
+                        if (midi !== null) {
+                            events.push({ type: 'note', midiNotes: [midi], duration: mult * (unitLength * 4) });
+                        }
+                    }
+                }
+            }
+
+            return { events, detectedBpm: currentBpm };
+        }
+
+        function parseDurationMultiplier(durStr) {
+            if (!durStr) return 1;
+            if (durStr === '/') return 0.5;
+            if (durStr.startsWith('/')) {
+                const den = parseInt(durStr.substring(1), 10);
+                return isNaN(den) || den === 0 ? 0.5 : 1 / den;
+            }
+            if (durStr.includes('/')) {
+                const parts = durStr.split('/');
+                return (parseInt(parts[0], 10) || 1) / (parseInt(parts[1], 10) || 2);
+            }
+            const v = parseFloat(durStr);
+            return isNaN(v) ? 1 : v;
+        }
+
+        function parseSinglePitch(str) {
+            const m = str.match(/(\^|_|=)?([A-Ga-g])([',]*)/);
+            if (!m) return null;
+            const acc = m[1];
+            const letter = m[2];
+            const octMods = m[3] || '';
+            let oct = (letter === letter.toLowerCase()) ? 5 : 4;
+
+            for (let c of octMods) {
+                if (c === "'") oct++;
+                if (c === ",") oct--;
+            }
+
+            let semi = BASE_NOTE_MAP[letter.toLowerCase()] || 0;
+            if (acc === '^') semi += 1;
+            if (acc === '_') semi -= 1;
+            return (oct + 1) * 12 + semi;
+        }
+
+        function calculateTrackDurationSec(abcCode, bpmVal) {
+            const parsed = parseABC(abcCode, bpmVal);
+            const effBpm = bpmVal || parsed.detectedBpm || 120;
+            const secPerQuarter = 60 / effBpm;
+            let total = 0;
+            for (let evt of parsed.events) {
+                if (evt.type === 'note' || evt.type === 'rest') {
+                    total += (evt.duration * secPerQuarter);
+                }
+            }
+            return Math.round(total);
+        }
+
+        function formatTimeMinSec(secTotal) {
+            const m = Math.floor(secTotal / 60).toString().padStart(2, '0');
+            const s = (secTotal % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // --- JUKEBOX PLAYBACK ENGINE ---
+        function loadTrack(index) {
+            if (index < 0 || index >= playlist.length) return;
+            currentTrackIndex = index;
+            const track = playlist[currentTrackIndex];
+
+            const parsed = parseABC(track.abcCode, track.bpm);
+            parsedEvents = parsed.events;
+            currentStepIndex = 0;
+            trackElapsedSec = 0;
+
+            document.getElementById('nowPlayingTitle').textContent = track.title || 'Senza Titolo';
+            document.getElementById('nowPlayingGenre').textContent = `Genere: ${track.genre || 'Generico'}`;
+            document.getElementById('nowPlayingBpm').textContent = `${track.bpm} BPM`;
+
+            document.getElementById('zenTrackTitle').textContent = track.title || 'Senza Titolo';
+            document.getElementById('zenTrackSub').textContent = `${track.bpm} BPM • OSC: ${getOscName(track.patch?.osc)}`;
+
+            const durSec = calculateTrackDurationSec(track.abcCode, track.bpm);
+            document.getElementById('timeCounterDisplay').textContent = `00:00 / ${formatTimeMinSec(durSec)}`;
+            document.getElementById('trackProgressBar').style.width = '0%';
+
+            applyAutoPatchSwitch(track);
+            renderPlaylistUI();
+        }
+
+        function startPlayback() {
+            if (playlist.length === 0) return;
+            getAudioContext();
+
+            if (isPaused) {
+                isPaused = false;
+                isPlaying = true;
+                updateTransportUI();
+                startTrackTimer();
+                scheduleStep();
+                return;
+            }
+
+            isPlaying = true;
+            isPaused = false;
+            loadTrack(currentTrackIndex);
+            updateTransportUI();
+            startTrackTimer();
+            scheduleStep();
+        }
+
+        function scheduleStep() {
+            if (!isPlaying || isPaused) return;
+
+            if (currentStepIndex >= parsedEvents.length) {
+                handleTrackFinished();
+                return;
+            }
+
+            const track = playlist[currentTrackIndex];
+            const bpm = track.bpm || 120;
+            const quarterMs = 60000 / bpm;
+            const evt = parsedEvents[currentStepIndex];
+
+            if (evt.type === 'cc') {
+                sendMidiCC(evt.cc, evt.value);
+                currentStepIndex++;
+                scheduleStep();
+                return;
+            }
+
+            const stepMs = (evt.duration || 0.25) * quarterMs;
+
+            if (evt.type === 'note') {
+                const isHumanize = document.getElementById('humanizeToggle').checked;
+                let vel = 100;
+                let gateFactor = 0.75;
+
+                // Mutazioni probabilistiche Humanize
+                if (isHumanize) {
+                    vel = Math.max(60, Math.min(127, Math.round(vel + (Math.random() * 24 - 12))));
+                    gateFactor = Math.max(0.4, Math.min(0.95, gateFactor + (Math.random() * 0.2 - 0.1)));
+                }
+
+                const noteMs = Math.max(20, stepMs * gateFactor);
+
+                evt.midiNotes.forEach(n => {
+                    let finalNote = n;
+                    if (isHumanize && Math.random() < 0.08) {
+                        // Raro shift di ottava casuale
+                        finalNote = Math.random() < 0.5 ? n + 12 : n - 12;
+                    }
+                    sendNoteOn(finalNote, vel);
+                    const t = setTimeout(() => sendNoteOff(finalNote), noteMs);
+                    noteOffTimers.push(t);
+                });
+            }
+
+            currentStepIndex++;
+            playbackTimer = setTimeout(() => scheduleStep(), stepMs);
+        }
+
+        function handleTrackFinished() {
+            stopStepTimers();
+            silenceActiveNotes();
+
+            if (loopMode === 'single') {
+                currentStepIndex = 0;
+                trackElapsedSec = 0;
+                scheduleStep();
+                return;
+            }
+
+            if (isShuffle) {
+                let nextIdx = Math.floor(Math.random() * playlist.length);
+                if (playlist.length > 1 && nextIdx === currentTrackIndex) {
+                    nextIdx = (nextIdx + 1) % playlist.length;
+                }
+                currentTrackIndex = nextIdx;
+                loadTrack(currentTrackIndex);
+                scheduleStep();
+                return;
+            }
+
+            if (currentTrackIndex < playlist.length - 1) {
+                currentTrackIndex++;
+                loadTrack(currentTrackIndex);
+                scheduleStep();
+            } else {
+                if (loopMode === 'playlist') {
+                    currentTrackIndex = 0;
+                    loadTrack(currentTrackIndex);
+                    scheduleStep();
+                } else {
+                    stopPlayback();
+                }
+            }
+        }
+
+        function pausePlayback() {
+            if (!isPlaying) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                stopStepTimers();
+                silenceActiveNotes();
+                clearInterval(trackDurationInterval);
+            } else {
+                startTrackTimer();
+                scheduleStep();
+            }
+            updateTransportUI();
+        }
+
+        function stopPlayback() {
+            stopStepTimers();
+            silenceActiveNotes();
+            clearInterval(trackDurationInterval);
+            isPlaying = false;
+            isPaused = false;
+            currentStepIndex = 0;
+            trackElapsedSec = 0;
+            document.getElementById('trackProgressBar').style.width = '0%';
+            updateTransportUI();
+        }
+
+        function stopStepTimers() {
+            clearTimeout(playbackTimer);
+            noteOffTimers.forEach(t => clearTimeout(t));
+            noteOffTimers = [];
+        }
+
+        function nextTrack() {
+            stopStepTimers();
+            silenceActiveNotes();
+            if (isShuffle) {
+                currentTrackIndex = Math.floor(Math.random() * playlist.length);
+            } else {
+                currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+            }
+            loadTrack(currentTrackIndex);
+            if (isPlaying && !isPaused) scheduleStep();
+        }
+
+        function prevTrack() {
+            stopStepTimers();
+            silenceActiveNotes();
+            currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+            loadTrack(currentTrackIndex);
+            if (isPlaying && !isPaused) scheduleStep();
+        }
+
+        function startTrackTimer() {
+            clearInterval(trackDurationInterval);
+            trackDurationInterval = setInterval(() => {
+                if (isPlaying && !isPaused && playlist[currentTrackIndex]) {
+                    trackElapsedSec++;
+                    const totalSec = calculateTrackDurationSec(playlist[currentTrackIndex].abcCode, playlist[currentTrackIndex].bpm);
+                    document.getElementById('timeCounterDisplay').textContent = `${formatTimeMinSec(trackElapsedSec)} / ${formatTimeMinSec(totalSec)}`;
+                    const pct = Math.min(100, (trackElapsedSec / Math.max(1, totalSec)) * 100);
+                    document.getElementById('trackProgressBar').style.width = `${pct}%`;
+                }
+            }, 1000);
+        }
+
+        function updateTransportUI() {
+            const led = document.getElementById('nowPlayingLed');
+            const icon = document.getElementById('playPauseIcon');
+            const label = document.getElementById('playPauseLabel');
+            const zenIcon = document.getElementById('zenPlayPauseIcon');
+
+            if (isPlaying && !isPaused) {
+                led.className = 'w-2 h-2 rounded-full bg-emerald-500 led-active';
+                icon.className = 'fa-solid fa-pause';
+                label.textContent = 'PAUSA';
+                zenIcon.className = 'fa-solid fa-pause';
+            } else if (isPaused) {
+                led.className = 'w-2 h-2 rounded-full bg-yellow-500 led-orange';
+                icon.className = 'fa-solid fa-play';
+                label.textContent = 'RIPRENDI';
+                zenIcon.className = 'fa-solid fa-play';
+            } else {
+                led.className = 'w-2 h-2 rounded-full bg-zinc-600';
+                icon.className = 'fa-solid fa-play';
+                label.textContent = 'PLAY';
+                zenIcon.className = 'fa-solid fa-play';
+            }
+        }
+
+        // --- PLAYLIST UI & DEMO DATA ---
+        function renderPlaylistUI() {
+            const container = document.getElementById('jukeboxTrackList');
+            container.innerHTML = '';
+
+            if (playlist.length === 0) {
+                container.innerHTML = `
+                    <div class="h-36 border border-zinc-800/80 rounded-xl flex flex-col items-center justify-center text-zinc-600 p-4 text-center">
+                        <i class="fa-solid fa-list-music text-xl mb-1"></i>
+                        <p class="text-xs">Nessuna traccia nel Jukebox.</p>
+                        <p class="text-[11px] text-zinc-500">Carica una scaletta esportata dal Playlist Builder.</p>
+                    </div>
+                `;
+                document.getElementById('playlistStatsBadge').textContent = '0 brani caricati';
+                return;
+            }
+
+            let totalSec = 0;
+            playlist.forEach((track, index) => {
+                const dur = calculateTrackDurationSec(track.abcCode, track.bpm);
+                totalSec += dur;
+                const isCurrent = (index === currentTrackIndex);
+
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between gap-3 transition-all cursor-pointer ${isCurrent ? 'active-track-card shadow-lg' : 'hover:bg-zinc-850'}`;
+                card.onclick = () => {
+                    stopPlayback();
+                    loadTrack(index);
+                    startPlayback();
+                };
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="w-6 h-6 rounded bg-zinc-800 text-orange-400 font-mono-code text-xs font-bold flex items-center justify-center flex-shrink-0">
+                            ${isCurrent && isPlaying ? '<i class="fa-solid fa-volume-high text-[10px] text-emerald-400"></i>' : index + 1}
+                        </span>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-xs font-bold text-zinc-100 truncate">${track.title}</span>
+                            <div class="flex items-center gap-2 text-[10px] text-zinc-400 font-mono-code">
+                                <span class="text-purple-400">${track.genre}</span>
+                                <span>•</span>
+                                <span class="text-orange-400">${track.bpm} BPM</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono-code text-indigo-400 font-bold bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-900/40 flex-shrink-0">
+                        ${formatTimeMinSec(dur)}
+                    </span>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('playlistStatsBadge').textContent = `${playlist.length} brani • Totale: ${formatTimeMinSec(totalSec)}`;
+        }
+
+        function loadDefaultDemoPlaylist() {
+            playlist = [
+                {
+                    title: "Midnight City Highway",
+                    genre: "synthwave",
+                    bpm: 125,
+                    patch: { osc: 76, shape: 80, alt: 35, cutoff: 85, resonance: 25, attack: 5, release: 40, delayTime: 25, reverbMix: 35 },
+                    abcCode: "X:1\nT:Midnight City Highway\nM:4/4\nL:1/8\nQ:125\nK:C\n%%MIDI control 53 76\nC, C, C C,   C, C, _E C,   F, F, F, F,   _G, _G, G, G, | C, C, C C,   C, C, _E C,   _B,, _B,, _B, _B,,   _A,, _A,, G,, G,, |"
+                },
+                {
+                    title: "Autumn Leaves & Rain",
+                    genre: "lofi_study",
+                    bpm: 78,
+                    patch: { osc: 16, shape: 40, alt: 20, cutoff: 55, resonance: 15, attack: 15, release: 60, delayTime: 35, reverbMix: 50 },
+                    abcCode: "X:2\nT:Autumn Leaves & Rain\nM:4/4\nL:1/8\nQ:78\nK:C\n%%MIDI control 53 16\n[D, F A c]2 z [D, F A c]   [E, G B d]2 z2 | [F, A c e]2 z [G, B d f]   [D, F A c]2 z2 |"
+                },
+                {
+                    title: "Deep Space Nebula",
+                    genre: "ambient_cloud",
+                    bpm: 64,
+                    patch: { osc: 64, shape: 95, alt: 70, cutoff: 70, resonance: 30, attack: 30, release: 90, delayTime: 60, reverbMix: 75 },
+                    abcCode: "X:3\nT:Deep Space Nebula\nM:4/4\nL:1/8\nQ:64\nK:C\n%%MIDI control 53 64\n[C, G, c e]4 z4 | [F, C F A]4 z4 | [_A,, _E, _A, c]4 z4 | [G,, D, G, B]4 z4 |"
+                }
+            ];
+            renderPlaylistUI();
+            loadTrack(0);
+        }
+
+        // --- POMODORO / FOCUS TIMER ENGINE ---
+        let focusTimerInterval = null;
+        let focusTimeRemainingSec = 25 * 60;
+        let isFocusTimerRunning = false;
+
+        function updateFocusTimerDisplay() {
+            const m = Math.floor(focusTimeRemainingSec / 60).toString().padStart(2, '0');
+            const s = (focusTimeRemainingSec % 60).toString().padStart(2, '0');
+            const formatted = `${m}:${s}`;
+            document.getElementById('focusTimerDisplay').textContent = formatted;
+            document.getElementById('zenTimerDisplay').textContent = formatted;
+        }
+
+        function startFocusTimer() {
+            if (isFocusTimerRunning) {
+                clearInterval(focusTimerInterval);
+                isFocusTimerRunning = false;
+                document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-play text-[10px]"></i> Riprendi Timer';
+                return;
+            }
+
+            isFocusTimerRunning = true;
+            document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-pause text-[10px]"></i> Pausa Timer';
+
+            focusTimerInterval = setInterval(() => {
+                if (focusTimeRemainingSec > 0) {
+                    focusTimeRemainingSec--;
+                    updateFocusTimerDisplay();
+
+                    // Dissolvenza graduale negli ultimi 15 secondi
+                    if (focusTimeRemainingSec <= 15 && masterGainNode) {
+                        const targetGain = Math.max(0, focusTimeRemainingSec / 15);
+                        masterGainNode.gain.setValueAtTime(targetGain, audioCtx.currentTime);
+                    }
+                } else {
+                    clearInterval(focusTimerInterval);
+                    isFocusTimerRunning = false;
+                    stopPlayback();
+                    if (masterGainNode) masterGainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                    playTibetanBowlChime();
+                    document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-check text-[10px]"></i> Sessione Completata!';
+                }
+            }, 1000);
+        }
+
+        function resetFocusTimer(minutes = 25) {
+            clearInterval(focusTimerInterval);
+            isFocusTimerRunning = false;
+            focusTimeRemainingSec = minutes * 60;
+            if (masterGainNode) masterGainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+            updateFocusTimerDisplay();
+            document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-play text-[10px]"></i> Avvia Timer';
+        }
+
+        document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const mins = parseInt(e.target.dataset.minutes, 10);
+                resetFocusTimer(mins);
+            });
+        });
+
+        document.getElementById('startTimerBtn').addEventListener('click', startFocusTimer);
+        document.getElementById('resetTimerBtn').addEventListener('click', () => resetFocusTimer(25));
+
+        // --- OSCILLOSCOPE & CANVAS VISUALIZER ---
+        const mainCanvas = document.getElementById('visualizerCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const zenCanvas = document.getElementById('zenCanvas');
+        const zenCtx = zenCanvas.getContext('2d');
+
+        function resizeCanvases() {
+            mainCanvas.width = mainCanvas.parentElement.clientWidth;
+            mainCanvas.height = mainCanvas.parentElement.clientHeight;
+            zenCanvas.width = zenCanvas.parentElement.clientWidth;
+            zenCanvas.height = zenCanvas.parentElement.clientHeight;
+        }
+
+        function drawVisualizer() {
+            requestAnimationFrame(drawVisualizer);
+            if (!analyserNode) {
+                clearCanvas(mainCtx, mainCanvas);
+                clearCanvas(zenCtx, zenCanvas);
+                return;
+            }
+
+            const bufferLength = analyserNode.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyserNode.getByteTimeDomainData(dataArray);
+
+            renderOscilloscopeOnContext(mainCtx, mainCanvas, dataArray, bufferLength, '#f97316');
+            if (!document.getElementById('zenOverlay').classList.contains('hidden')) {
+                renderOscilloscopeOnContext(zenCtx, zenCanvas, dataArray, bufferLength, '#22c55e');
+            }
+        }
+
+        function clearCanvas(ctx, canvas) {
+            ctx.fillStyle = '#09090b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function renderOscilloscopeOnContext(ctx, canvas, dataArray, bufferLength, strokeColor) {
+            ctx.fillStyle = '#09090b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = isPlaying && !isPaused ? strokeColor : '#3f3f46';
+            ctx.beginPath();
+
+            const sliceWidth = canvas.width * 1.0 / bufferLength;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * (canvas.height / 2);
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+
+                x += sliceWidth;
+            }
+
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+        }
+
+        // --- ZEN MODE TOGGLE ---
+        const zenOverlay = document.getElementById('zenOverlay');
+        document.getElementById('openZenBtn').addEventListener('click', () => {
+            zenOverlay.classList.remove('hidden');
+            resizeCanvases();
+        });
+        document.getElementById('closeZenBtn').addEventListener('click', () => {
+            zenOverlay.classList.add('hidden');
+        });
+
+        // --- BUTTONS & CONTROLS BINDING ---
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            if (isPlaying && !isPaused) pausePlayback();
+            else startPlayback();
+        });
+
+        document.getElementById('zenPlayPauseBtn').addEventListener('click', () => {
+            if (isPlaying && !isPaused) pausePlayback();
+            else startPlayback();
+        });
+
+        document.getElementById('stopTrackBtn').addEventListener('click', stopPlayback);
+        document.getElementById('nextTrackBtn').addEventListener('click', nextTrack);
+        document.getElementById('zenNextBtn').addEventListener('click', nextTrack);
+        document.getElementById('prevTrackBtn').addEventListener('click', prevTrack);
+        document.getElementById('zenPrevBtn').addEventListener('click', prevTrack);
+        document.getElementById('panicBtn').addEventListener('click', panic);
+
+        document.getElementById('shuffleToggleBtn').addEventListener('click', () => {
+            isShuffle = !isShuffle;
+            document.getElementById('shuffleLabel').textContent = isShuffle ? 'Shuffle: ON' : 'Shuffle: OFF';
+            document.getElementById('shuffleToggleBtn').className = isShuffle
+                ? 'py-1.5 bg-orange-600/20 text-orange-400 border border-orange-500/40 rounded-lg font-medium transition flex items-center justify-center gap-1.5'
+                : 'py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 rounded-lg font-medium transition flex items-center justify-center gap-1.5';
+        });
+
+        document.getElementById('loopModeToggleBtn').addEventListener('click', () => {
+            if (loopMode === 'playlist') {
+                loopMode = 'single';
+                document.getElementById('loopModeLabel').textContent = 'Loop: Singolo';
+            } else if (loopMode === 'single') {
+                loopMode = 'off';
+                document.getElementById('loopModeLabel').textContent = 'Loop: OFF';
+                document.getElementById('loopModeToggleBtn').className = 'py-1.5 bg-zinc-900 text-zinc-400 border border-zinc-800 rounded-lg font-medium transition flex items-center justify-center gap-1.5';
+            } else {
+                loopMode = 'playlist';
+                document.getElementById('loopModeLabel').textContent = 'Loop: Playlist';
+                document.getElementById('loopModeToggleBtn').className = 'py-1.5 bg-orange-600/20 text-orange-400 border border-orange-500/40 rounded-lg font-medium transition flex items-center justify-center gap-1.5';
+            }
+        });
+
+        // --- IMPORT PLAYLIST JSON / ABC ---
+        const importPlaylistBtn = document.getElementById('importPlaylistBtn');
+        const playlistFileInput = document.getElementById('playlistFileInput');
+
+        importPlaylistBtn.addEventListener('click', () => playlistFileInput.click());
+        playlistFileInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            for (let file of files) {
+                const text = await file.text();
+                try {
+                    const data = JSON.parse(text);
+                    if (data.type === 'korg_nts1_playlist' && Array.isArray(data.tracks)) {
+                        playlist = data.tracks;
+                    } else if (data.abcCode) {
+                        playlist.push({
+                            title: data.metadata?.title || file.name.replace(/\.[^/.]+$/, ""),
+                            genre: data.genre || 'custom',
+                            bpm: data.bpm || 120,
+                            patch: { osc: parseInt(data.mainOsc, 10) || 0, shape: 64, alt: 32, cutoff: 80, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
+                            abcCode: data.abcCode
+                        });
+                    }
+                } catch (err) {
+                    playlist.push({
+                        title: file.name.replace(/\.[^/.]+$/, ""),
+                        genre: 'custom',
+                        bpm: 120,
+                        patch: { osc: 0, shape: 64, alt: 32, cutoff: 80, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
+                        abcCode: text
+                    });
+                }
+            }
+            renderPlaylistUI();
+            if (playlist.length > 0) loadTrack(0);
+            playlistFileInput.value = '';
+        });
+
+        window.addEventListener('resize', resizeCanvases);
+        window.addEventListener('DOMContentLoaded', () => {
+            initWebMIDI();
+            loadDefaultDemoPlaylist();
+            resizeCanvases();
+            drawVisualizer();
+        });
+    </script>
+</body>
+</html>
