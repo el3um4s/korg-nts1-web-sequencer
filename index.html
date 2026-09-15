@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Korg NTS-1 - Playlist Builder Studio v1.1.0</title>
+    <title>Korg NTS-1 Modular Suite — Central Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -20,225 +20,236 @@
         .led-active { box-shadow: 0 0 8px #22c55e, inset 0 0 4px #4ade80; }
         .led-cyan { box-shadow: 0 0 8px #06b6d4, inset 0 0 4px #22d3ee; }
         .led-orange { box-shadow: 0 0 8px #f97316, inset 0 0 4px #fb923c; }
-        .drag-over { border-color: #f97316 !important; background-color: rgba(249, 115, 22, 0.08) !important; }
-        .track-selected { border-color: #f97316 !important; background-color: rgba(249, 115, 22, 0.1) !important; }
+        .app-card { transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+        .app-card:hover { transform: translateY(-3px); }
     </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-3 md:p-5 select-none overflow-x-hidden">
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-4 md:p-6 select-none overflow-x-hidden">
 
-    <!-- Header & Hardware Routing -->
-    <header class="max-w-7xl mx-auto w-full mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+    <!-- Header & Status Bar -->
+    <header class="max-w-7xl mx-auto w-full mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-zinc-800/80 pb-4">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-500 shadow-lg">
-                <i class="fa-solid fa-list-check text-xl"></i>
+            <div class="w-12 h-12 rounded-xl bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-500 shadow-xl">
+                <i class="fa-solid fa-shapes text-2xl"></i>
             </div>
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
-                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">PLAYLIST BUILDER</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 3 v1.1</span>
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">KORG NTS-1 SUITE</h1>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">HUB v1.0.0</span>
                 </div>
-                <p class="text-xs text-zinc-400">Assemblatore Scalette, Export Singoli (.ABC/.JSON/.WAV), Tracklist Album & Patch Hardware</p>
+                <p class="text-xs text-zinc-400">Dashboard di Sistema, Routing Micro-App, Diagnostica MIDI & Guida Hardware</p>
             </div>
         </div>
 
+        <!-- MIDI Hardware Monitor Badge -->
         <div class="flex items-center gap-2 flex-wrap justify-end">
-            <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-xl text-xs">
-                <label for="soundTargetSelect" class="text-zinc-400 font-semibold flex items-center gap-1 text-[11px]">
-                    <i class="fa-solid fa-volume-high text-orange-400"></i> Anteprima:
-                </label>
-                <select id="soundTargetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-medium">
-                    <option value="both">Entrambi (MIDI + Casse)</option>
-                    <option value="internal">Solo Casse PC / Mobile</option>
-                    <option value="midi">Solo Korg NTS-1 (MIDI)</option>
-                </select>
-            </div>
-
-            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium">
+            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium shadow">
                 <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"></span>
                 <span id="statusText" class="text-zinc-300">Inizializzazione MIDI...</span>
             </div>
+            <button id="panicBtn" class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow" title="Interrompe tutte le note e reimposta i canali MIDI">
+                <i class="fa-solid fa-triangle-exclamation text-red-400"></i> PANIC
+            </button>
         </div>
     </header>
 
-    <!-- Main Workspace -->
-    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow">
-        
-        <!-- Left Column: Scaletta, Importazione & Tracklist Summary -->
-        <section class="lg:col-span-7 flex flex-col gap-3">
-            
-            <!-- Drag & Drop Zone / Multi-upload -->
-            <div id="dropZone" class="border-2 border-dashed border-zinc-800 hover:border-orange-500/60 bg-zinc-900/50 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all shadow-inner">
-                <div class="w-10 h-10 rounded-full bg-orange-600/10 border border-orange-500/30 flex items-center justify-center text-orange-400">
-                    <i class="fa-solid fa-file-circle-plus text-lg"></i>
-                </div>
-                <div class="text-center">
-                    <p class="text-xs font-semibold text-zinc-200">Trascina qui i tuoi file <span class="text-orange-400 font-mono-code">.json</span> o <span class="text-indigo-400 font-mono-code">.abc</span></p>
-                    <p class="text-[11px] text-zinc-500">oppure clicca per selezionare più file contemporaneamente</p>
-                </div>
-                <input type="file" id="multiFileInput" multiple accept=".json,.abc,.txt" class="hidden">
+    <!-- Main Grid Content -->
+    <main class="max-w-7xl mx-auto w-full flex flex-col gap-6 flex-grow">
+
+        <!-- 1. APP LAUNCHER GRID (4 MICRO-APPS) -->
+        <section class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-rocket text-orange-400"></i> Micro-Web App della Suite
+                </h2>
+                <span class="text-[10px] text-zinc-500 font-mono-code">Architettura Modulare a Singola Pagina</span>
             </div>
 
-            <!-- Header Scaletta, Statistiche & Azioni Tracklist -->
-            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 shadow-xl flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-md bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs">
-                        <i class="fa-solid fa-list-ol"></i>
-                    </span>
-                    <div>
-                        <h2 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Scaletta Playlist</h2>
-                        <span id="playlistStatsBadge" class="text-[11px] text-zinc-400 font-mono-code">0 brani • Durata Totale: 00:00</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- App 1: ABC Generator -->
+                <a href="./abc-generator/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-orange-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-orange-600/20 border border-orange-500/30 flex items-center justify-center text-orange-400 group-hover:scale-105 transition-transform">
+                                <i class="fa-solid fa-pen-nib text-lg"></i>
+                            </div>
+                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-orange-300 border border-zinc-800">v1.8.1</span>
+                        </div>
+                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-orange-400 transition-colors">1. ABC Generator</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Generatore e arrangiatore modale. Motore metrico multilingua (IT, EN, Toki Pona) e composizione reattiva con testi[cite: 1].
+                        </p>
                     </div>
-                </div>
+                    <div class="flex items-center justify-between text-[11px] text-orange-400/80 font-semibold pt-2 border-t border-zinc-800/80">
+                        <span>Avvia Compositore</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
 
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <button id="copyTracklistBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-700 rounded-lg text-xs font-semibold transition flex items-center gap-1" title="Copia l'elenco dei brani con durata per documentare il disco">
-                        <i class="fa-solid fa-clipboard text-amber-400"></i> Copia Elenco
-                    </button>
-                    <button id="downloadTracklistTxtBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-emerald-300 border border-zinc-700 rounded-lg text-xs font-semibold transition flex items-center gap-1" title="Scarica l'elenco della tracklist in formato .txt">
-                        <i class="fa-solid fa-file-lines text-emerald-400"></i> Tracklist .TXT
-                    </button>
-                    <button id="addEmptyTrackBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-lg text-xs font-medium transition flex items-center gap-1">
-                        <i class="fa-solid fa-plus text-orange-400"></i> Aggiungi Traccia
-                    </button>
-                    <button id="clearPlaylistBtn" class="px-2.5 py-1 bg-red-950/50 hover:bg-red-900/70 text-red-300 border border-red-800/60 rounded-lg text-xs font-medium transition flex items-center gap-1">
-                        <i class="fa-solid fa-trash-can"></i> Svuota
-                    </button>
-                </div>
+                <!-- App 2: ABC Player & Radio -->
+                <a href="./abc-player/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-purple-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
+                                <i class="fa-solid fa-tower-broadcast text-lg"></i>
+                            </div>
+                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-purple-300 border border-zinc-800">v1.7.2</span>
+                        </div>
+                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-purple-400 transition-colors">2. Player & Radio</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Player file singoli e Radio Generativa continua[cite: 1]. 9 oscillatori, progressioni armoniche dinamiche e Master Presets rapidi[cite: 1].
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-purple-400/80 font-semibold pt-2 border-t border-zinc-800/80">
+                        <span>Ascolta / Radio</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
+
+                <!-- App 3: Playlist Builder -->
+                <a href="./playlist-builder/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-indigo-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
+                                <i class="fa-solid fa-list-check text-lg"></i>
+                            </div>
+                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-indigo-300 border border-zinc-800">v1.1.0</span>
+                        </div>
+                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-indigo-400 transition-colors">3. Playlist Builder</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Assemblatore scalette con calcolo automatico durate, editor dei parametri timbrici NTS-1 per traccia ed export sommario disco[cite: 1].
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-indigo-400/80 font-semibold pt-2 border-t border-zinc-800/80">
+                        <span>Crea Scaletta</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
+
+                <!-- App 4: Zen Jukebox -->
+                <a href="./jukebox-player/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
+                                <i class="fa-solid fa-compact-disc text-lg"></i>
+                            </div>
+                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-300 border border-zinc-800">v1.8.0</span>
+                        </div>
+                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-emerald-400 transition-colors">4. Zen Jukebox</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Esecutore continuo per sessioni di pittura e studio[cite: 1]. Auto-Patch switch, Timer Pomodoro, Pad Matrix e Zen Mode fullscreen[cite: 1].
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-emerald-400/80 font-semibold pt-2 border-t border-zinc-800/80">
+                        <span>Avvia Sessione Zen</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
+
             </div>
-
-            <!-- Track List Container -->
-            <div id="trackListContainer" class="flex flex-col gap-2 min-h-[260px] max-h-[520px] overflow-y-auto custom-scrollbar pr-1">
-                <!-- Generato dinamicamente via JS -->
-            </div>
-
-            <!-- Playlist Actions Bar -->
-            <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-xl shadow-xl flex flex-wrap items-center justify-between gap-2 mt-auto">
-                <div class="flex items-center gap-2 flex-grow sm:flex-grow-0">
-                    <input type="text" id="playlistTitleInput" value="Sessione Focus NTS-1" placeholder="Nome Playlist..." class="bg-zinc-950 border border-zinc-700 text-xs text-orange-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-orange-500 font-medium w-full sm:w-56">
-                </div>
-                <div class="flex items-center gap-2 flex-wrap">
-                    <button id="importPlaylistJsonBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-indigo-300 border border-zinc-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-folder-open text-indigo-400"></i> Carica Playlist
-                    </button>
-                    <input type="file" id="playlistFileInput" accept=".json" class="hidden">
-                    <button id="exportPlaylistJsonBtn" class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white font-bold rounded-lg text-xs transition flex items-center gap-1.5 shadow-md border border-orange-400/40">
-                        <i class="fa-solid fa-floppy-disk"></i> Salva Playlist (.JSON)
-                    </button>
-                </div>
-            </div>
-
         </section>
 
-        <!-- Right Column: Inspector Traccia, Patch Editor & Preview -->
-        <section class="lg:col-span-5 flex flex-col gap-3">
+        <!-- 2. DIAGNOSTICA MIDI & HARDWARE CONTROL -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
             
-            <!-- Traccia Dettagli & Patch Hardware -->
-            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden flex flex-col">
-                <div class="p-3 bg-zinc-900/80 border-b border-zinc-800 flex items-center justify-between">
+            <!-- Diagnostica e Routing MIDI -->
+            <div class="lg:col-span-6 bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
                     <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-md bg-orange-600/20 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-sliders"></i>
+                        <span class="w-6 h-6 rounded-md bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-plug"></i>
                         </span>
-                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Patch Hardware & Dettagli Traccia</span>
+                        <h2 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Diagnostica & Routing MIDI</h2>
                     </div>
-                    <span id="selectedTrackBadge" class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code">Nessuna Traccia</span>
+                    <button id="refreshMidiBtn" class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-arrows-rotate text-[9px]"></i> Riscansiona
+                    </button>
                 </div>
 
-                <div id="inspectorPanel" class="p-3.5 flex flex-col gap-3 text-xs opacity-50 pointer-events-none transition-opacity">
-                    <!-- Titolo, Genere e BPM -->
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] font-semibold text-zinc-400">Titolo Traccia:</label>
-                            <input type="text" id="trackTitleInput" class="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-orange-500">
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] font-semibold text-zinc-400">Genere / Mood:</label>
-                            <input type="text" id="trackGenreInput" class="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-purple-300 focus:outline-none focus:border-purple-500">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] font-semibold text-zinc-400">Tempo (BPM):</label>
-                            <input type="number" id="trackBpmInput" min="40" max="240" class="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-orange-400 font-mono-code focus:outline-none focus:border-orange-500">
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] font-semibold text-zinc-400">Oscillatore NTS-1 (CC 53):</label>
-                            <select id="trackOscSelect" class="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-orange-300 font-mono-code focus:outline-none focus:border-orange-500">
-                                <option value="0">SAW (CC: 0)</option>
-                                <option value="16">TRI (CC: 16)</option>
-                                <option value="32">SQR (CC: 32)</option>
-                                <option value="48">VPM (CC: 48)</option>
-                                <option value="64">WAVES (CC: 64)</option>
-                                <option value="76">Volca Bass (CC: 76)</option>
-                                <option value="88">Chords (CC: 88)</option>
-                                <option value="100">Proba-B (CC: 100)</option>
-                                <option value="112">J6 (CC: 112)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Parametri Hardware CC Rack -->
-                    <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-2.5 flex flex-col gap-2">
-                        <div class="flex items-center justify-between text-[11px] font-bold text-zinc-300 border-b border-zinc-800 pb-1">
-                            <span><i class="fa-solid fa-microchip text-orange-400 mr-1"></i>Parametri Timbrici Hardware (CC)</span>
-                            <button id="sendPatchNowBtn" class="text-[10px] px-2 py-0.5 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/40 rounded transition">
-                                <i class="fa-solid fa-bolt mr-1"></i>Invia a Synth
-                            </button>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-[11px]">
-                            <div>
-                                <label class="text-[10px] text-zinc-400 flex justify-between"><span>Shape (CC 54):</span> <span id="valCc54" class="text-orange-400 font-mono-code">64</span></label>
-                                <input type="range" id="paramCc54" min="0" max="127" value="64" class="w-full accent-orange-500 h-1 bg-zinc-800 rounded">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-zinc-400 flex justify-between"><span>Alt (CC 55):</span> <span id="valCc55" class="text-orange-400 font-mono-code">32</span></label>
-                                <input type="range" id="paramCc55" min="0" max="127" value="32" class="w-full accent-orange-500 h-1 bg-zinc-800 rounded">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-zinc-400 flex justify-between"><span>Cutoff (CC 43):</span> <span id="valCc43" class="text-cyan-400 font-mono-code">80</span></label>
-                                <input type="range" id="paramCc43" min="0" max="127" value="80" class="w-full accent-cyan-500 h-1 bg-zinc-800 rounded">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-zinc-400 flex justify-between"><span>Resonance (CC 44):</span> <span id="valCc44" class="text-cyan-400 font-mono-code">20</span></label>
-                                <input type="range" id="paramCc44" min="0" max="127" value="20" class="w-full accent-cyan-500 h-1 bg-zinc-800 rounded">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-zinc-400 flex justify-between"><span>Attack (CC 16):</span> <span id="valCc16" class="text-emerald-400 font-mono-code">10</span></label>
-                                <input type="range" id="paramCc16" min="0" max="127" value="10" class="w-full accent-emerald-500 h-1 bg-zinc-800 rounded">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-zinc-400 flex justify-between"><span>Release (CC 19):</span> <span id="valCc19" class="text-emerald-400 font-mono-code">45</span></label>
-                                <input type="range" id="paramCc19" min="0" max="127" value="45" class="w-full accent-emerald-500 h-1 bg-zinc-800 rounded">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-zinc-400 flex justify-between"><span>Delay Time (CC 30):</span> <span id="valCc30" class="text-purple-400 font-mono-code">25</span></label>
-                                <input type="range" id="paramCc30" min="0" max="127" value="25" class="w-full accent-purple-500 h-1 bg-zinc-800 rounded">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-zinc-400 flex justify-between"><span>Reverb Mix (CC 35):</span> <span id="valCc35" class="text-purple-400 font-mono-code">30</span></label>
-                                <input type="range" id="paramCc35" min="0" max="127" value="30" class="w-full accent-purple-500 h-1 bg-zinc-800 rounded">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Codice ABC Traccia -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
                     <div class="flex flex-col gap-1">
-                        <div class="flex items-center justify-between text-[10px] font-semibold text-zinc-400">
-                            <span>Sorgente Notazione ABC:</span>
-                            <span id="trackAbcLenBadge" class="text-zinc-500 font-mono-code">0 battute</span>
-                        </div>
-                        <textarea id="trackAbcTextarea" rows="4" spellcheck="false" class="w-full bg-zinc-950 font-mono-code text-[11px] text-orange-200/90 border border-zinc-800 rounded p-2 focus:outline-none focus:border-orange-500 custom-scrollbar resize-y"></textarea>
+                        <label for="midiOutputSelect" class="text-[10px] font-semibold text-zinc-400">Porta MIDI Output:</label>
+                        <select id="midiOutputSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded-lg px-2 py-1.5 text-xs font-medium focus:outline-none focus:border-orange-500 cursor-pointer">
+                            <option value="">Nessuna porta rilevata</option>
+                        </select>
                     </div>
+                    <div class="flex flex-col gap-1">
+                        <label for="midiChannelSelect" class="text-[10px] font-semibold text-zinc-400">Canale MIDI (Korg default: 1):</label>
+                        <select id="midiChannelSelect" class="bg-zinc-950 border border-zinc-700 text-zinc-200 rounded-lg px-2 py-1.5 text-xs font-mono-code focus:outline-none focus:border-orange-500 cursor-pointer">
+                            <option value="0">Canale 1</option>
+                            <option value="1">Canale 2</option>
+                            <option value="2">Canale 3</option>
+                            <option value="3">Canale 4</option>
+                        </select>
+                    </div>
+                </div>
 
-                    <!-- Transport Anteprima Traccia -->
-                    <div class="flex items-center gap-2 pt-1 border-t border-zinc-800">
-                        <button id="previewPlayBtn" class="flex-1 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded text-xs transition flex items-center justify-center gap-1.5 shadow">
-                            <i class="fa-solid fa-play text-[10px]"></i> Anteprima Traccia
-                        </button>
-                        <button id="previewStopBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded text-xs font-bold transition flex items-center justify-center gap-1 border border-zinc-700">
-                            <i class="fa-solid fa-stop text-[10px]"></i> Stop
-                        </button>
+                <!-- Test Sonoro Hardware -->
+                <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 flex flex-col gap-2">
+                    <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Test Note & Sweep Frequenze</span>
+                    <div class="grid grid-cols-4 gap-1.5 text-xs">
+                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="48">C3 (Basso)</button>
+                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="60">C4 (Medio)</button>
+                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="72">C5 (Alto)</button>
+                        <button id="testChordBtn" class="py-1.5 rounded bg-orange-950/40 hover:bg-orange-900/60 text-orange-300 border border-orange-700/60 font-mono-code font-bold transition">Accordo C</button>
+                    </div>
+                </div>
+
+                <!-- Stato API Browser -->
+                <div class="grid grid-cols-3 gap-1.5 text-[10px] font-mono-code text-center pt-1">
+                    <div id="checkWebMidi" class="p-1.5 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center gap-1.5 text-zinc-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span> Web MIDI
+                    </div>
+                    <div id="checkWebAudio" class="p-1.5 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center gap-1.5 text-zinc-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span> Web Audio
+                    </div>
+                    <div id="checkOfflineAudio" class="p-1.5 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center gap-1.5 text-zinc-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span> Offline Render
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Hardware NTS-1 Cheat Sheet -->
+            <div class="lg:col-span-6 bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-amber-600/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-microchip"></i>
+                        </span>
+                        <h2 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Mappa CC & Oscillatori NTS-1</h2>
+                    </div>
+                    <span class="text-[9px] text-zinc-500 font-mono-code">MIDI CC Standard[cite: 1]</span>
+                </div>
+
+                <!-- 9 Motori di Sintesi Sinottica -->
+                <div class="flex flex-col gap-1 text-[11px]">
+                    <span class="text-[10px] text-zinc-400 font-semibold">9 Oscillatori (MIDI CC 53)[cite: 1]:</span>
+                    <div class="grid grid-cols-3 gap-1 text-[10px] font-mono-code">
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-zinc-300"><strong>0</strong>: SAW (Sawtooth)</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-amber-300"><strong>16</strong>: TRI (Triangle)</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-zinc-300"><strong>32</strong>: SQR (Square)</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-cyan-300"><strong>48</strong>: VPM (FM Nativo)</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-emerald-300"><strong>64</strong>: WAVES (Wavetable)</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-purple-300"><strong>76</strong>: Volca Bass</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-amber-300"><strong>88</strong>: Chords (chord-osc)</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-rose-300"><strong>100</strong>: Proba-B</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-indigo-300"><strong>112</strong>: J6 (Roland Juno)</div>
+                    </div>
+                </div>
+
+                <!-- Parametri Hardware CC Rapidi -->
+                <div class="flex flex-col gap-1 text-[11px] pt-1 border-t border-zinc-800">
+                    <span class="text-[10px] text-zinc-400 font-semibold">Parametri Controlli Fisici[cite: 1]:</span>
+                    <div class="grid grid-cols-4 gap-1 text-[10px] font-mono-code text-center">
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-zinc-400"><span class="text-zinc-500 block">Shape</span>CC 54</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-zinc-400"><span class="text-zinc-500 block">Alt</span>CC 55</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-cyan-400"><span class="text-zinc-500 block">Cutoff</span>CC 43</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-cyan-400"><span class="text-zinc-500 block">Resonance</span>CC 44</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-emerald-400"><span class="text-zinc-500 block">Attack</span>CC 16</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-emerald-400"><span class="text-zinc-500 block">Release</span>CC 19</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-purple-400"><span class="text-zinc-500 block">Delay Time</span>CC 30</div>
+                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-purple-400"><span class="text-zinc-500 block">Reverb Mix</span>CC 35</div>
                     </div>
                 </div>
             </div>
@@ -247,24 +258,20 @@
 
     </main>
 
-    <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>Korg NTS-1 Suite • Playlist Builder Studio (Prototipo 3)</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">BUILD v1.1.0</span>
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto w-full mt-6 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>Korg NTS-1 Modular Suite • Single Page Architecture (No Build Tools, No NPM)[cite: 1]</p>
+        <span class="font-mono-code text-[11px] text-zinc-400">HUB SYSTEM v1.0.0</span>
     </footer>
 
-    <!-- Application Script Logic -->
+    <!-- Hub Script Logic -->
     <script>
-        // --- DATA STRUCTURE ---
-        let playlist = [];
-        let selectedTrackIndex = -1;
-
-        const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        const BASE_NOTE_MAP = { 'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11 };
-
-        // --- WEB AUDIO SYNTH ENGINE (PREVIEW) ---
+        let midiAccess = null;
+        let selectedOutput = null;
+        let midiChannel = 0;
         let audioCtx = null;
-        let activeVoices = new Map();
 
+        // --- WEB AUDIO TEST SYNTH ---
         function getAudioContext() {
             if (!audioCtx) {
                 const AudioClass = window.AudioContext || window.webkitAudioContext;
@@ -274,922 +281,159 @@
             return audioCtx;
         }
 
-        function playInternalNote(midiNote, vel = 100) {
+        function playInternalBeep(midiNote, durationSec = 0.3) {
             const ctx = getAudioContext();
             if (!ctx) return;
-            stopInternalNote(midiNote, true);
-
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            const filter = ctx.createBiquadFilter();
-
             const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
             osc.frequency.setValueAtTime(freq, ctx.currentTime);
             osc.type = 'sawtooth';
 
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(3600, ctx.currentTime);
-            filter.Q.setValueAtTime(2.5, ctx.currentTime);
-
-            const peak = 0.20 * (vel / 127);
             gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(peak, ctx.currentTime + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationSec);
 
-            osc.connect(filter);
-            filter.connect(gain);
+            osc.connect(gain);
             gain.connect(ctx.destination);
-
-            osc.start();
-            activeVoices.set(midiNote, { osc, gain });
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + durationSec + 0.05);
         }
 
-        function stopInternalNote(midiNote, instant = false) {
-            if (!activeVoices.has(midiNote)) return;
-            const ctx = getAudioContext();
-            const voice = activeVoices.get(midiNote);
-            activeVoices.delete(midiNote);
-
-            if (ctx && voice) {
-                try {
-                    voice.gain.gain.cancelScheduledValues(ctx.currentTime);
-                    if (instant) {
-                        voice.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-                        voice.osc.stop();
-                        voice.osc.disconnect();
-                    } else {
-                        voice.gain.gain.setValueAtTime(Math.max(0.0001, voice.gain.gain.value), ctx.currentTime);
-                        voice.gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
-                        setTimeout(() => {
-                            try { voice.osc.stop(); voice.osc.disconnect(); } catch (e) {}
-                        }, 60);
-                    }
-                } catch (e) {
-                    try { voice.osc.stop(); } catch (err) {}
-                }
-            }
-        }
-
-        function stopAllInternalNotes() {
-            for (const n of Array.from(activeVoices.keys())) stopInternalNote(n, true);
-            activeVoices.clear();
-        }
-
-        // --- WEB MIDI ACCESS ---
-        let midiAccess = null;
-        let selectedOutput = null;
-        let midiChannel = 0;
-        let currentlyPlayingMidiNotes = new Set();
-
-        async function initWebMIDI() {
+        // --- MIDI ROUTING & DISCOVERY ---
+        async function initHubMIDI() {
             const statusIndicator = document.getElementById('statusIndicator');
             const statusText = document.getElementById('statusText');
+            const outputSelect = document.getElementById('midiOutputSelect');
+
+            updateApiCheckBadges();
 
             if (!navigator.requestMIDIAccess) {
                 statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
-                statusText.textContent = 'Synth Interno (Casse)';
-                document.getElementById('soundTargetSelect').value = 'internal';
+                statusText.textContent = 'Web MIDI non supportato dal browser';
+                outputSelect.innerHTML = '<option value="">MIDI non supportato</option>';
                 return;
             }
 
             try {
                 midiAccess = await navigator.requestMIDIAccess({ sysex: false });
-                const outputs = Array.from(midiAccess.outputs.values());
-                let korg = outputs.find(o => (o.name || '').toLowerCase().includes('nts') || (o.name || '').toLowerCase().includes('korg'));
-                
-                if (korg) {
-                    selectedOutput = korg;
-                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
-                    statusText.textContent = `Connesso: ${korg.name}`;
-                } else if (outputs.length > 0) {
-                    selectedOutput = outputs[0];
-                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
-                    statusText.textContent = `MIDI: ${outputs[0].name}`;
-                } else {
-                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 led-orange';
-                    statusText.textContent = 'Synth Interno (Nessun MIDI)';
-                }
-            } catch (e) {
-                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
-                statusText.textContent = 'Synth Interno Attivo';
+                midiAccess.onstatechange = () => refreshMidiOutputs();
+                refreshMidiOutputs();
+            } catch (err) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+                statusText.textContent = 'Accesso MIDI Negato';
+                outputSelect.innerHTML = '<option value="">Permesso MIDI negato</option>';
             }
         }
 
-        function sendMidiCC(cc, val) {
-            const target = document.getElementById('soundTargetSelect').value;
-            if ((target === 'midi' || target === 'both') && selectedOutput) {
+        function refreshMidiOutputs() {
+            const outputSelect = document.getElementById('midiOutputSelect');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+
+            if (!midiAccess) return;
+            const outputs = Array.from(midiAccess.outputs.values());
+            outputSelect.innerHTML = '';
+
+            if (outputs.length === 0) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 led-orange';
+                statusText.textContent = 'Nessun dispositivo MIDI connesso';
+                outputSelect.innerHTML = '<option value="">Nessun hardware rilevato</option>';
+                selectedOutput = null;
+                return;
+            }
+
+            let korgOutput = outputs.find(o => (o.name || '').toLowerCase().includes('nts') || (o.name || '').toLowerCase().includes('korg'));
+            
+            outputs.forEach(opt => {
+                const el = document.createElement('option');
+                el.value = opt.id;
+                el.textContent = opt.name;
+                if (korgOutput && opt.id === korgOutput.id) el.selected = true;
+                outputSelect.appendChild(el);
+            });
+
+            selectedOutput = korgOutput || outputs[0];
+            statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+            statusText.textContent = `Connesso: ${selectedOutput.name}`;
+        }
+
+        function updateApiCheckBadges() {
+            const elMidi = document.getElementById('checkWebMidi');
+            const elAudio = document.getElementById('checkWebAudio');
+            const elOffline = document.getElementById('checkOfflineAudio');
+
+            if (navigator.requestMIDIAccess) {
+                elMidi.className = 'p-1.5 rounded bg-zinc-950 border border-emerald-900/60 flex items-center justify-center gap-1.5 text-emerald-300 font-bold';
+                elMidi.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 led-active';
+            }
+
+            if (window.AudioContext || window.webkitAudioContext) {
+                elAudio.className = 'p-1.5 rounded bg-zinc-950 border border-emerald-900/60 flex items-center justify-center gap-1.5 text-emerald-300 font-bold';
+                elAudio.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 led-active';
+            }
+
+            if (window.OfflineAudioContext || window.webkitOfflineAudioContext) {
+                elOffline.className = 'p-1.5 rounded bg-zinc-950 border border-emerald-900/60 flex items-center justify-center gap-1.5 text-emerald-300 font-bold';
+                elOffline.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 led-active';
+            }
+        }
+
+        function sendMidiTestNote(midiNote) {
+            playInternalBeep(midiNote, 0.35);
+            if (selectedOutput) {
                 try {
-                    selectedOutput.send([0xB0 | (midiChannel & 0x0F), cc & 0x7F, val & 0x7F]);
+                    const statusOn = 0x90 | (midiChannel & 0x0F);
+                    const statusOff = 0x80 | (midiChannel & 0x0F);
+                    selectedOutput.send([statusOn, midiNote & 0x7F, 100]);
+                    setTimeout(() => {
+                        selectedOutput.send([statusOff, midiNote & 0x7F, 0]);
+                    }, 350);
                 } catch (e) {}
             }
         }
 
-        function sendNoteOn(midiNote, vel = 100) {
-            const target = document.getElementById('soundTargetSelect').value;
-            currentlyPlayingMidiNotes.add(midiNote);
-
-            if (target === 'internal' || target === 'both') playInternalNote(midiNote, vel);
-            if ((target === 'midi' || target === 'both') && selectedOutput) {
-                try {
-                    selectedOutput.send([0x90 | (midiChannel & 0x0F), midiNote & 0x7F, vel & 0x7F]);
-                } catch (e) {}
-            }
-        }
-
-        function sendNoteOff(midiNote) {
-            const target = document.getElementById('soundTargetSelect').value;
-            currentlyPlayingMidiNotes.delete(midiNote);
-
-            if (target === 'internal' || target === 'both') stopInternalNote(midiNote, false);
-            if ((target === 'midi' || target === 'both') && selectedOutput) {
-                try {
-                    selectedOutput.send([0x80 | (midiChannel & 0x0F), midiNote & 0x7F, 0]);
-                } catch (e) {}
-            }
-        }
-
-        function silenceActiveNotes() {
+        function panic() {
             if (selectedOutput) {
                 try {
                     const statusCC = 0xB0 | (midiChannel & 0x0F);
                     selectedOutput.send([statusCC, 120, 0]);
                     selectedOutput.send([statusCC, 123, 0]);
                     selectedOutput.send([statusCC, 64, 0]);
-                    for (const n of currentlyPlayingMidiNotes) {
-                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n & 0x7F, 0]);
+                    for (let n = 0; n < 128; n++) {
+                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n, 0]);
                     }
                 } catch (e) {}
             }
-            currentlyPlayingMidiNotes.clear();
-            stopAllInternalNotes();
         }
 
-        // --- ABC PARSING & TIME ESTIMATION ---
-        function parseABC(text, fallbackBpm = 120) {
-            const lines = text.split('\n');
-            const events = [];
-            let currentBpm = fallbackBpm;
-            let unitLength = 1 / 16;
+        // --- EVENT LISTENERS ---
+        document.getElementById('refreshMidiBtn').addEventListener('click', initHubMIDI);
+        document.getElementById('panicBtn').addEventListener('click', panic);
 
-            for (let line of lines) {
-                line = line.trim();
-                if (!line || (line.startsWith('%') && !line.startsWith('%%MIDI'))) continue;
-
-                if (line.startsWith('Q:')) {
-                    const m = line.match(/Q:\s*(\d+)/i);
-                    if (m) currentBpm = parseInt(m[1], 10);
-                    continue;
-                }
-                if (line.startsWith('L:')) {
-                    const m = line.match(/L:\s*1\/(\d+)/i);
-                    if (m) unitLength = 1 / parseInt(m[1], 10);
-                    continue;
-                }
-                if (line.startsWith('%%MIDI control')) {
-                    const m = line.match(/%%MIDI\s+control\s+(\d+)\s+(\d+)/i);
-                    if (m) events.push({ type: 'cc', cc: parseInt(m[1], 10), value: parseInt(m[2], 10) });
-                    continue;
-                }
-                if (line.startsWith('X:') || line.startsWith('T:') || line.startsWith('C:') || line.startsWith('M:') || line.startsWith('K:')) continue;
-
-                const matches = line.match(/(\[[^\]]+\]|\^?[_]?[=]?[A-Ga-g][',]*[0-9]*\/?[0-9]*|z[0-9]*\/?[0-9]*|[|])/g) || [];
-                for (let tok of matches) {
-                    tok = tok.trim();
-                    if (!tok || tok === '|') continue;
-
-                    if (tok.startsWith('z') || tok.startsWith('Z')) {
-                        const mult = parseDurationMultiplier(tok.substring(1));
-                        events.push({ type: 'rest', duration: mult * (unitLength * 4) });
-                        continue;
-                    }
-
-                    if (tok.startsWith('[')) {
-                        const m = tok.match(/\[([^\]]+)\]([0-9]*\/?[0-9]*)?/);
-                        if (m) {
-                            const mult = parseDurationMultiplier(m[2] || '');
-                            const notesStr = m[1].match(/(\^?[_]?[=]?[A-Ga-g][',]*)/g) || [];
-                            const midiNotes = notesStr.map(s => parseSinglePitch(s)).filter(n => n !== null);
-                            if (midiNotes.length > 0) events.push({ type: 'note', midiNotes, duration: mult * (unitLength * 4) });
-                        }
-                        continue;
-                    }
-
-                    const m = tok.match(/(\^?[_]?[=]?[A-Ga-g][',]*)([0-9]*\/?[0-9]*)?/);
-                    if (m) {
-                        const midi = parseSinglePitch(m[1]);
-                        const mult = parseDurationMultiplier(m[2] || '');
-                        if (midi !== null) events.push({ type: 'note', midiNotes: [midi], duration: mult * (unitLength * 4) });
-                    }
-                }
-            }
-
-            return { events, detectedBpm: currentBpm };
-        }
-
-        function parseDurationMultiplier(durStr) {
-            if (!durStr) return 1;
-            if (durStr === '/') return 0.5;
-            if (durStr.startsWith('/')) {
-                const den = parseInt(durStr.substring(1), 10);
-                return isNaN(den) || den === 0 ? 0.5 : 1 / den;
-            }
-            if (durStr.includes('/')) {
-                const parts = durStr.split('/');
-                return (parseInt(parts[0], 10) || 1) / (parseInt(parts[1], 10) || 2);
-            }
-            const v = parseFloat(durStr);
-            return isNaN(v) ? 1 : v;
-        }
-
-        function parseSinglePitch(str) {
-            const m = str.match(/(\^|_|=)?([A-Ga-g])([',]*)/);
-            if (!m) return null;
-            const acc = m[1];
-            const letter = m[2];
-            const octMods = m[3] || '';
-            let oct = (letter === letter.toLowerCase()) ? 5 : 4;
-
-            for (let c of octMods) {
-                if (c === "'") oct++;
-                if (c === ",") oct--;
-            }
-
-            let semi = BASE_NOTE_MAP[letter.toLowerCase()] || 0;
-            if (acc === '^') semi += 1;
-            if (acc === '_') semi -= 1;
-            return (oct + 1) * 12 + semi;
-        }
-
-        function calculateTrackDurationSec(abcCode, bpmVal) {
-            const parsed = parseABC(abcCode, bpmVal);
-            const effectiveBpm = bpmVal || parsed.detectedBpm || 120;
-            const secPerQuarter = 60 / effectiveBpm;
-            let totalSec = 0;
-            for (let evt of parsed.events) {
-                if (evt.type === 'note' || evt.type === 'rest') {
-                    totalSec += (evt.duration * secPerQuarter);
-                }
-            }
-            return Math.round(totalSec);
-        }
-
-        function formatTimeMinSec(secTotal) {
-            const m = Math.floor(secTotal / 60).toString().padStart(2, '0');
-            const s = (secTotal % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
-        }
-
-        // --- SINGLE TRACK DOWNLOAD ENGINES & OFFLINE WAV RENDERER ---
-        function downloadBlob(blob, filename) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(url), 2000);
-        }
-
-        function downloadSingleTrackAbc(index) {
-            const t = playlist[index];
-            if (!t) return;
-            const cleanTitle = (t.title || `Traccia_${index + 1}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-            const blob = new Blob([t.abcCode], { type: 'text/plain;charset=utf-8' });
-            downloadBlob(blob, `${cleanTitle}.abc`);
-        }
-
-        function downloadSingleTrackJson(index) {
-            const t = playlist[index];
-            if (!t) return;
-            const cleanTitle = (t.title || `Traccia_${index + 1}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-            const jsonBundle = {
-                generator: "Korg NTS-1 Suite - Playlist Builder",
-                version: "1.1.0",
-                timestamp: new Date().toISOString(),
-                metadata: {
-                    title: t.title,
-                    composer: t.composer || "Autore",
-                    meter: "4/4"
-                },
-                genre: t.genre || 'custom',
-                bpm: t.bpm || 120,
-                mainOsc: String(t.patch?.osc ?? 0),
-                patch: t.patch || { osc: 0, shape: 64, alt: 32, cutoff: 80, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
-                abcCode: t.abcCode
-            };
-            const blob = new Blob([JSON.stringify(jsonBundle, null, 2)], { type: 'application/json' });
-            downloadBlob(blob, `${cleanTitle}.json`);
-        }
-
-        function audioBufferToWav(buffer) {
-            const numChannels = buffer.numberOfChannels;
-            const sampleRate = buffer.sampleRate;
-            const format = 1;
-            const bitDepth = 16;
-            const bytesPerSample = bitDepth / 8;
-            const blockAlign = numChannels * bytesPerSample;
-            const numSamples = buffer.length;
-            const dataSize = numSamples * blockAlign;
-            const headerSize = 44;
-            const totalSize = headerSize + dataSize;
-            const arrayBuffer = new ArrayBuffer(totalSize);
-            const view = new DataView(arrayBuffer);
-
-            function writeString(offset, string) {
-                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
-            }
-
-            writeString(0, 'RIFF');
-            view.setUint32(4, totalSize - 8, true);
-            writeString(8, 'WAVE');
-            writeString(12, 'fmt ');
-            view.setUint32(16, 16, true);
-            view.setUint16(20, format, true);
-            view.setUint16(22, numChannels, true);
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * blockAlign, true);
-            view.setUint16(32, blockAlign, true);
-            view.setUint16(34, bitDepth, true);
-            writeString(36, 'data');
-            view.setUint32(40, dataSize, true);
-
-            let offset = 44;
-            for (let i = 0; i < numSamples; i++) {
-                for (let channel = 0; channel < numChannels; channel++) {
-                    let sample = buffer.getChannelData(channel)[i];
-                    sample = Math.max(-1, Math.min(1, sample));
-                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-                    offset += 2;
-                }
-            }
-
-            return new Blob([view], { type: 'audio/wav' });
-        }
-
-        async function renderOfflineWavAudio(events, bpmVal) {
-            const secPerQuarter = 60 / bpmVal;
-            let totalDurationSec = 0;
-            for (let evt of events) {
-                if (evt.type === 'note' || evt.type === 'rest') {
-                    totalDurationSec += (evt.duration * secPerQuarter);
-                }
-            }
-            totalDurationSec = Math.max(1, totalDurationSec + 0.5);
-
-            const sampleRate = 44100;
-            const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, Math.ceil(totalDurationSec * sampleRate), sampleRate);
-            let currentTimeSec = 0;
-            const gate = 0.75;
-
-            for (let evt of events) {
-                if (evt.type === 'rest') {
-                    currentTimeSec += (evt.duration * secPerQuarter);
-                } else if (evt.type === 'note' && evt.midiNotes) {
-                    const stepDurationSec = evt.duration * secPerQuarter;
-                    const noteDurationSec = Math.max(0.04, stepDurationSec * gate);
-
-                    evt.midiNotes.forEach(midiNote => {
-                        const osc = offlineCtx.createOscillator();
-                        const gain = offlineCtx.createGain();
-                        const filter = offlineCtx.createBiquadFilter();
-
-                        const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
-                        osc.frequency.setValueAtTime(freq, currentTimeSec);
-                        osc.type = 'sawtooth';
-
-                        filter.type = 'lowpass';
-                        filter.frequency.setValueAtTime(3600, currentTimeSec);
-                        filter.Q.setValueAtTime(2.5, currentTimeSec);
-
-                        gain.gain.setValueAtTime(0.0001, currentTimeSec);
-                        gain.gain.exponentialRampToValueAtTime(0.22, currentTimeSec + 0.015);
-                        gain.gain.setValueAtTime(0.22, currentTimeSec + noteDurationSec);
-                        gain.gain.exponentialRampToValueAtTime(0.0001, currentTimeSec + noteDurationSec + 0.06);
-
-                        osc.connect(filter);
-                        filter.connect(gain);
-                        gain.connect(offlineCtx.destination);
-
-                        osc.start(currentTimeSec);
-                        osc.stop(currentTimeSec + noteDurationSec + 0.08);
-                    });
-
-                    currentTimeSec += stepDurationSec;
-                }
-            }
-
-            const renderedBuffer = await offlineCtx.startRendering();
-            return audioBufferToWav(renderedBuffer);
-        }
-
-        async function downloadSingleTrackWav(index, btnElement) {
-            const t = playlist[index];
-            if (!t) return;
-            const origHtml = btnElement.innerHTML;
-            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px]"></i>';
-            btnElement.disabled = true;
-
-            try {
-                const parsed = parseABC(t.abcCode, t.bpm);
-                const wavBlob = await renderOfflineWavAudio(parsed.events, t.bpm);
-                const cleanTitle = (t.title || `Traccia_${index + 1}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-                downloadBlob(wavBlob, `${cleanTitle}.wav`);
-            } catch (err) {
-                alert('Errore nel rendering audio WAV');
-            } finally {
-                btnElement.innerHTML = origHtml;
-                btnElement.disabled = false;
-            }
-        }
-
-        // --- TRACKLIST SUMMARY (COPY & DOWNLOAD .TXT) ---
-        function generateTracklistSummaryText() {
-            if (playlist.length === 0) return 'Nessuna canzone presente nella playlist.';
-            let totalSec = 0;
-            const title = document.getElementById('playlistTitleInput').value.trim() || 'Sessione Focus NTS-1';
-            const lines = [];
-            lines.push(`================================================`);
-            lines.push(`🎶 KORG NTS-1 — TRACKLIST: ${title.toUpperCase()}`);
-            lines.push(`Data Esportazione: ${new Date().toLocaleString()}`);
-            lines.push(`Totale Brani: ${playlist.length}`);
-            lines.push(`================================================\n`);
-
-            playlist.forEach((track, idx) => {
-                const dur = calculateTrackDurationSec(track.abcCode, track.bpm);
-                totalSec += dur;
-                const num = (idx + 1).toString().padStart(2, '0');
-                lines.push(`${num}. ${track.title} [${(track.genre || 'Generico').toUpperCase()} • ${track.bpm} BPM] — ${formatTimeMinSec(dur)}`);
-            });
-
-            lines.push(`\n------------------------------------------------`);
-            lines.push(`⏱️ DURATA TOTALE: ${formatTimeMinSec(totalSec)} (${Math.round(totalSec / 60)} min)`);
-            lines.push(`================================================`);
-            return lines.join('\n');
-        }
-
-        document.getElementById('copyTracklistBtn').addEventListener('click', async () => {
-            const text = generateTracklistSummaryText();
-            const btn = document.getElementById('copyTracklistBtn');
-            const orig = btn.innerHTML;
-            try {
-                await navigator.clipboard.writeText(text);
-                btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copiato!';
-                setTimeout(() => btn.innerHTML = orig, 2000);
-            } catch (e) {
-                alert('Impossibile copiare negli appunti automaticamente:\n\n' + text);
+        document.getElementById('midiOutputSelect').addEventListener('change', (e) => {
+            if (midiAccess) {
+                selectedOutput = midiAccess.outputs.get(e.target.value);
             }
         });
 
-        document.getElementById('downloadTracklistTxtBtn').addEventListener('click', () => {
-            const text = generateTracklistSummaryText();
-            const title = document.getElementById('playlistTitleInput').value.trim() || 'tracklist';
-            const cleanTitle = title.toLowerCase().replace(/[^a-z0-9_-]/gi, '_');
-            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-            downloadBlob(blob, `tracklist_${cleanTitle}_${Date.now().toString().slice(-4)}.txt`);
+        document.getElementById('midiChannelSelect').addEventListener('change', (e) => {
+            midiChannel = parseInt(e.target.value, 10) || 0;
         });
 
-        // --- PLAYLIST STATE MANAGEMENT ---
-        function renderPlaylistUI() {
-            const container = document.getElementById('trackListContainer');
-            container.innerHTML = '';
-
-            let totalPlaylistSec = 0;
-
-            if (playlist.length === 0) {
-                container.innerHTML = `
-                    <div class="h-44 border border-zinc-800/80 rounded-xl flex flex-col items-center justify-center text-zinc-600 p-4 text-center">
-                        <i class="fa-solid fa-music text-2xl mb-2"></i>
-                        <p class="text-xs">Nessuna traccia caricata nella scaletta.</p>
-                        <p class="text-[11px] text-zinc-500">Trascina sopra i file .json / .abc o clicca su "Aggiungi Traccia".</p>
-                    </div>
-                `;
-                document.getElementById('playlistStatsBadge').textContent = '0 brani • Durata Totale: 00:00';
-                deselectTrack();
-                return;
-            }
-
-            playlist.forEach((track, index) => {
-                const durSec = calculateTrackDurationSec(track.abcCode, track.bpm);
-                track.calculatedDuration = durSec;
-                totalPlaylistSec += durSec;
-
-                const card = document.createElement('div');
-                card.className = `p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between gap-2.5 transition-all ${index === selectedTrackIndex ? 'track-selected shadow-lg' : 'hover:bg-zinc-850'}`;
-
-                card.innerHTML = `
-                    <div class="flex items-center gap-2.5 flex-grow min-w-0 cursor-pointer" onclick="selectTrack(${index})">
-                        <span class="w-6 h-6 rounded bg-zinc-800 text-orange-400 font-mono-code text-xs font-bold flex items-center justify-center flex-shrink-0">
-                            ${index + 1}
-                        </span>
-                        <div class="flex flex-col min-w-0">
-                            <span class="text-xs font-bold text-zinc-100 truncate">${track.title || 'Senza Titolo'}</span>
-                            <div class="flex items-center gap-2 text-[11px] text-zinc-400 font-mono-code">
-                                <span class="text-purple-400 font-medium">${track.genre || 'Generico'}</span>
-                                <span>•</span>
-                                <span class="text-orange-400">${track.bpm} BPM</span>
-                                <span>•</span>
-                                <span class="text-zinc-500">OSC: ${getOscName(track.patch.osc)}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-1.5 flex-shrink-0" onclick="event.stopPropagation()">
-                        <span class="text-xs font-mono-code font-bold text-indigo-400 bg-indigo-950/40 px-2 py-1 rounded border border-indigo-900/40 mr-1">
-                            ${formatTimeMinSec(durSec)}
-                        </span>
-                        
-                        <!-- Single Track Export Buttons -->
-                        <button onclick="downloadSingleTrackAbc(${index})" class="w-6 h-6 rounded bg-zinc-950 hover:bg-zinc-800 text-orange-400 hover:text-orange-300 border border-zinc-800 flex items-center justify-center text-[10px] transition" title="Scarica lo spartito .ABC di questa traccia">
-                            <i class="fa-solid fa-file-code"></i>
-                        </button>
-                        <button onclick="downloadSingleTrackJson(${index})" class="w-6 h-6 rounded bg-zinc-950 hover:bg-zinc-800 text-indigo-400 hover:text-indigo-300 border border-zinc-800 flex items-center justify-center text-[10px] transition" title="Scarica questa singola traccia in .JSON con patch hardware NTS-1">
-                            <i class="fa-solid fa-file-export"></i>
-                        </button>
-                        <button onclick="downloadSingleTrackWav(${index}, this)" class="w-6 h-6 rounded bg-zinc-950 hover:bg-zinc-800 text-sky-400 hover:text-sky-300 border border-zinc-800 flex items-center justify-center text-[10px] transition" title="Effettua il render offline e scarica l'audio .WAV di questa traccia">
-                            <i class="fa-solid fa-volume-high"></i>
-                        </button>
-
-                        <div class="h-4 w-[1px] bg-zinc-800 mx-0.5"></div>
-
-                        <!-- Ordering and Remove Actions -->
-                        <div class="flex items-center gap-1">
-                            <button onclick="moveTrack(${index}, -1)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center text-[10px]" title="Sposta Su" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>
-                                <i class="fa-solid fa-chevron-up"></i>
-                            </button>
-                            <button onclick="moveTrack(${index}, 1)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center text-[10px]" title="Sposta Giù" ${index === playlist.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>
-                                <i class="fa-solid fa-chevron-down"></i>
-                            </button>
-                            <button onclick="removeTrack(${index})" class="w-6 h-6 rounded bg-red-950/40 hover:bg-red-900 text-red-300 flex items-center justify-center text-[10px] ml-0.5" title="Elimina Traccia">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-                container.appendChild(card);
-            });
-
-            document.getElementById('playlistStatsBadge').textContent = `${playlist.length} brani • Durata Totale: ${formatTimeMinSec(totalPlaylistSec)}`;
-            
-            if (selectedTrackIndex >= 0 && selectedTrackIndex < playlist.length) {
-                syncInspectorWithTrack(playlist[selectedTrackIndex]);
-            } else {
-                deselectTrack();
-            }
-        }
-
-        function getOscName(oscVal) {
-            const map = {
-                '0': 'SAW', '16': 'TRI', '32': 'SQR', '48': 'VPM', '64': 'WAVES',
-                '76': 'Volca Bass', '88': 'Chords', '100': 'Proba-B', '112': 'J6'
-            };
-            return map[String(oscVal)] || `CC:${oscVal}`;
-        }
-
-        function selectTrack(index) {
-            selectedTrackIndex = index;
-            renderPlaylistUI();
-            const panel = document.getElementById('inspectorPanel');
-            panel.classList.remove('opacity-50', 'pointer-events-none');
-            document.getElementById('selectedTrackBadge').textContent = `Traccia #${index + 1}`;
-        }
-
-        function deselectTrack() {
-            selectedTrackIndex = -1;
-            const panel = document.getElementById('inspectorPanel');
-            panel.classList.add('opacity-50', 'pointer-events-none');
-            document.getElementById('selectedTrackBadge').textContent = 'Nessuna Traccia';
-        }
-
-        function moveTrack(index, delta) {
-            const target = index + delta;
-            if (target < 0 || target >= playlist.length) return;
-            const item = playlist.splice(index, 1)[0];
-            playlist.splice(target, 0, item);
-            selectedTrackIndex = target;
-            renderPlaylistUI();
-        }
-
-        function removeTrack(index) {
-            stopPreview();
-            playlist.splice(index, 1);
-            if (selectedTrackIndex === index) selectedTrackIndex = -1;
-            else if (selectedTrackIndex > index) selectedTrackIndex--;
-            renderPlaylistUI();
-        }
-
-        function addEmptyTrack() {
-            const newTrack = {
-                title: `Nuovo Brano #${playlist.length + 1}`,
-                composer: 'Autore',
-                genre: 'synthwave',
-                bpm: 120,
-                patch: {
-                    osc: 76,
-                    shape: 64,
-                    alt: 32,
-                    cutoff: 80,
-                    resonance: 20,
-                    attack: 10,
-                    release: 45,
-                    delayTime: 25,
-                    reverbMix: 30
-                },
-                abcCode: `X: 1\nT: Nuovo Brano\nM: 4/4\nL: 1/8\nQ: 120\nK: C\n%%MIDI control 53 76\nC, C, C C, C, C, _E C, |`
-            };
-            playlist.push(newTrack);
-            selectTrack(playlist.length - 1);
-        }
-
-        function syncInspectorWithTrack(track) {
-            document.getElementById('trackTitleInput').value = track.title || '';
-            document.getElementById('trackGenreInput').value = track.genre || '';
-            document.getElementById('trackBpmInput').value = track.bpm || 120;
-            document.getElementById('trackOscSelect').value = track.patch.osc || 0;
-
-            const p = track.patch;
-            document.getElementById('paramCc54').value = p.shape ?? 64;
-            document.getElementById('valCc54').textContent = p.shape ?? 64;
-            document.getElementById('paramCc55').value = p.alt ?? 32;
-            document.getElementById('valCc55').textContent = p.alt ?? 32;
-            document.getElementById('paramCc43').value = p.cutoff ?? 80;
-            document.getElementById('valCc43').textContent = p.cutoff ?? 80;
-            document.getElementById('paramCc44').value = p.resonance ?? 20;
-            document.getElementById('valCc44').textContent = p.resonance ?? 20;
-            document.getElementById('paramCc16').value = p.attack ?? 10;
-            document.getElementById('valCc16').textContent = p.attack ?? 10;
-            document.getElementById('paramCc19').value = p.release ?? 45;
-            document.getElementById('valCc19').textContent = p.release ?? 45;
-            document.getElementById('paramCc30').value = p.delayTime ?? 25;
-            document.getElementById('valCc30').textContent = p.delayTime ?? 25;
-            document.getElementById('paramCc35').value = p.reverbMix ?? 30;
-            document.getElementById('valCc35').textContent = p.reverbMix ?? 30;
-
-            document.getElementById('trackAbcTextarea').value = track.abcCode || '';
-        }
-
-        // --- BIND INSPECTOR CHANGES TO DATA ---
-        function updateActiveTrackField(key, val) {
-            if (selectedTrackIndex < 0 || !playlist[selectedTrackIndex]) return;
-            playlist[selectedTrackIndex][key] = val;
-            renderPlaylistUI();
-        }
-
-        function updateActiveTrackPatch(param, val) {
-            if (selectedTrackIndex < 0 || !playlist[selectedTrackIndex]) return;
-            playlist[selectedTrackIndex].patch[param] = parseInt(val, 10);
-        }
-
-        document.getElementById('trackTitleInput').addEventListener('input', (e) => updateActiveTrackField('title', e.target.value));
-        document.getElementById('trackGenreInput').addEventListener('input', (e) => updateActiveTrackField('genre', e.target.value));
-        document.getElementById('trackBpmInput').addEventListener('input', (e) => updateActiveTrackField('bpm', parseInt(e.target.value, 10) || 120));
-        document.getElementById('trackOscSelect').addEventListener('change', (e) => {
-            updateActiveTrackPatch('osc', e.target.value);
-            renderPlaylistUI();
-        });
-        document.getElementById('trackAbcTextarea').addEventListener('input', (e) => updateActiveTrackField('abcCode', e.target.value));
-
-        const rackSliders = [
-            { id: 'paramCc54', label: 'valCc54', key: 'shape', cc: 54 },
-            { id: 'paramCc55', label: 'valCc55', key: 'alt', cc: 55 },
-            { id: 'paramCc43', label: 'valCc43', key: 'cutoff', cc: 43 },
-            { id: 'paramCc44', label: 'valCc44', key: 'resonance', cc: 44 },
-            { id: 'paramCc16', label: 'valCc16', key: 'attack', cc: 16 },
-            { id: 'paramCc19', label: 'valCc19', key: 'release', cc: 19 },
-            { id: 'paramCc30', label: 'valCc30', key: 'delayTime', cc: 30 },
-            { id: 'paramCc35', label: 'valCc35', key: 'reverbMix', cc: 35 }
-        ];
-
-        rackSliders.forEach(s => {
-            document.getElementById(s.id).addEventListener('input', (e) => {
-                const val = e.target.value;
-                document.getElementById(s.label).textContent = val;
-                updateActiveTrackPatch(s.key, val);
-                sendMidiCC(s.cc, parseInt(val, 10));
+        document.querySelectorAll('.test-note-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                sendMidiTestNote(parseInt(e.currentTarget.dataset.note, 10));
             });
         });
 
-        document.getElementById('sendPatchNowBtn').addEventListener('click', () => {
-            if (selectedTrackIndex < 0 || !playlist[selectedTrackIndex]) return;
-            const p = playlist[selectedTrackIndex].patch;
-            sendMidiCC(53, p.osc);
-            sendMidiCC(54, p.shape);
-            sendMidiCC(55, p.alt);
-            sendMidiCC(43, p.cutoff);
-            sendMidiCC(44, p.resonance);
-            sendMidiCC(16, p.attack);
-            sendMidiCC(19, p.release);
-            sendMidiCC(30, p.delayTime);
-            sendMidiCC(35, p.reverbMix);
+        document.getElementById('testChordBtn').addEventListener('click', () => {
+            [48, 52, 55, 60].forEach((n, idx) => {
+                setTimeout(() => sendMidiTestNote(n), idx * 60);
+            });
         });
 
-        // --- PREVIEW PLAYER ENGINE ---
-        let isPreviewPlaying = false;
-        let previewTimer = null;
-        let previewNoteOffTimers = [];
-        let previewStepIndex = 0;
-        let previewEvents = [];
-
-        function startPreview() {
-            if (selectedTrackIndex < 0 || !playlist[selectedTrackIndex]) return;
-            stopPreview();
-            getAudioContext();
-
-            const track = playlist[selectedTrackIndex];
-            const parsed = parseABC(track.abcCode, track.bpm);
-            previewEvents = parsed.events;
-            if (previewEvents.length === 0) return;
-
-            const p = track.patch;
-            sendMidiCC(53, p.osc);
-            sendMidiCC(54, p.shape);
-            sendMidiCC(55, p.alt);
-            sendMidiCC(43, p.cutoff);
-            sendMidiCC(44, p.resonance);
-            sendMidiCC(16, p.attack);
-            sendMidiCC(19, p.release);
-            sendMidiCC(30, p.delayTime);
-            sendMidiCC(35, p.reverbMix);
-
-            isPreviewPlaying = true;
-            previewStepIndex = 0;
-            document.getElementById('previewPlayBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> In Riproduzione...';
-            schedulePreviewStep(track.bpm);
-        }
-
-        function schedulePreviewStep(bpm) {
-            if (!isPreviewPlaying) return;
-
-            if (previewStepIndex >= previewEvents.length) {
-                stopPreview();
-                return;
-            }
-
-            const evt = previewEvents[previewStepIndex];
-            const quarterMs = 60000 / (bpm || 120);
-
-            if (evt.type === 'cc') {
-                sendMidiCC(evt.cc, evt.value);
-                previewStepIndex++;
-                schedulePreviewStep(bpm);
-                return;
-            }
-
-            const stepMs = (evt.duration || 0.25) * quarterMs;
-
-            if (evt.type === 'note') {
-                const noteMs = Math.max(20, stepMs * 0.75);
-                evt.midiNotes.forEach(n => {
-                    sendNoteOn(n, 100);
-                    const t = setTimeout(() => sendNoteOff(n), noteMs);
-                    previewNoteOffTimers.push(t);
-                });
-            }
-
-            previewStepIndex++;
-            previewTimer = setTimeout(() => schedulePreviewStep(bpm), stepMs);
-        }
-
-        function stopPreview() {
-            clearTimeout(previewTimer);
-            previewNoteOffTimers.forEach(t => clearTimeout(t));
-            silenceActiveNotes();
-            isPreviewPlaying = false;
-            previewStepIndex = 0;
-            document.getElementById('previewPlayBtn').innerHTML = '<i class="fa-solid fa-play text-[10px]"></i> Anteprima Traccia';
-        }
-
-        document.getElementById('previewPlayBtn').addEventListener('click', startPreview);
-        document.getElementById('previewStopBtn').addEventListener('click', stopPreview);
-
-        // --- FILE IMPORT (JSON / ABC) & DRAG-AND-DROP ---
-        async function processImportedFile(file) {
-            const text = await file.text();
-            const fileName = file.name.toLowerCase();
-
-            if (fileName.endsWith('.json')) {
-                try {
-                    const data = JSON.parse(text);
-                    if (data.type === 'korg_nts1_playlist' && Array.isArray(data.tracks)) {
-                        playlist = data.tracks;
-                        if (data.title) document.getElementById('playlistTitleInput').value = data.title;
-                        renderPlaylistUI();
-                        if (playlist.length > 0) selectTrack(0);
-                        return;
-                    }
-
-                    const title = (data.metadata && data.metadata.title) ? data.metadata.title : file.name.replace(/\.[^/.]+$/, "");
-                    const bpm = data.bpm || 120;
-                    const osc = parseInt(data.mainOsc, 10) || 76;
-                    const genre = data.genre || 'synthwave';
-                    const abcCode = data.abcCode || '';
-
-                    playlist.push({
-                        title: title,
-                        composer: (data.metadata && data.metadata.composer) || 'Autore',
-                        genre: genre,
-                        bpm: bpm,
-                        patch: data.patch || { osc: osc, shape: 64, alt: 32, cutoff: 80, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
-                        abcCode: abcCode
-                    });
-                } catch (e) {
-                    console.error('Errore lettura JSON:', e);
-                }
-            } else {
-                const lines = text.split('\n');
-                let foundTitle = file.name.replace(/\.[^/.]+$/, "");
-                let foundBpm = 120;
-                let foundOsc = 0;
-
-                for (let line of lines) {
-                    const tMatch = line.match(/^T:\s*(.+)$/i);
-                    if (tMatch) foundTitle = tMatch[1].trim();
-                    const qMatch = line.match(/^Q:\s*(\d+)$/i);
-                    if (qMatch) foundBpm = parseInt(qMatch[1], 10);
-                    const oscMatch = line.match(/^%%MIDI\s+control\s+53\s+(\d+)/i);
-                    if (oscMatch) foundOsc = parseInt(oscMatch[1], 10);
-                }
-
-                playlist.push({
-                    title: foundTitle,
-                    composer: 'Autore',
-                    genre: 'custom',
-                    bpm: foundBpm,
-                    patch: { osc: foundOsc, shape: 64, alt: 32, cutoff: 80, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
-                    abcCode: text
-                });
-            }
-
-            renderPlaylistUI();
-            if (selectedTrackIndex < 0 && playlist.length > 0) selectTrack(playlist.length - 1);
-        }
-
-        const dropZone = document.getElementById('dropZone');
-        const multiFileInput = document.getElementById('multiFileInput');
-
-        dropZone.addEventListener('click', () => multiFileInput.click());
-        multiFileInput.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-            for (let f of files) await processImportedFile(f);
-            multiFileInput.value = '';
-        });
-
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-        dropZone.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            const files = Array.from(e.dataTransfer.files);
-            for (let f of files) await processImportedFile(f);
-        });
-
-        // --- PLAYLIST IMPORT / EXPORT (JUKEBOX COMPATIBLE) ---
-        const importPlaylistJsonBtn = document.getElementById('importPlaylistJsonBtn');
-        const playlistFileInput = document.getElementById('playlistFileInput');
-        const exportPlaylistJsonBtn = document.getElementById('exportPlaylistJsonBtn');
-
-        importPlaylistJsonBtn.addEventListener('click', () => playlistFileInput.click());
-        playlistFileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) await processImportedFile(file);
-            playlistFileInput.value = '';
-        });
-
-        exportPlaylistJsonBtn.addEventListener('click', () => {
-            if (playlist.length === 0) {
-                alert('La playlist è vuota. Aggiungi almeno un brano prima di esportare.');
-                return;
-            }
-
-            const title = document.getElementById('playlistTitleInput').value.trim() || 'playlist_nts1';
-            const cleanFilename = title.toLowerCase().replace(/[^a-z0-9_-]/gi, '_');
-
-            const bundle = {
-                type: 'korg_nts1_playlist',
-                version: '1.0.0',
-                generator: 'Korg NTS-1 Suite - Playlist Builder',
-                timestamp: new Date().toISOString(),
-                title: title,
-                totalTracks: playlist.length,
-                tracks: playlist
-            };
-
-            const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
-            downloadBlob(blob, `${cleanFilename}.json`);
-        });
-
-        // --- INITIALIZATION ---
-        document.getElementById('addEmptyTrackBtn').addEventListener('click', addEmptyTrack);
-        document.getElementById('clearPlaylistBtn').addEventListener('click', () => {
-            if (confirm('Sei sicuro di voler svuotare l\'intera scaletta?')) {
-                stopPreview();
-                playlist = [];
-                renderPlaylistUI();
-            }
-        });
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initWebMIDI();
-            renderPlaylistUI();
-        });
+        window.addEventListener('DOMContentLoaded', initHubMIDI);
     </script>
 </body>
 </html>
