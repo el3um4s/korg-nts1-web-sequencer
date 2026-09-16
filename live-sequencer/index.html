@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Korg NTS-1 - Live Step Sequencer & Realtime Sketchpad v1.0.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; touch-action: manipulation; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #09090b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        .led-active { box-shadow: 0 0 8px #22c55e, inset 0 0 4px #4ade80; }
+        .led-orange { box-shadow: 0 0 8px #f97316, inset 0 0 4px #fb923c; }
+        .no-select { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+        
+        select option {
+            background-color: #18181b !important;
+            color: #f4f4f5 !important;
+            padding: 6px;
+        }
+
+        .play-pad-active {
+            background: linear-gradient(135deg, #f97316, #ea580c) !important;
+            color: #09090b !important;
+            transform: scale(0.96);
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.6) !important;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-3 md:p-5 select-none overflow-x-hidden no-select">
+
+    <!-- Header & Hardware Routing -->
+    <header class="max-w-7xl mx-auto w-full mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-500 shadow-lg">
+                <i class="fa-solid fa-microphone-lines text-xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">LIVE STEP SEQUENCER</h1>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">PROTOTIPO 6 v1.0.0</span>
+                </div>
+                <p class="text-xs text-zinc-400">Registratore Realtime & Step-by-Step, Quantizzazione Live e Tastiera Esecutiva</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap justify-end">
+            <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-xl text-xs">
+                <label for="soundTargetSelect" class="text-zinc-400 font-semibold flex items-center gap-1 text-[11px]">
+                    <i class="fa-solid fa-volume-high text-orange-400"></i> Uscita:
+                </label>
+                <select id="soundTargetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-medium">
+                    <option value="both" selected>Entrambi (MIDI + Casse)</option>
+                    <option value="internal">Solo Casse PC / Mobile</option>
+                    <option value="midi">Solo Korg NTS-1 (MIDI)</option>
+                </select>
+            </div>
+
+            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium">
+                <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"></span>
+                <span id="statusText" class="text-zinc-300">Inizializzazione MIDI...</span>
+            </div>
+
+            <button id="panicBtn" class="bg-red-950/40 hover:bg-red-900 text-red-300 border border-red-800/60 px-2.5 py-1 rounded-xl text-xs font-mono-code active:scale-95 transition" title="MIDI Panic">
+                PANIC
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow items-start">
+
+        <!-- Left Column: Master Transport, Pad Rack & Rec Modes -->
+        <section class="lg:col-span-4 flex flex-col gap-3">
+            
+            <!-- Master Transport & Rec Controls -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-dot text-rose-500 animate-pulse"></i> Registratore Live
+                    </span>
+                    <span id="globalStepDisplay" class="text-[11px] font-mono-code text-orange-400 font-bold">Pad 1 • Step 0/16</span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="playPauseBtn" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg">
+                        <i id="playPauseIcon" class="fa-solid fa-play"></i>
+                        <span id="playPauseLabel">PLAY</span>
+                    </button>
+                    <button id="recordToggleBtn" class="py-2.5 bg-rose-950 text-rose-300 border border-rose-700/60 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow">
+                        <i class="fa-solid fa-circle text-rose-500 text-[10px]"></i>
+                        <span id="recBtnLabel">REC: OFF</span>
+                    </button>
+                    <button id="stopBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-stop"></i>
+                        <span>STOP</span>
+                    </button>
+                </div>
+
+                <!-- Modalità di Inserimento -->
+                <div class="grid grid-cols-2 gap-2 text-xs bg-zinc-950 p-1.5 rounded-lg border border-zinc-800">
+                    <button id="modeRealtimeBtn" class="py-1 rounded font-bold transition text-orange-400 bg-zinc-800 flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-stopwatch text-[10px]"></i> Realtime Overdub
+                    </button>
+                    <button id="modeStepRecordBtn" class="py-1 rounded font-bold transition text-zinc-400 hover:text-zinc-200 flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-shoe-prints text-[10px]"></i> Step-by-Step
+                    </button>
+                </div>
+
+                <!-- Controlli Step Manuali in Step-by-Step Mode -->
+                <div id="stepManualControls" class="hidden flex items-center justify-between gap-1.5 pt-1">
+                    <button id="stepRestBtn" class="flex-1 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 text-xs font-mono-code font-bold transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-pause text-[10px]"></i> Pausa (z)
+                    </button>
+                    <button id="stepBackBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 text-xs font-mono-code transition" title="Indietro di un passo">
+                        <i class="fa-solid fa-backward-step"></i>
+                    </button>
+                    <button id="stepForwardBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 text-xs font-mono-code transition" title="Avanza senza suonare">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-zinc-800/80">
+                    <div class="flex flex-col gap-1 bg-zinc-950 p-2 rounded-lg border border-zinc-800">
+                        <div class="flex items-center justify-between">
+                            <span class="text-zinc-400 text-[10px]">Tempo (BPM)</span>
+                            <span id="bpmDisplay" class="font-mono-code font-bold text-orange-400">115</span>
+                        </div>
+                        <input type="range" id="bpmSlider" min="40" max="220" value="115" class="w-full accent-orange-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                    </div>
+                    <div class="flex flex-col gap-1 bg-zinc-950 p-2 rounded-lg border border-zinc-800">
+                        <div class="flex items-center justify-between">
+                            <span class="text-zinc-400 text-[10px]">Quantizzazione</span>
+                            <span id="quantizeDisplay" class="font-mono-code font-bold text-cyan-400">1/16 Step</span>
+                        </div>
+                        <select id="quantizeSelect" class="bg-zinc-900 border border-zinc-700 text-cyan-300 rounded text-[10px] font-mono-code p-1">
+                            <option value="16" selected>1/16 (Sedicesimi)</option>
+                            <option value="8">1/8 (Ottavi)</option>
+                            <option value="4">1/4 (Quarti)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pad Rack Stack (Pezzi della canzone) -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-2.5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Pad della Canzone</span>
+                        <p class="text-[10px] text-zinc-500">Seleziona per registrare o riordinare</p>
+                    </div>
+                    <button id="addPadBtn" class="px-2.5 py-1 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/40 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                        <i class="fa-solid fa-plus text-[10px]"></i> Aggiungi Pad
+                    </button>
+                </div>
+                <div id="padsListContainer" class="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1"></div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Live Playing Surface & Realtime ABC Visualizer -->
+        <section class="lg:col-span-8 flex flex-col gap-3">
+            
+            <!-- Live Playing Surface (Tastiera & Grandi Pad Touch) -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-2.5 flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <span id="activePadBadge" class="px-2.5 py-0.5 rounded-lg bg-orange-600/20 text-orange-400 font-mono-code font-bold border border-orange-500/30 text-xs">
+                            PAD 1
+                        </span>
+                        <input type="text" id="activePadNameInput" value="Intro Groove" class="bg-zinc-950 border border-zinc-700 text-xs text-zinc-200 font-bold px-2 py-1 rounded focus:outline-none focus:border-orange-500 w-32">
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap text-xs">
+                        <div class="flex items-center gap-1 bg-zinc-950 px-2 py-1 rounded border border-zinc-800">
+                            <label class="text-[10px] text-zinc-400">OSC:</label>
+                            <select id="activePadOscSelect" class="bg-zinc-900 border border-zinc-700 text-cyan-300 font-mono-code font-bold rounded px-1.5 py-0.5">
+                                <option value="0">0: SAW</option>
+                                <option value="16">16: TRI</option>
+                                <option value="32">32: SQR</option>
+                                <option value="48">48: VPM</option>
+                                <option value="64">64: WAVES</option>
+                                <option value="76" selected>76: Volca</option>
+                                <option value="88">88: Chords</option>
+                                <option value="100">100: Proba-B</option>
+                                <option value="112">112: J6</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1 bg-zinc-950 px-2 py-1 rounded border border-zinc-800">
+                            <label class="text-[10px] text-zinc-400">Scala:</label>
+                            <select id="activePadScaleSelect" class="bg-zinc-900 border border-zinc-700 text-purple-300 font-mono-code rounded px-1.5 py-0.5">
+                                <option value="pentatonic_minor">Penta Minore</option>
+                                <option value="dorian">Dorico (Re)</option>
+                                <option value="major_pentatonic">Penta Maggiore</option>
+                                <option value="hirajoshi">Hirajoshi</option>
+                                <option value="chromatic">Cromatica (12)</option>
+                            </select>
+                        </div>
+                        <button id="clearPadNotesBtn" class="px-2 py-1 bg-zinc-800 hover:bg-rose-900/60 text-zinc-400 hover:text-rose-300 rounded border border-zinc-700 transition" title="Cancella registrazione del pad">
+                            <i class="fa-solid fa-trash-can mr-1"></i>Reset Note
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Timeline Sequenza Registrata nel Pad Attivo -->
+                <div class="flex flex-col gap-1">
+                    <span class="text-[10px] text-zinc-400 font-mono-code flex items-center justify-between">
+                        <span>Timeline Note Registrate (Trig & Tie):</span>
+                        <span id="currentStepCursorBadge" class="text-orange-400 font-bold">Step: 1/16</span>
+                    </span>
+                    <div id="timelineContainer" class="overflow-x-auto custom-scrollbar bg-zinc-950 border border-zinc-800 rounded-lg p-2 flex items-center gap-1 min-h-[46px]">
+                        <!-- Popolato dinamicamente da JS -->
+                    </div>
+                </div>
+
+                <!-- Grandi Pad da Suonare con Touch o QWERTY -->
+                <div class="flex flex-col gap-1.5 pt-1">
+                    <span class="text-[11px] font-bold text-zinc-300 uppercase tracking-wider flex items-center justify-between">
+                        <span>Superficie di Esecuzione (Tocca o usa Tastiera PC):</span>
+                        <span class="text-[10px] text-zinc-500 font-normal">Tieni premuto per allungare la nota</span>
+                    </span>
+                    <div id="playingPadsGrid" class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                        <!-- Popolato via JS in base alla scala -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partitura ABC Live & Export Studio -->
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-code text-orange-400"></i> Notazione ABC Generata Live
+                        </span>
+                        <span id="totalDurationBadge" class="text-[10px] font-mono-code text-indigo-400 font-bold bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-900/40">Durata: 00:08</span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button id="exportAbcBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-orange-300 border border-zinc-700 rounded-lg text-xs font-mono-code font-bold transition">
+                            <i class="fa-solid fa-download mr-1"></i>.ABC
+                        </button>
+                        <button id="exportMidiBtn" class="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 rounded-lg text-xs font-mono-code font-bold transition">
+                            <i class="fa-solid fa-file-audio mr-1"></i>.MID
+                        </button>
+                        <button id="exportWavBtn" class="px-2.5 py-1 bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-700/60 rounded-lg text-xs font-mono-code font-bold transition">
+                            <i class="fa-solid fa-volume-high mr-1"></i>.WAV
+                        </button>
+                        <button id="exportJsonBtn" class="px-2.5 py-1 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 rounded-lg text-xs font-mono-code font-bold transition">
+                            <i class="fa-solid fa-file-export mr-1"></i>.JSON (Suite)
+                        </button>
+                    </div>
+                </div>
+
+                <textarea id="liveAbcOutput" readonly rows="4" class="w-full bg-zinc-950 font-mono-code text-xs text-orange-200/90 border border-zinc-800 rounded-lg p-2.5 focus:outline-none custom-scrollbar resize-none"></textarea>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Script Logic -->
+    <script>
+        const SCALES = {
+            pentatonic_minor: [
+                { note: "C", midi: 60, label: "C4", key: "A" },
+                { note: "D", midi: 62, label: "D4", key: "S" },
+                { note: "E", midi: 64, label: "E4", key: "D" },
+                { note: "G", midi: 67, label: "G4", key: "F" },
+                { note: "A", midi: 69, label: "A4", key: "G" },
+                { note: "c", midi: 72, label: "C5", key: "H" },
+                { note: "d", midi: 74, label: "D5", key: "J" },
+                { note: "e", midi: 76, label: "E5", key: "K" }
+            ],
+            major_pentatonic: [
+                { note: "C", midi: 60, label: "C4", key: "A" },
+                { note: "D", midi: 62, label: "D4", key: "S" },
+                { note: "E", midi: 64, label: "E4", key: "D" },
+                { note: "G", midi: 67, label: "G4", key: "F" },
+                { note: "A", midi: 69, label: "A4", key: "G" },
+                { note: "c", midi: 72, label: "C5", key: "H" },
+                { note: "d", midi: 74, label: "D5", key: "J" },
+                { note: "e", midi: 76, label: "E5", key: "K" }
+            ],
+            dorian: [
+                { note: "D", midi: 62, label: "D4", key: "A" },
+                { note: "E", midi: 64, label: "E4", key: "S" },
+                { note: "F", midi: 65, label: "F4", key: "D" },
+                { note: "G", midi: 67, label: "G4", key: "F" },
+                { note: "A", midi: 69, label: "A4", key: "G" },
+                { note: "B", midi: 71, label: "B4", key: "H" },
+                { note: "c", midi: 72, label: "C5", key: "J" },
+                { note: "d", midi: 74, label: "D5", key: "K" }
+            ],
+            hirajoshi: [
+                { note: "F,", midi: 53, label: "F3", key: "A" },
+                { note: "G,", midi: 55, label: "G3", key: "S" },
+                { note: "B,", midi: 59, label: "B3", key: "D" },
+                { note: "c",  midi: 60, label: "C4", key: "F" },
+                { note: "f",  midi: 65, label: "F4", key: "G" },
+                { note: "g",  midi: 67, label: "G4", key: "H" },
+                { note: "b",  midi: 71, label: "B4", key: "J" },
+                { note: "c'", midi: 72, label: "C5", key: "K" }
+            ],
+            chromatic: [
+                { note: "C",  midi: 60, label: "C4",  key: "A" },
+                { note: "^C", midi: 61, label: "C#4", key: "W" },
+                { note: "D",  midi: 62, label: "D4",  key: "S" },
+                { note: "^D", midi: 63, label: "D#4", key: "E" },
+                { note: "E",  midi: 64, label: "E4",  key: "D" },
+                { note: "F",  midi: 65, label: "F4",  key: "F" },
+                { note: "^F", midi: 66, label: "F#4", key: "T" },
+                { note: "G",  midi: 67, label: "G4",  key: "G" }
+            ]
+        };
+
+        const OSC_NAMES = { 0: "SAW", 16: "TRI", 32: "SQR", 48: "VPM", 64: "WAVES", 76: "Volca Bass", 88: "Chords", 100: "Proba-B", 112: "J6" };
+
+        let padRack = [
+            {
+                id: 1,
+                name: "Intro Groove",
+                osc: 76,
+                patch: { osc: 76, cutoff: 85 },
+                scaleKey: "pentatonic_minor",
+                steps: 16,
+                sequence: Array(16).fill(null) // { midi, note, len } oppure null = rest
+            },
+            {
+                id: 2,
+                name: "Lead Chorus",
+                osc: 112,
+                patch: { osc: 112, cutoff: 95 },
+                scaleKey: "pentatonic_minor",
+                steps: 16,
+                sequence: Array(16).fill(null)
+            }
+        ];
+
+        let activePadIndex = 0;
+        let isPlaying = false;
+        let isRecording = false;
+        let recMode = 'realtime'; // 'realtime' | 'step'
+        let currentStepIndex = -1;
+        let sequencerTimer = null;
+        let activeHoldPresses = new Map(); // midi -> startTime
+
+        // --- WEB AUDIO ENGINE ---
+        let audioCtx = null;
+        let masterGainNode = null;
+        let activeVoices = new Map();
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioClass) {
+                    audioCtx = new AudioClass();
+                    masterGainNode = audioCtx.createGain();
+                    updateAudioRouting();
+                    masterGainNode.connect(audioCtx.destination);
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function updateAudioRouting() {
+            if (!masterGainNode || !audioCtx) return;
+            const target = document.getElementById('soundTargetSelect').value;
+            masterGainNode.gain.setValueAtTime(target === 'midi' ? 0.00001 : 0.85, audioCtx.currentTime);
+        }
+
+        document.getElementById('soundTargetSelect').addEventListener('change', updateAudioRouting);
+
+        function playInternalSynth(midiNote, oscType = 76, durationSec = 0.25) {
+            const target = document.getElementById('soundTargetSelect').value;
+            if (target === 'midi') return;
+
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            stopInternalSynth(midiNote);
+
+            const baseFreq = 440 * Math.pow(2, (midiNote - 69) / 12);
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
+
+            osc.type = oscType === 16 ? 'triangle' : (oscType === 32 ? 'square' : 'sawtooth');
+            osc.frequency.setValueAtTime(baseFreq, now);
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(3200, now);
+
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.22, now + 0.015);
+            gain.gain.setValueAtTime(0.22, now + durationSec * 0.85);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGainNode);
+
+            osc.start(now);
+            osc.stop(now + durationSec + 0.05);
+            activeVoices.set(midiNote, { osc, gain });
+        }
+
+        function stopInternalSynth(midiNote) {
+            if (!activeVoices.has(midiNote)) return;
+            const voice = activeVoices.get(midiNote);
+            activeVoices.delete(midiNote);
+            try {
+                voice.gain.gain.cancelScheduledValues(audioCtx.currentTime);
+                voice.gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+                voice.osc.stop();
+            } catch (e) {}
+        }
+
+        // --- WEB MIDI ---
+        let midiAccess = null;
+        let selectedOutput = null;
+
+        async function initWebMIDI() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+
+            if (!navigator.requestMIDIAccess) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400';
+                statusText.textContent = 'Synth Casse Web';
+                document.getElementById('soundTargetSelect').value = 'internal';
+                return;
+            }
+
+            try {
+                midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+                const outputs = Array.from(midiAccess.outputs.values());
+                let korg = outputs.find(o => (o.name || '').toLowerCase().includes('nts') || (o.name || '').toLowerCase().includes('korg'));
+                
+                if (korg) {
+                    selectedOutput = korg;
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `Connesso: ${korg.name}`;
+                } else if (outputs.length > 0) {
+                    selectedOutput = outputs[0];
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `MIDI: ${outputs[0].name}`;
+                } else {
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 led-orange';
+                    statusText.textContent = 'Synth Casse (Nessun MIDI)';
+                }
+            } catch (e) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400';
+                statusText.textContent = 'Synth Casse Attivo';
+            }
+        }
+
+        function sendMidi(note, on = true) {
+            const target = document.getElementById('soundTargetSelect').value;
+            if (target === 'internal' || !selectedOutput) return;
+            try {
+                selectedOutput.send([on ? 0x90 : 0x80, note & 0x7F, on ? 100 : 0]);
+            } catch (e) {}
+        }
+
+        document.getElementById('panicBtn').addEventListener('click', () => {
+            stopPlayback();
+            if (selectedOutput) {
+                try {
+                    selectedOutput.send([0xB0, 120, 0]);
+                    selectedOutput.send([0xB0, 123, 0]);
+                    for (let n = 0; n < 128; n++) selectedOutput.send([0x80, n, 0]);
+                } catch (e) {}
+            }
+        });
+
+        // --- GESTIONE PAD E TIMELINE ---
+        function renderPadsList() {
+            const container = document.getElementById('padsListContainer');
+            container.innerHTML = '';
+
+            padRack.forEach((pad, idx) => {
+                if (!pad.sequence || pad.sequence.length !== pad.steps) {
+                    pad.sequence = Array(pad.steps).fill(null);
+                }
+                const isActive = (idx === activePadIndex);
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-xl border flex items-center justify-between gap-2 transition cursor-pointer ${
+                    isActive ? 'pad-card-active border-orange-500 shadow-md' : 'bg-zinc-900 border-zinc-800 hover:bg-zinc-850'
+                }`;
+                card.onclick = () => selectPad(idx);
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-6 h-6 rounded bg-zinc-800 text-orange-400 font-mono-code text-xs font-bold flex items-center justify-center shrink-0">
+                            ${idx + 1}
+                        </span>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-xs font-bold text-zinc-100 truncate">${pad.name}</span>
+                            <div class="flex items-center gap-1.5 text-[10px] font-mono-code text-zinc-400">
+                                <span class="text-orange-400 font-bold">${OSC_NAMES[pad.osc] || 'OSC'}</span>
+                                <span>•</span>
+                                <span class="text-cyan-400">${pad.steps} step</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                        <button onclick="removePad(${idx})" class="w-6 h-6 rounded bg-red-950/40 hover:bg-red-900 text-red-300 border border-red-800/60 flex items-center justify-center text-[10px]">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            syncActivePadUI();
+            renderTimeline();
+            renderPlayingPads();
+            compileABC();
+        }
+
+        function selectPad(idx) {
+            activePadIndex = idx;
+            renderPadsList();
+        }
+
+        function removePad(idx) {
+            if (padRack.length <= 1) return;
+            padRack.splice(idx, 1);
+            if (activePadIndex >= padRack.length) activePadIndex = padRack.length - 1;
+            renderPadsList();
+        }
+
+        document.getElementById('addPadBtn').addEventListener('click', () => {
+            padRack.push({
+                id: Date.now(),
+                name: `Pad #${padRack.length + 1}`,
+                osc: 76,
+                patch: { osc: 76, cutoff: 85 },
+                scaleKey: "pentatonic_minor",
+                steps: 16,
+                sequence: Array(16).fill(null)
+            });
+            selectPad(padRack.length - 1);
+        });
+
+        function syncActivePadUI() {
+            const pad = padRack[activePadIndex];
+            if (!pad) return;
+            document.getElementById('activePadBadge').textContent = `PAD ${activePadIndex + 1}`;
+            document.getElementById('activePadNameInput').value = pad.name;
+            document.getElementById('activePadOscSelect').value = pad.osc;
+            document.getElementById('activePadScaleSelect').value = pad.scaleKey;
+        }
+
+        document.getElementById('activePadOscSelect').addEventListener('change', (e) => {
+            const pad = padRack[activePadIndex];
+            if (pad) {
+                pad.osc = parseInt(e.target.value, 10);
+                pad.patch.osc = pad.osc;
+                renderPadsList();
+            }
+        });
+
+        document.getElementById('activePadScaleSelect').addEventListener('change', (e) => {
+            const pad = padRack[activePadIndex];
+            if (pad) {
+                pad.scaleKey = e.target.value;
+                renderPlayingPads();
+            }
+        });
+
+        document.getElementById('clearPadNotesBtn').addEventListener('click', () => {
+            const pad = padRack[activePadIndex];
+            if (pad) {
+                pad.sequence = Array(pad.steps).fill(null);
+                renderTimeline();
+                compileABC();
+            }
+        });
+
+        // --- TIMELINE VISUALIZZATORE DEGLI STEP ---
+        function renderTimeline() {
+            const pad = padRack[activePadIndex];
+            const container = document.getElementById('timelineContainer');
+            container.innerHTML = '';
+            if (!pad) return;
+
+            for (let s = 0; s < pad.steps; s++) {
+                const item = pad.sequence[s];
+                const box = document.createElement('div');
+                const isCur = (s === currentStepIndex);
+
+                box.className = `h-9 min-w-[32px] sm:min-w-[38px] rounded border flex flex-col items-center justify-center font-mono-code text-[10px] shrink-0 transition-all ${
+                    isCur ? 'border-amber-400 bg-amber-500/20 shadow-md shadow-amber-500/30' : 'border-zinc-800 bg-zinc-900'
+                }`;
+
+                if (item) {
+                    if (item.type === 'trig') {
+                        box.classList.add('bg-orange-600/30', 'border-orange-500', 'text-orange-300', 'font-bold');
+                        box.textContent = item.label;
+                    } else if (item.type === 'tie') {
+                        box.classList.add('bg-cyan-600/20', 'border-cyan-500/50', 'text-cyan-400');
+                        box.textContent = '➔';
+                    }
+                } else {
+                    box.textContent = '·';
+                    box.classList.add('text-zinc-600');
+                }
+
+                container.appendChild(box);
+            }
+        }
+
+        // --- SUPERFICIE DI ESECUZIONE (PAD E TASTIERA) ---
+        function renderPlayingPads() {
+            const pad = padRack[activePadIndex];
+            const grid = document.getElementById('playingPadsGrid');
+            grid.innerHTML = '';
+            if (!pad) return;
+
+            const scale = SCALES[pad.scaleKey] || SCALES.pentatonic_minor;
+
+            scale.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = "play-pad h-16 sm:h-20 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-orange-500/50 flex flex-col items-center justify-center p-1 transition shadow font-mono-code active:scale-95";
+                btn.id = `pad-btn-${item.midi}`;
+
+                btn.innerHTML = `
+                    <span class="text-sm sm:text-base font-black text-zinc-100">${item.label}</span>
+                    <span class="text-[9px] text-zinc-500 font-bold bg-zinc-950 px-1 rounded border border-zinc-800">${item.key}</span>
+                `;
+
+                // Eventi Pointer Touch & Hold per durata dinamica
+                btn.onpointerdown = (e) => {
+                    e.preventDefault();
+                    btn.setPointerCapture(e.pointerId);
+                    handleNotePress(item);
+                };
+
+                btn.onpointerup = (e) => {
+                    e.preventDefault();
+                    handleNoteRelease(item);
+                };
+
+                btn.onpointercancel = (e) => handleNoteRelease(item);
+
+                grid.appendChild(btn);
+            });
+        }
+
+        // --- REGISTRAZIONE LIVE & STEP RECORDING ---
+        function handleNotePress(item) {
+            getAudioContext();
+            const pad = padRack[activePadIndex];
+            playInternalSynth(item.midi, pad.osc, 0.4);
+            sendMidi(item.midi, true);
+
+            const btn = document.getElementById(`pad-btn-${item.midi}`);
+            if (btn) btn.classList.add('play-pad-active');
+
+            activeHoldPresses.set(item.midi, { startTime: Date.now(), item });
+
+            // Se Step-by-Step Recording attivo
+            if (isRecording && recMode === 'step') {
+                if (currentStepIndex < 0) currentStepIndex = 0;
+                pad.sequence[currentStepIndex] = { type: 'trig', midi: item.midi, label: item.label, note: item.note };
+                renderTimeline();
+                compileABC();
+            }
+        }
+
+        function handleNoteRelease(item) {
+            sendMidi(item.midi, false);
+            const btn = document.getElementById(`pad-btn-${item.midi}`);
+            if (btn) btn.classList.remove('play-pad-active');
+
+            if (!activeHoldPresses.has(item.midi)) return;
+            const data = activeHoldPresses.get(item.midi);
+            activeHoldPresses.delete(item.midi);
+
+            const durationMs = Date.now() - data.startTime;
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const stepMs = (60000 / bpm) / 4;
+            const stepsHeld = Math.max(1, Math.round(durationMs / stepMs));
+
+            const pad = padRack[activePadIndex];
+
+            // In Step-by-Step, allunga i passi con TIE in base a quanto hai tenuto premuto
+            if (isRecording && recMode === 'step') {
+                for (let i = 1; i < stepsHeld; i++) {
+                    const nextStep = currentStepIndex + i;
+                    if (nextStep < pad.steps) {
+                        pad.sequence[nextStep] = { type: 'tie', midi: item.midi, label: item.label, note: item.note };
+                    }
+                }
+                currentStepIndex = Math.min(pad.steps - 1, currentStepIndex + stepsHeld);
+                document.getElementById('currentStepCursorBadge').textContent = `Step: ${currentStepIndex + 1}/${pad.steps}`;
+                renderTimeline();
+                compileABC();
+            }
+        }
+
+        // Tastiera PC QWERTY Mapping
+        window.addEventListener('keydown', (e) => {
+            if (e.repeat || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            const pad = padRack[activePadIndex];
+            const scale = SCALES[pad.scaleKey];
+            const found = scale.find(it => it.key.toUpperCase() === e.key.toUpperCase());
+            if (found) handleNotePress(found);
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const pad = padRack[activePadIndex];
+            const scale = SCALES[pad.scaleKey];
+            const found = scale.find(it => it.key.toUpperCase() === e.key.toUpperCase());
+            if (found) handleNoteRelease(found);
+        });
+
+        // Controlli Step Manuali
+        document.getElementById('stepRestBtn').addEventListener('click', () => {
+            const pad = padRack[activePadIndex];
+            if (currentStepIndex < 0) currentStepIndex = 0;
+            pad.sequence[currentStepIndex] = null; // Pausa
+            currentStepIndex = Math.min(pad.steps - 1, currentStepIndex + 1);
+            document.getElementById('currentStepCursorBadge').textContent = `Step: ${currentStepIndex + 1}/${pad.steps}`;
+            renderTimeline();
+            compileABC();
+        });
+
+        document.getElementById('stepBackBtn').addEventListener('click', () => {
+            const pad = padRack[activePadIndex];
+            currentStepIndex = Math.max(0, currentStepIndex - 1);
+            document.getElementById('currentStepCursorBadge').textContent = `Step: ${currentStepIndex + 1}/${pad.steps}`;
+            renderTimeline();
+        });
+
+        document.getElementById('stepForwardBtn').addEventListener('click', () => {
+            const pad = padRack[activePadIndex];
+            currentStepIndex = Math.min(pad.steps - 1, currentStepIndex + 1);
+            document.getElementById('currentStepCursorBadge').textContent = `Step: ${currentStepIndex + 1}/${pad.steps}`;
+            renderTimeline();
+        });
+
+        // Modalità Rec Switch
+        const modeRealtimeBtn = document.getElementById('modeRealtimeBtn');
+        const modeStepRecordBtn = document.getElementById('modeStepRecordBtn');
+        const stepManualControls = document.getElementById('stepManualControls');
+
+        modeRealtimeBtn.addEventListener('click', () => {
+            recMode = 'realtime';
+            modeRealtimeBtn.className = 'py-1 rounded font-bold transition text-orange-400 bg-zinc-800 flex items-center justify-center gap-1';
+            modeStepRecordBtn.className = 'py-1 rounded font-bold transition text-zinc-400 hover:text-zinc-200 flex items-center justify-center gap-1';
+            stepManualControls.classList.add('hidden');
+        });
+
+        modeStepRecordBtn.addEventListener('click', () => {
+            recMode = 'step';
+            modeStepRecordBtn.className = 'py-1 rounded font-bold transition text-orange-400 bg-zinc-800 flex items-center justify-center gap-1';
+            modeRealtimeBtn.className = 'py-1 rounded font-bold transition text-zinc-400 hover:text-zinc-200 flex items-center justify-center gap-1';
+            stepManualControls.classList.remove('hidden');
+        });
+
+        document.getElementById('recordToggleBtn').addEventListener('click', () => {
+            isRecording = !isRecording;
+            const btn = document.getElementById('recordToggleBtn');
+            const lbl = document.getElementById('recBtnLabel');
+            if (isRecording) {
+                btn.className = "py-2.5 bg-rose-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg";
+                lbl.textContent = "REC: ON";
+                if (!isPlaying && recMode === 'realtime') startSequencer();
+            } else {
+                btn.className = "py-2.5 bg-rose-950 text-rose-300 border border-rose-700/60 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow";
+                lbl.textContent = "REC: OFF";
+            }
+        });
+
+        // --- SEQUENCER PLAYBACK ENGINE ---
+        function startSequencer() {
+            getAudioContext();
+            if (isPlaying) return;
+            isPlaying = true;
+            currentStepIndex = -1;
+            document.getElementById('playPauseLabel').textContent = "PAUSA";
+            document.getElementById('playPauseBtn').className = "py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg";
+            scheduleStep();
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            clearTimeout(sequencerTimer);
+            sequencerTimer = null;
+            currentStepIndex = -1;
+            document.getElementById('playPauseLabel').textContent = "PLAY";
+            document.getElementById('playPauseBtn').className = "py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg";
+            renderTimeline();
+        }
+
+        function scheduleStep() {
+            if (!isPlaying) return;
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const stepMs = (60000 / bpm) / 4;
+
+            const pad = padRack[activePadIndex];
+            currentStepIndex = (currentStepIndex + 1) % pad.steps;
+
+            // In Realtime Overdub, se un tasto è tenuto premuto, registrane l'evento nello step
+            if (isRecording && recMode === 'realtime') {
+                if (activeHoldPresses.size > 0) {
+                    const firstHeld = Array.from(activeHoldPresses.values())[0];
+                    const isFirstHit = (Date.now() - firstHeld.startTime) < stepMs;
+                    pad.sequence[currentStepIndex] = {
+                        type: isFirstHit ? 'trig' : 'tie',
+                        midi: firstHeld.item.midi,
+                        label: firstHeld.item.label,
+                        note: firstHeld.item.note
+                    };
+                    compileABC();
+                }
+            }
+
+            // Suona le note registrate
+            const curItem = pad.sequence[currentStepIndex];
+            if (curItem && curItem.type === 'trig') {
+                playInternalSynth(curItem.midi, pad.osc, (stepMs * 0.9) / 1000);
+                sendMidi(curItem.midi, true);
+                setTimeout(() => sendMidi(curItem.midi, false), stepMs * 0.85);
+            }
+
+            document.getElementById('currentStepCursorBadge').textContent = `Step: ${currentStepIndex + 1}/${pad.steps}`;
+            renderTimeline();
+
+            sequencerTimer = setTimeout(scheduleStep, stepMs);
+        }
+
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            if (isPlaying) stopPlayback();
+            else startSequencer();
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', stopPlayback);
+
+        document.getElementById('bpmSlider').addEventListener('input', (e) => {
+            document.getElementById('bpmDisplay').textContent = e.target.value;
+            compileABC();
+        });
+
+        // --- COMPILATORE ABC ---
+        function compileABC() {
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const lines = [];
+            lines.push(`X: 1\nT: Live Sequencer Sketch\nM: 4/4\nL: 1/16\nQ: ${bpm}\nK: C\n`);
+
+            let totalSteps = 0;
+
+            padRack.forEach((pad, pIdx) => {
+                lines.push(`% --- PAD ${pIdx + 1}: ${pad.name} ---`);
+                lines.push(`%%MIDI control 53 ${pad.osc}`);
+                let tokens = [];
+                let s = 0;
+
+                while (s < pad.steps) {
+                    totalSteps++;
+                    const item = pad.sequence[s];
+                    if (!item) {
+                        tokens.push("z");
+                        if ((s + 1) % 4 === 0 && s !== pad.steps - 1) tokens.push("|");
+                        s++;
+                    } else if (item.type === 'trig') {
+                        let dur = 1;
+                        let look = s + 1;
+                        while (look < pad.steps && pad.sequence[look] && pad.sequence[look].type === 'tie' && pad.sequence[look].midi === item.midi) {
+                            dur++;
+                            look++;
+                        }
+                        tokens.push(`${item.note}${dur > 1 ? dur : ''}`);
+                        for (let adv = 0; adv < dur; adv++) {
+                            if ((s + adv + 1) % 4 === 0 && (s + adv) !== pad.steps - 1) tokens.push("|");
+                        }
+                        s += dur;
+                    } else {
+                        tokens.push("z");
+                        s++;
+                    }
+                }
+
+                lines.push(tokens.join(" ") + " |]\n");
+            });
+
+            document.getElementById('liveAbcOutput').value = lines.join("\n");
+            const sec = Math.round((totalSteps * ((60 / bpm) / 4)));
+            const m = Math.floor(sec / 60).toString().padStart(2, '0');
+            const sStr = (sec % 60).toString().padStart(2, '0');
+            document.getElementById('totalDurationBadge').textContent = `Durata: ${m}:${sStr}`;
+        }
+
+        // --- EXPORT ABC & JSON ---
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+
+        document.getElementById('exportAbcBtn').addEventListener('click', () => {
+            const abc = document.getElementById('liveAbcOutput').value;
+            downloadBlob(new Blob([abc], { type: 'text/plain;charset=utf-8' }), "live_sequencer.abc");
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', () => {
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const bundle = {
+                generator: "Korg NTS-1 Suite - Live Sequencer",
+                version: "1.0.0",
+                timestamp: new Date().toISOString(),
+                bpm: bpm,
+                abcCode: document.getElementById('liveAbcOutput').value
+            };
+            downloadBlob(new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' }), "live_sequencer.json");
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderPadsList();
+            initWebMIDI();
+        });
+    </script>
+</body>
+</html>
