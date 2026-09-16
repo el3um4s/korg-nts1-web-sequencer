@@ -1,0 +1,2453 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Korg NTS-1 - ABC Multi-Pad Composer Studio v1.8.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; touch-action: manipulation; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #09090b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        .led-active { box-shadow: 0 0 8px #22c55e, inset 0 0 4px #4ade80; }
+        .led-cyan { box-shadow: 0 0 8px #06b6d4, inset 0 0 4px #22d3ee; }
+        .led-orange { box-shadow: 0 0 8px #f97316, inset 0 0 4px #fb923c; }
+        .pad-card-active { border-color: #f97316 !important; background: linear-gradient(90deg, rgba(249, 115, 22, 0.15), rgba(24, 24, 27, 0.95)) !important; }
+        .no-select { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+        
+        select option {
+            background-color: #18181b !important;
+            color: #f4f4f5 !important;
+            padding: 6px;
+        }
+        select option:checked {
+            background-color: #ea580c !important;
+            color: #ffffff !important;
+        }
+
+        .pad-fullscreen-active {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 50 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            padding: 1rem !important;
+            background-color: #09090b !important;
+            overflow-y: auto !important;
+        }
+
+        .step-col-active {
+            background-color: rgba(249, 115, 22, 0.18) !important;
+            border-color: #f59e0b !important;
+            box-shadow: inset 0 0 6px rgba(245, 158, 11, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-3 md:p-5 select-none overflow-x-hidden no-select">
+
+    <!-- Header & Hardware Routing -->
+    <header class="max-w-7xl mx-auto w-full mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-500 shadow-lg">
+                <i class="fa-solid fa-shapes text-xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">MULTI-PAD COMPOSER</h1>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">STUDIO v1.8.0</span>
+                </div>
+                <p class="text-xs text-zinc-400">Generatore Casuale Intelligente, Rispetto Strutture Formali & Protezione Note</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap justify-end">
+            <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-xl text-xs">
+                <label for="soundTargetSelect" class="text-zinc-400 font-semibold flex items-center gap-1 text-[11px]">
+                    <i class="fa-solid fa-volume-high text-orange-400"></i> Uscita:
+                </label>
+                <select id="soundTargetSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-500 cursor-pointer font-medium">
+                    <option value="both" selected>Entrambi (MIDI + Casse)</option>
+                    <option value="internal">Solo Casse PC / Mobile</option>
+                    <option value="midi">Solo Korg NTS-1 (MIDI)</option>
+                </select>
+            </div>
+
+            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium">
+                <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"></span>
+                <span id="statusText" class="text-zinc-300">Inizializzazione MIDI...</span>
+            </div>
+
+            <button id="panicBtn" class="bg-red-950/40 hover:bg-red-900 text-red-300 border border-red-800/60 px-2.5 py-1 rounded-xl text-xs font-mono-code active:scale-95 transition" title="MIDI Panic (All Sound Off)">
+                PANIC
+            </button>
+        </div>
+    </header>
+
+    <!-- Global Toolbar -->
+    <div class="max-w-7xl mx-auto w-full flex items-center justify-between gap-2 px-1 mb-3 text-xs text-zinc-400">
+        <span class="text-[11px] font-medium text-zinc-500">
+            <i class="fa-solid fa-arrows-up-down mr-1"></i>Spazio di Lavoro Modulare
+        </span>
+        <div class="flex items-center gap-2">
+            <button id="expandAllSectionsBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[11px] text-zinc-300 transition flex items-center gap-1">
+                <i class="fa-solid fa-folder-open text-orange-400 text-[10px]"></i> Espandi tutto
+            </button>
+            <button id="collapseAllSectionsBtn" class="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[11px] text-zinc-300 transition flex items-center gap-1">
+                <i class="fa-solid fa-folder-minus text-zinc-400 text-[10px]"></i> Riduci tutto
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow items-start">
+
+        <!-- Left Column: Master Transport, Metadati & Pad Rack -->
+        <section class="lg:col-span-4 flex flex-col gap-3">
+            
+            <!-- Section 1: Master Transport -->
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyTransportSection">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-orange-600/20 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-play"></i>
+                        </span>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">1. Master Sequencer</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="globalStepDisplay" class="text-[11px] font-mono-code text-orange-400 font-bold mr-1">Pad 1 • Step 0/16</span>
+                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bodyTransportSection" class="section-body p-3.5 flex flex-col gap-3">
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="playPauseBtn" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg">
+                            <i id="playPauseIcon" class="fa-solid fa-play"></i>
+                            <span id="playPauseLabel">PLAY</span>
+                        </button>
+                        <button id="stopBtn" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                            <i class="fa-solid fa-stop"></i>
+                            <span>STOP</span>
+                        </button>
+                        <button id="loopModeBtn" class="py-2.5 bg-orange-600/20 text-orange-400 border border-orange-500/40 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition" title="Cambia modalità loop">
+                            <i class="fa-solid fa-repeat"></i>
+                            <span id="loopLabel">Loop: Song</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-zinc-800/80">
+                        <div class="flex flex-col gap-1 bg-zinc-950 p-2 rounded-lg border border-zinc-800">
+                            <div class="flex items-center justify-between">
+                                <span class="text-zinc-400 text-[10px]">Tempo (BPM)</span>
+                                <span id="bpmDisplay" class="font-mono-code font-bold text-orange-400">115</span>
+                            </div>
+                            <input type="range" id="bpmSlider" min="40" max="220" value="115" class="w-full accent-orange-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                        <div class="flex flex-col gap-1 bg-zinc-950 p-2 rounded-lg border border-zinc-800">
+                            <div class="flex items-center justify-between">
+                                <span class="text-zinc-400 text-[10px]">Gate Staccato</span>
+                                <span id="gateDisplay" class="font-mono-code font-bold text-cyan-400">75%</span>
+                            </div>
+                            <input type="range" id="gateSlider" min="20" max="95" value="75" class="w-full accent-cyan-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Metadati & Generazione Casuale -->
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyMetadataSection">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </span>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">2. Struttura & Randomizer</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bodyMetadataSection" class="section-body p-3.5 flex flex-col gap-2.5">
+                    <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                        <!-- Pulsante Apertura Modale Generazione Casuale Avanzata -->
+                        <button id="openRandomizerModalBtn" class="py-1.5 px-3 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-md border border-purple-500/50">
+                            <i class="fa-solid fa-dice text-yellow-300"></i>
+                            <span>🎲 Riempi a Caso...</span>
+                        </button>
+
+                        <button id="triggerImportBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-indigo-300 border border-zinc-700 rounded text-xs font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-folder-open text-indigo-400"></i> Carica File
+                        </button>
+                        <input type="file" id="universalFileInput" accept=".abc,.json,.mid,.midi,.txt" class="hidden">
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-semibold text-indigo-300 flex items-center justify-between">
+                            <span>Preset Struttura Canzone:</span>
+                            <span class="text-[9px] text-zinc-500">Crea Pad vuoti mirati</span>
+                        </label>
+                        <select id="songTemplateSelect" class="bg-zinc-950 border border-indigo-500/40 text-indigo-200 rounded px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-indigo-400 cursor-pointer">
+                            <option value="">Scegli uno schema formale...</option>
+                            <option value="pop_standard">📻 Pop Standard (Intro ➔ Strofa ➔ Ritornello ➔ Bridge ➔ Outro)</option>
+                            <option value="ballad_aaba">📜 Ballata AABA (Intro ➔ Strofa A ➔ Strofa B ➔ Ritornello ➔ Outro)</option>
+                            <option value="punk_fast">🎈 Filastrocca / Punk AABB (Strofa A ➔ Coro A ➔ Strofa B ➔ Coro B)</option>
+                            <option value="ambient_triad">🌌 Ambient Triade (Intro Drone ➔ Pad Sviluppo ➔ Outro)</option>
+                            <option value="continuous_groove">🔄 Continuous Groove (Pattern 16esimi ad evoluzione)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] text-zinc-400">Titolo Brano (T:):</label>
+                            <input type="text" id="metaTitle" value="Multi-Pad Sketch" class="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-zinc-200 focus:outline-none focus:border-orange-500 text-xs">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] text-zinc-400">Compositore (C:):</label>
+                            <input type="text" id="metaComposer" value="User Composer" class="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-zinc-200 focus:outline-none focus:border-orange-500 text-xs">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Pad Rack Stack -->
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl overflow-hidden transition-all duration-200">
+                <div class="section-header p-3 flex items-center justify-between cursor-pointer select-none bg-zinc-900/80 hover:bg-zinc-850 border-b border-zinc-800/60" data-target="bodyPadsListSection">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-list-ol"></i>
+                        </span>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider">3. Pad in Sequenza</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="addPadBtn" class="px-2 py-0.5 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/40 rounded text-[11px] font-bold transition flex items-center gap-1" onclick="event.stopPropagation()">
+                            <i class="fa-solid fa-plus text-[9px]"></i> Aggiungi Pad
+                        </button>
+                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bodyPadsListSection" class="section-body p-3.5 flex flex-col gap-2">
+                    <p class="text-[10px] text-zinc-500 mb-1">Clicca sul Pad per editarlo, usa Play per testarlo o le frecce per riordinarlo:</p>
+                    <div id="padsListContainer" class="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                        <!-- Popolato via JS -->
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Interactive Step Matrix Grid, Presets, Hardware Rack & Exporters -->
+        <section class="lg:col-span-8 flex flex-col gap-3">
+            
+            <!-- Section 4: Pad Active Inspector & Step Matrix Editor -->
+            <div id="matrixSectionCard" class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-3 transition-all duration-200">
+                
+                <!-- Barra Superiore Controlli Pad -->
+                <div class="flex flex-wrap items-center justify-between gap-2.5 border-b border-zinc-800 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span id="activePadBadge" class="px-2.5 py-0.5 rounded-lg bg-orange-600/20 text-orange-400 font-mono-code font-bold border border-orange-500/30 text-xs">
+                            PAD 1
+                        </span>
+                        <input type="text" id="activePadNameInput" value="Intro Groove" class="bg-zinc-950 border border-zinc-700 text-xs text-zinc-200 font-bold px-2 py-1 rounded focus:outline-none focus:border-orange-500 w-28 sm:w-36">
+                        <span id="activePadDurationBadge" class="text-[10px] font-mono-code text-cyan-400 font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900/40" title="Durata effettiva di questo singolo pad">00:08</span>
+                    </div>
+
+                    <!-- Esecutori Indipendenti Singolo Pad & Variazione Rapida -->
+                    <div class="flex items-center gap-1.5 bg-zinc-950 px-2 py-1 rounded-lg border border-zinc-800 flex-wrap">
+                        <span class="text-[10px] font-bold text-zinc-400 uppercase">Esegui:</span>
+                        <button id="playCurrentPad1ShotBtn" class="px-2 py-0.5 bg-emerald-700/80 hover:bg-emerald-600 text-white rounded text-[11px] font-bold transition flex items-center gap-1" title="Esegui solo questo Pad una volta sola">
+                            <i class="fa-solid fa-play text-[9px]"></i> 1-Shot
+                        </button>
+                        <button id="loopCurrentPadBtn" class="px-2 py-0.5 bg-cyan-900/60 hover:bg-cyan-800 text-cyan-300 border border-cyan-700/50 rounded text-[11px] font-bold transition flex items-center gap-1" title="Metti in loop continuo solo questo Pad">
+                            <i class="fa-solid fa-repeat text-[9px]"></i> Loop Pad
+                        </button>
+                        <button id="quickRandomizePadBtn" class="px-2 py-0.5 bg-purple-900/70 hover:bg-purple-800 text-purple-200 border border-purple-700/50 rounded text-[11px] font-bold transition flex items-center gap-1" title="Genera subito una nuova variazione casuale su questo Pad preservando il synth">
+                            <i class="fa-solid fa-dice text-[10px] text-yellow-300"></i> Varia Note
+                        </button>
+                    </div>
+
+                    <!-- Tasto Schermo Intero -->
+                    <button id="toggleFullscreenPadBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5" title="Ingrandisci il pad a tutto schermo">
+                        <i id="fullscreenIcon" class="fa-solid fa-expand"></i>
+                        <span id="fullscreenLabel" class="hidden sm:inline">Schermo Intero</span>
+                    </button>
+                </div>
+
+                <!-- Configurazione Tecnica del Pad & Preset Hardware -->
+                <div class="flex items-center justify-between gap-2 flex-wrap text-xs bg-zinc-950/80 p-2 rounded-lg border border-zinc-800">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <!-- Preset Hardware (Modifica solo il synth senza toccare note né step) -->
+                        <div class="flex items-center gap-1">
+                            <label class="text-[10px] text-orange-400 font-bold uppercase flex items-center gap-1">
+                                <i class="fa-solid fa-wand-magic-sparkles text-[11px]"></i> Preset Synth:
+                            </label>
+                            <select id="padPresetSelect" class="bg-zinc-900 border border-zinc-700 text-amber-300 font-semibold text-xs rounded px-2 py-0.5 focus:outline-none focus:border-orange-500 cursor-pointer">
+                                <option value="">Personalizzato...</option>
+                                <option value="focus_zen">🎨 Focus Zen (TRI • Cutoff 75 • Reverb 40)</option>
+                                <option value="synthwave_bass">⚡ Synthwave Bass (Volca • Cutoff 85 • Res 25)</option>
+                                <option value="juno_lead">🎹 80s Juno Lead (J6 • Cutoff 95 • Shape 80)</option>
+                                <option value="lofi_chords">☕ Deep Lo-Fi (Chords • Cutoff 70 • Delay 35)</option>
+                                <option value="ambient_hira">🧪 Ambient (WAVES • Cutoff 75 • Reverb 60)</option>
+                                <option value="chiptune_sqr">👾 Chiptune (SQR • Cutoff 90 • Attack 0)</option>
+                                <option value="scifi_drone">🪐 Sci-Fi Drone (VPM • Cutoff 65 • Alt 70)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            <label class="text-[10px] text-zinc-400 font-medium">Step:</label>
+                            <select id="activePadStepsSelect" class="bg-zinc-900 border border-zinc-700 text-orange-300 font-mono-code font-bold rounded px-1.5 py-0.5 focus:outline-none cursor-pointer">
+                                <option value="8">8 Step</option>
+                                <option value="12">12 Step</option>
+                                <option value="16" selected>16 Step</option>
+                                <option value="24">24 Step</option>
+                                <option value="32">32 Step</option>
+                                <option value="48">48 Step</option>
+                                <option value="64">64 Step</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            <label class="text-[10px] text-zinc-400 font-medium">OSC:</label>
+                            <select id="activePadOscSelect" class="bg-zinc-900 border border-zinc-700 text-cyan-300 font-mono-code font-bold rounded px-1.5 py-0.5 focus:outline-none cursor-pointer">
+                                <option value="0">0: SAW</option>
+                                <option value="16">16: TRI</option>
+                                <option value="32">32: SQR</option>
+                                <option value="48">48: VPM</option>
+                                <option value="64">64: WAVES</option>
+                                <option value="76">76: Volca</option>
+                                <option value="88">88: Chords</option>
+                                <option value="100">100: Proba-B</option>
+                                <option value="112">112: J6</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            <label class="text-[10px] text-zinc-400 font-medium">Scala:</label>
+                            <select id="activePadScaleSelect" class="bg-zinc-900 border border-zinc-700 text-purple-300 font-mono-code rounded px-1.5 py-0.5 focus:outline-none cursor-pointer">
+                                <option value="pentatonic_minor">Penta Minore</option>
+                                <option value="dorian">Dorico (Re)</option>
+                                <option value="major_pentatonic">Penta Maggiore</option>
+                                <option value="hirajoshi">Hirajoshi</option>
+                                <option value="chromatic">Cromatica (12)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                        <button id="toggleHwRackBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-orange-300 border border-zinc-700 rounded text-xs transition flex items-center gap-1">
+                            <i class="fa-solid fa-sliders text-[10px]"></i> Parametri CC
+                        </button>
+                        <button id="clearCurrentGridBtn" class="px-2 py-0.5 bg-zinc-800 hover:bg-red-950/60 text-zinc-400 hover:text-red-300 border border-zinc-700 rounded text-xs transition" title="Svuota note del pad corrente">
+                            <i class="fa-solid fa-eraser mr-1"></i>Pulisci Griglia
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hardware Rack CC Slider Completo per il Pad Attivo -->
+                <div id="hwRackPanel" class="hidden bg-zinc-950/90 border border-zinc-800 rounded-lg p-3 flex flex-col gap-2.5">
+                    <div class="flex items-center justify-between text-xs border-b border-zinc-800/80 pb-1.5">
+                        <span class="font-bold text-orange-400 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                            <i class="fa-solid fa-microchip"></i> Parametri Hardware Korg NTS-1 del Pad
+                        </span>
+                        <button id="sendHwPatchBtn" class="px-2 py-0.5 bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 border border-orange-500/40 rounded text-[10px] font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-bolt"></i> Invia a Synth
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[11px]">
+                        <div>
+                            <label class="text-[10px] text-zinc-400 flex justify-between"><span>Shape (CC 54):</span> <span id="valCc54" class="text-orange-400 font-mono-code font-bold">64</span></label>
+                            <input type="range" id="paramCc54" min="0" max="127" value="64" class="w-full accent-orange-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-zinc-400 flex justify-between"><span>Alt (CC 55):</span> <span id="valCc55" class="text-orange-400 font-mono-code font-bold">32</span></label>
+                            <input type="range" id="paramCc55" min="0" max="127" value="32" class="w-full accent-orange-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-zinc-400 flex justify-between"><span>Cutoff (CC 43):</span> <span id="valCc43" class="text-cyan-400 font-mono-code font-bold">85</span></label>
+                            <input type="range" id="paramCc43" min="0" max="127" value="85" class="w-full accent-cyan-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-zinc-400 flex justify-between"><span>Resonance (CC 44):</span> <span id="valCc44" class="text-cyan-400 font-mono-code font-bold">20</span></label>
+                            <input type="range" id="paramCc44" min="0" max="127" value="20" class="w-full accent-cyan-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-zinc-400 flex justify-between"><span>Attack (CC 16):</span> <span id="valCc16" class="text-emerald-400 font-mono-code font-bold">10</span></label>
+                            <input type="range" id="paramCc16" min="0" max="127" value="10" class="w-full accent-emerald-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-zinc-400 flex justify-between"><span>Release (CC 19):</span> <span id="valCc19" class="text-emerald-400 font-mono-code font-bold">45</span></label>
+                            <input type="range" id="paramCc19" min="0" max="127" value="45" class="w-full accent-emerald-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-zinc-400 flex justify-between"><span>Delay Time (CC 30):</span> <span id="valCc30" class="text-purple-400 font-mono-code font-bold">25</span></label>
+                            <input type="range" id="paramCc30" min="0" max="127" value="25" class="w-full accent-purple-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-zinc-400 flex justify-between"><span>Reverb Mix (CC 35):</span> <span id="valCc35" class="text-purple-400 font-mono-code font-bold">30</span></label>
+                            <input type="range" id="paramCc35" min="0" max="127" value="30" class="w-full accent-purple-500 h-1 bg-zinc-800 rounded cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legenda Note Lunghe & Istruzioni -->
+                <div class="flex items-center justify-between text-[11px] text-zinc-400 px-1">
+                    <span class="flex items-center gap-3 flex-wrap">
+                        <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded bg-orange-500 inline-block"></span> 1° Click: Nota (Trig)</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded bg-cyan-500 inline-block"></span> 2° Click: Legato / Tie (Allunga la nota)</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded bg-zinc-800 inline-block"></span> 3° Click: Spento</span>
+                    </span>
+                    <span class="text-zinc-500 text-[10px] font-mono-code hidden sm:inline">Trascina orizzontalmente per gli altri step</span>
+                </div>
+
+                <!-- Touch & Scroll Matrix Table -->
+                <div class="overflow-x-auto custom-scrollbar border border-zinc-800/80 rounded-xl bg-zinc-950 p-2 shadow-inner">
+                    <div id="gridMatrixContainer" class="inline-block min-w-full">
+                        <!-- Celle generate via JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Section 5: ABC Realtime Exporter & Download Studio -->
+            <div class="collapsible-section bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 shadow-xl flex flex-col gap-3">
+                <div class="section-header flex items-center justify-between cursor-pointer select-none border-b border-zinc-800/60 pb-2.5" data-target="bodyExportSection">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-md bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-cloud-arrow-down"></i>
+                        </span>
+                        <span class="text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                            5. Partitura ABC & Download
+                        </span>
+                        <span id="totalSongDurationBadge" class="text-[10px] font-mono-code text-indigo-400 font-bold bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-900/40 ml-1">Durata Canzone: 00:00</span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
+                        <button class="toggle-btn w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bodyExportSection" class="section-body flex flex-col gap-2.5">
+                    <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                        <button id="exportAbcBtn" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-orange-300 border border-zinc-700 rounded-lg text-xs font-mono-code font-bold transition">
+                            <i class="fa-solid fa-download mr-1"></i>.ABC
+                        </button>
+                        <button id="exportMidiBtn" class="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 rounded-lg text-xs font-mono-code font-bold transition">
+                            <i class="fa-solid fa-file-audio mr-1"></i>.MID
+                        </button>
+                        <button id="exportWavBtn" class="px-2.5 py-1 bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-700/60 rounded-lg text-xs font-mono-code font-bold transition">
+                            <i class="fa-solid fa-volume-high mr-1"></i>.WAV
+                        </button>
+                        <button id="exportJsonBtn" class="px-2.5 py-1 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 rounded-lg text-xs font-mono-code font-bold transition">
+                            <i class="fa-solid fa-file-export mr-1"></i>.JSON (Suite)
+                        </button>
+                    </div>
+
+                    <textarea id="liveAbcOutput" readonly rows="5" class="w-full bg-zinc-950 font-mono-code text-xs text-orange-200/90 border border-zinc-800 rounded-lg p-2.5 focus:outline-none custom-scrollbar resize-none"></textarea>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- MODALE RANDOMIZER AVANZATO -->
+    <div id="randomizerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-5 flex flex-col gap-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-purple-600/20 text-purple-400 flex items-center justify-center text-sm border border-purple-500/30">
+                        <i class="fa-solid fa-dice"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-sm font-bold text-zinc-100">Generatore Casuale Intelligente</h3>
+                        <p class="text-[10px] text-zinc-400">Componi melodie tenendo conto della struttura</p>
+                    </div>
+                </div>
+                <button id="closeRandomizerModalBtn" class="text-zinc-500 hover:text-zinc-300 text-base">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Target: Quali Pad Riempire -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-zinc-300">Su quali Pad vuoi intervenire?</label>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <label class="flex flex-col items-center gap-1 p-2 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-orange-500 cursor-pointer text-center">
+                        <input type="radio" name="randTargetRadio" value="active" checked class="accent-orange-500">
+                        <span class="font-bold text-zinc-200 text-[11px]">Pad Attivo</span>
+                        <span class="text-[9px] text-zinc-500">Solo quello aperto</span>
+                    </label>
+                    <label class="flex flex-col items-center gap-1 p-2 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-orange-500 cursor-pointer text-center">
+                        <input type="radio" name="randTargetRadio" value="empty" class="accent-orange-500">
+                        <span class="font-bold text-zinc-200 text-[11px]">Solo i Vuoti</span>
+                        <span class="text-[9px] text-zinc-500">Protegge i compilati</span>
+                    </label>
+                    <label class="flex flex-col items-center gap-1 p-2 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-orange-500 cursor-pointer text-center">
+                        <input type="radio" name="randTargetRadio" value="all" class="accent-orange-500">
+                        <span class="font-bold text-zinc-200 text-[11px]">Tutti i Pad</span>
+                        <span class="text-[9px] text-zinc-500">Riscrive l'intera serie</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Protezioni / Mantenimento Parametri -->
+            <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex flex-col gap-2 text-xs">
+                <span class="text-[11px] font-bold text-orange-400 uppercase tracking-wider">Cosa vuoi mantenere inalterato?</span>
+                
+                <label class="flex items-center justify-between cursor-pointer py-0.5">
+                    <span class="text-zinc-300">Mantieni Preset & Patch Synth Correnti</span>
+                    <input type="checkbox" id="keepPatchCheck" checked class="accent-orange-500 rounded">
+                </label>
+                
+                <label class="flex items-center justify-between cursor-pointer py-0.5">
+                    <span class="text-zinc-300">Mantieni Lunghezza (Numero di Step)</span>
+                    <input type="checkbox" id="keepDurationCheck" checked class="accent-orange-500 rounded">
+                </label>
+
+                <label class="flex items-center justify-between cursor-pointer py-0.5">
+                    <span class="text-zinc-300">Mantieni Scala Musicale Assegnata</span>
+                    <input type="checkbox" id="keepScaleCheck" checked class="accent-orange-500 rounded">
+                </label>
+
+                <label class="flex items-center justify-between cursor-pointer py-0.5 border-t border-zinc-800 pt-1.5">
+                    <span class="text-zinc-300 font-semibold text-purple-300">Adatta Melodia al Ruolo Formale</span>
+                    <input type="checkbox" id="structureAwareCheck" checked class="accent-purple-500 rounded" title="Regola densità e registro in base a Intro, Strofa, Ritornello o Outro">
+                </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800">
+                <button id="cancelRandomizerModalBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-semibold transition">
+                    Annulla
+                </button>
+                <button id="confirmRandomizeBtn" class="px-4 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs font-bold transition shadow-md flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles text-yellow-300"></i>
+                    <span>Genera Note</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale di Importazione Intelligente -->
+    <div id="importModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-5 flex flex-col gap-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-sm border border-indigo-500/30">
+                        <i class="fa-solid fa-file-import"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-sm font-bold text-zinc-100">Importa Traccia / Sezioni</h3>
+                        <p id="importModalFileName" class="text-[10px] text-zinc-400 font-mono-code">file.abc</p>
+                    </div>
+                </div>
+                <button id="closeImportModalBtn" class="text-zinc-500 hover:text-zinc-300 text-base">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-zinc-300">Come desideri inserire queste parti?</label>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <label class="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-orange-500 cursor-pointer text-center">
+                        <input type="radio" name="importModeRadio" value="overwrite" checked class="accent-orange-500">
+                        <span class="font-bold text-zinc-200">Sovrascrivi</span>
+                        <span class="text-[9px] text-zinc-500">Sostituisci tutto</span>
+                    </label>
+                    <label class="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-orange-500 cursor-pointer text-center">
+                        <input type="radio" name="importModeRadio" value="append" class="accent-orange-500">
+                        <span class="font-bold text-zinc-200">Accoda</span>
+                        <span class="text-[9px] text-zinc-500">Aggiungi in fondo</span>
+                    </label>
+                    <label class="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-orange-500 cursor-pointer text-center">
+                        <input type="radio" name="importModeRadio" value="prepend" class="accent-orange-500">
+                        <span class="font-bold text-zinc-200">Inserisci Prima</span>
+                        <span class="text-[9px] text-zinc-500">All'inizio della lista</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <div class="flex items-center justify-between text-xs">
+                    <label class="font-bold text-zinc-300">Parti disponibili nel file:</label>
+                    <button id="toggleSelectAllImportBtn" class="text-[10px] text-indigo-400 hover:underline">Seleziona Tutte</button>
+                </div>
+                <div id="importSectionsList" class="flex flex-col gap-1.5 max-h-48 overflow-y-auto custom-scrollbar p-2 bg-zinc-950 rounded-xl border border-zinc-800"></div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800">
+                <button id="cancelImportBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-semibold transition">
+                    Annulla
+                </button>
+                <button id="confirmImportBtn" class="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold transition shadow-md">
+                    Importa Parti Selezionate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+        const SCALES = {
+            pentatonic_minor: [
+                { note: "e'", midi: 76, label: "E5" },
+                { note: "d'", midi: 74, label: "D5" },
+                { note: "c'", midi: 72, label: "C5" },
+                { note: "A",  midi: 69, label: "A4" },
+                { note: "G",  midi: 67, label: "G4" },
+                { note: "E",  midi: 64, label: "E4" },
+                { note: "D",  midi: 62, label: "D4" },
+                { note: "C",  midi: 60, label: "C4" }
+            ],
+            major_pentatonic: [
+                { note: "e'", midi: 76, label: "E5" },
+                { note: "d'", midi: 74, label: "D5" },
+                { note: "c'", midi: 72, label: "C5" },
+                { note: "A",  midi: 69, label: "A4" },
+                { note: "G",  midi: 67, label: "G4" },
+                { note: "E",  midi: 64, label: "E4" },
+                { note: "D",  midi: 62, label: "D4" },
+                { note: "C",  midi: 60, label: "C4" }
+            ],
+            dorian: [
+                { note: "d'", midi: 74, label: "D5" },
+                { note: "c'", midi: 72, label: "C5" },
+                { note: "B",  midi: 71, label: "B4" },
+                { note: "A",  midi: 69, label: "A4" },
+                { note: "G",  midi: 67, label: "G4" },
+                { note: "F",  midi: 65, label: "F4" },
+                { note: "E",  midi: 64, label: "E4" },
+                { note: "D",  midi: 62, label: "D4" }
+            ],
+            hirajoshi: [
+                { note: "c'", midi: 72, label: "C5" },
+                { note: "b",  midi: 71, label: "B4" },
+                { note: "g",  midi: 67, label: "G4" },
+                { note: "f",  midi: 65, label: "F4" },
+                { note: "c",  midi: 60, label: "C4" },
+                { note: "B,", midi: 59, label: "B3" },
+                { note: "G,", midi: 55, label: "G3" },
+                { note: "F,", midi: 53, label: "F3" }
+            ],
+            chromatic: [
+                { note: "c'", midi: 72, label: "C5" },
+                { note: "^A", midi: 70, label: "A#4" },
+                { note: "A",  midi: 69, label: "A4" },
+                { note: "^G", midi: 68, label: "G#4" },
+                { note: "G",  midi: 67, label: "G4" },
+                { note: "^F", midi: 66, label: "F#4" },
+                { note: "F",  midi: 65, label: "F4" },
+                { note: "E",  midi: 64, label: "E4" },
+                { note: "^D", midi: 63, label: "D#4" },
+                { note: "D",  midi: 62, label: "D4" },
+                { note: "^C", midi: 61, label: "C#4" },
+                { note: "C",  midi: 60, label: "C4" }
+            ]
+        };
+
+        const OSC_NAMES = {
+            0: "SAW", 16: "TRI", 32: "SQR", 48: "VPM", 64: "WAVES",
+            76: "Volca Bass", 88: "Chords", 100: "Proba-B", 112: "J6"
+        };
+
+        const PAD_PRESETS = {
+            focus_zen: { osc: 16, shape: 50, alt: 20, cutoff: 75, resonance: 15, attack: 15, release: 60, delayTime: 30, reverbMix: 40 },
+            synthwave_bass: { osc: 76, shape: 80, alt: 35, cutoff: 85, resonance: 25, attack: 5, release: 40, delayTime: 25, reverbMix: 35 },
+            juno_lead: { osc: 112, shape: 80, alt: 40, cutoff: 95, resonance: 20, attack: 10, release: 50, delayTime: 25, reverbMix: 40 },
+            lofi_chords: { osc: 88, shape: 64, alt: 32, cutoff: 70, resonance: 15, attack: 12, release: 55, delayTime: 35, reverbMix: 45 },
+            ambient_hira: { osc: 64, shape: 95, alt: 70, cutoff: 75, resonance: 30, attack: 30, release: 90, delayTime: 50, reverbMix: 60 },
+            chiptune_sqr: { osc: 32, shape: 30, alt: 10, cutoff: 90, resonance: 20, attack: 0, release: 30, delayTime: 10, reverbMix: 20 },
+            scifi_drone: { osc: 48, shape: 75, alt: 70, cutoff: 65, resonance: 35, attack: 25, release: 80, delayTime: 40, reverbMix: 50 }
+        };
+
+        const SONG_TEMPLATES = {
+            pop_standard: [
+                { name: "Intro", osc: 16, patch: { ...PAD_PRESETS.focus_zen }, scaleKey: "dorian", steps: 16 },
+                { name: "Strofa 1", osc: 76, patch: { ...PAD_PRESETS.synthwave_bass }, scaleKey: "pentatonic_minor", steps: 16 },
+                { name: "Ritornello", osc: 112, patch: { ...PAD_PRESETS.juno_lead }, scaleKey: "major_pentatonic", steps: 16 },
+                { name: "Bridge", osc: 88, patch: { ...PAD_PRESETS.lofi_chords }, scaleKey: "dorian", steps: 16 },
+                { name: "Outro", osc: 16, patch: { ...PAD_PRESETS.focus_zen }, scaleKey: "dorian", steps: 16 }
+            ],
+            ballad_aaba: [
+                { name: "Intro Atmosferica", osc: 64, patch: { ...PAD_PRESETS.ambient_hira }, scaleKey: "dorian", steps: 16 },
+                { name: "Strofa A", osc: 16, patch: { ...PAD_PRESETS.focus_zen }, scaleKey: "dorian", steps: 16 },
+                { name: "Strofa B", osc: 16, patch: { ...PAD_PRESETS.focus_zen }, scaleKey: "dorian", steps: 16 },
+                { name: "Ritornello Coro", osc: 88, patch: { ...PAD_PRESETS.lofi_chords }, scaleKey: "dorian", steps: 16 },
+                { name: "Outro Finale", osc: 64, patch: { ...PAD_PRESETS.ambient_hira }, scaleKey: "dorian", steps: 16 }
+            ],
+            punk_fast: [
+                { name: "Strofa A", osc: 0, patch: { ...PAD_PRESETS.synthwave_bass, osc: 0 }, scaleKey: "pentatonic_minor", steps: 16 },
+                { name: "Ritornello A", osc: 32, patch: { ...PAD_PRESETS.chiptune_sqr }, scaleKey: "pentatonic_minor", steps: 16 },
+                { name: "Strofa B", osc: 0, patch: { ...PAD_PRESETS.synthwave_bass, osc: 0 }, scaleKey: "pentatonic_minor", steps: 16 },
+                { name: "Ritornello Finale", osc: 32, patch: { ...PAD_PRESETS.chiptune_sqr }, scaleKey: "pentatonic_minor", steps: 16 }
+            ],
+            ambient_triad: [
+                { name: "Intro Drone", osc: 48, patch: { ...PAD_PRESETS.scifi_drone }, scaleKey: "hirajoshi", steps: 16 },
+                { name: "Sviluppo Pad", osc: 64, patch: { ...PAD_PRESETS.ambient_hira }, scaleKey: "hirajoshi", steps: 32 },
+                { name: "Outro Sospeso", osc: 16, patch: { ...PAD_PRESETS.focus_zen }, scaleKey: "hirajoshi", steps: 16 }
+            ],
+            continuous_groove: [
+                { name: "Groove Pattern 1", osc: 76, patch: { ...PAD_PRESETS.synthwave_bass }, scaleKey: "pentatonic_minor", steps: 16 },
+                { name: "Groove Variazione 2", osc: 76, patch: { ...PAD_PRESETS.synthwave_bass, cutoff: 95 }, scaleKey: "pentatonic_minor", steps: 16 },
+                { name: "Climax Synth", osc: 112, patch: { ...PAD_PRESETS.juno_lead }, scaleKey: "pentatonic_minor", steps: 16 }
+            ]
+        };
+
+        // --- APP STATE ---
+        let padRack = [
+            {
+                id: 1,
+                name: "Intro Groove",
+                osc: 76,
+                patch: { osc: 76, shape: 80, alt: 35, cutoff: 85, resonance: 25, attack: 5, release: 40, delayTime: 25, reverbMix: 35 },
+                scaleKey: "pentatonic_minor",
+                steps: 16,
+                matrix: []
+            },
+            {
+                id: 2,
+                name: "Lead Chorus",
+                osc: 112,
+                patch: { osc: 112, shape: 80, alt: 40, cutoff: 95, resonance: 20, attack: 10, release: 50, delayTime: 25, reverbMix: 40 },
+                scaleKey: "major_pentatonic",
+                steps: 16,
+                matrix: []
+            }
+        ];
+
+        let activePadIndex = 0;
+        let isPlaying = false;
+        let loopMode = 'song'; // 'song' | 'pad' | 'off'
+        let currentPlayingPadIndex = 0;
+        let currentStepIndex = -1;
+        let sequencerTimer = null;
+        let pendingImportData = null;
+        let isPadFullscreen = false;
+
+        // --- COLLAPSIBLE SECTIONS ---
+        function updateSectionHeaderChevron(header, isOpen) {
+            const chevron = header.querySelector('.toggle-btn i') || header.querySelector('i.fa-chevron-down, i.fa-chevron-right');
+            if (chevron) {
+                chevron.className = isOpen 
+                    ? 'fa-solid fa-chevron-down text-xs transition-transform duration-200'
+                    : 'fa-solid fa-chevron-right text-xs transition-transform duration-200';
+            }
+        }
+
+        function setupCollapsibleSections() {
+            document.querySelectorAll('.collapsible-section .section-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const targetId = header.dataset.target;
+                    const body = document.getElementById(targetId);
+                    if (!body) return;
+
+                    const isCurrentlyHidden = body.classList.contains('hidden');
+                    if (isCurrentlyHidden) {
+                        body.classList.remove('hidden');
+                        updateSectionHeaderChevron(header, true);
+                    } else {
+                        body.classList.add('hidden');
+                        updateSectionHeaderChevron(header, false);
+                    }
+                });
+            });
+
+            document.getElementById('expandAllSectionsBtn').addEventListener('click', () => {
+                document.querySelectorAll('.collapsible-section .section-body').forEach(b => b.classList.remove('hidden'));
+                document.querySelectorAll('.collapsible-section .section-header').forEach(h => updateSectionHeaderChevron(h, true));
+            });
+
+            document.getElementById('collapseAllSectionsBtn').addEventListener('click', () => {
+                document.querySelectorAll('.collapsible-section .section-body').forEach(b => b.classList.add('hidden'));
+                document.querySelectorAll('.collapsible-section .section-header').forEach(h => updateSectionHeaderChevron(h, false));
+            });
+        }
+
+        // --- FULLSCREEN PAD MATRIX ---
+        const toggleFullscreenPadBtn = document.getElementById('toggleFullscreenPadBtn');
+        const matrixSectionCard = document.getElementById('matrixSectionCard');
+        const fullscreenIcon = document.getElementById('fullscreenIcon');
+        const fullscreenLabel = document.getElementById('fullscreenLabel');
+
+        function togglePadFullscreen() {
+            isPadFullscreen = !isPadFullscreen;
+            if (isPadFullscreen) {
+                matrixSectionCard.classList.add('pad-fullscreen-active');
+                fullscreenIcon.className = 'fa-solid fa-compress';
+                fullscreenLabel.textContent = 'Riduci';
+            } else {
+                matrixSectionCard.classList.remove('pad-fullscreen-active');
+                fullscreenIcon.className = 'fa-solid fa-expand';
+                fullscreenLabel.textContent = 'Schermo Intero';
+            }
+        }
+
+        toggleFullscreenPadBtn.addEventListener('click', togglePadFullscreen);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isPadFullscreen) togglePadFullscreen();
+        });
+
+        document.getElementById('toggleHwRackBtn').addEventListener('click', () => {
+            const panel = document.getElementById('hwRackPanel');
+            panel.classList.toggle('hidden');
+        });
+
+        // --- WEB AUDIO ENGINE ---
+        let audioCtx = null;
+        let masterGainNode = null;
+        let activeVoices = new Map();
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioClass) {
+                    audioCtx = new AudioClass();
+                    masterGainNode = audioCtx.createGain();
+                    updateAudioRoutingGain();
+                    masterGainNode.connect(audioCtx.destination);
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function updateAudioRoutingGain() {
+            if (!masterGainNode || !audioCtx) return;
+            const target = document.getElementById('soundTargetSelect').value;
+            if (target === 'midi') {
+                masterGainNode.gain.setValueAtTime(0.00001, audioCtx.currentTime);
+            } else {
+                masterGainNode.gain.setValueAtTime(0.85, audioCtx.currentTime);
+            }
+        }
+
+        document.getElementById('soundTargetSelect').addEventListener('change', () => {
+            updateAudioRoutingGain();
+        });
+
+        function playInternalNoteEmulated(midiNote, padPatch, duration = 0.2) {
+            const target = document.getElementById('soundTargetSelect').value;
+            if (target === 'midi') return;
+
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            stopInternalNote(midiNote, true);
+
+            const oscType = padPatch.osc ?? 0;
+            const cutoffVal = padPatch.cutoff ?? 80;
+            const resVal = padPatch.resonance ?? 20;
+
+            const baseFreq = 440 * Math.pow(2, (midiNote - 69) / 12);
+            const now = ctx.currentTime;
+            const nodes = [];
+
+            const mainGain = ctx.createGain();
+            mainGain.gain.setValueAtTime(0.0001, now);
+            mainGain.gain.exponentialRampToValueAtTime(0.22, now + 0.012);
+            mainGain.gain.setValueAtTime(0.22, now + duration * 0.85);
+            mainGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+            const cutoffFreq = 200 + (Math.pow(cutoffVal / 127, 2) * 9800);
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(cutoffFreq, now);
+            filter.Q.setValueAtTime(Math.max(1, (resVal / 127) * 12), now);
+
+            if (oscType === 16) {
+                const osc = ctx.createOscillator();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(baseFreq, now);
+                osc.connect(filter);
+                osc.start(now);
+                osc.stop(now + duration + 0.05);
+                nodes.push(osc);
+            } else if (oscType === 32) {
+                const osc = ctx.createOscillator();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(baseFreq, now);
+                osc.connect(filter);
+                osc.start(now);
+                osc.stop(now + duration + 0.05);
+                nodes.push(osc);
+            } else if (oscType === 48) {
+                const carrier = ctx.createOscillator();
+                const modulator = ctx.createOscillator();
+                const modGain = ctx.createGain();
+
+                carrier.type = 'sine';
+                modulator.type = 'sine';
+                carrier.frequency.setValueAtTime(baseFreq, now);
+                modulator.frequency.setValueAtTime(baseFreq * 2.5, now);
+
+                modGain.gain.setValueAtTime(baseFreq * 2.0, now);
+                modGain.gain.exponentialRampToValueAtTime(10, now + duration);
+
+                modulator.connect(modGain);
+                modGain.connect(carrier.frequency);
+                carrier.connect(filter);
+
+                modulator.start(now);
+                carrier.start(now);
+                modulator.stop(now + duration + 0.05);
+                carrier.stop(now + duration + 0.05);
+                nodes.push(carrier, modulator);
+            } else if (oscType === 88) {
+                [0, 4, 7].forEach(semiOffset => {
+                    const osc = ctx.createOscillator();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(440 * Math.pow(2, (midiNote + semiOffset - 69) / 12), now);
+                    osc.connect(filter);
+                    osc.start(now);
+                    osc.stop(now + duration + 0.05);
+                    nodes.push(osc);
+                });
+            } else if (oscType === 76) {
+                [-0.015, 0, 0.015].forEach(detuneRatio => {
+                    const osc = ctx.createOscillator();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(baseFreq * (1 + detuneRatio), now);
+                    osc.connect(filter);
+                    osc.start(now);
+                    osc.stop(now + duration + 0.05);
+                    nodes.push(osc);
+                });
+            } else if (oscType === 112) {
+                const oscMain = ctx.createOscillator();
+                oscMain.type = 'sawtooth';
+                oscMain.frequency.setValueAtTime(baseFreq, now);
+                oscMain.connect(filter);
+                oscMain.start(now);
+                oscMain.stop(now + duration + 0.05);
+                nodes.push(oscMain);
+
+                const oscSub = ctx.createOscillator();
+                oscSub.type = 'square';
+                oscSub.frequency.setValueAtTime(baseFreq * 0.5, now);
+                oscSub.connect(filter);
+                oscSub.start(now);
+                oscSub.stop(now + duration + 0.05);
+                nodes.push(oscSub);
+            } else {
+                const osc = ctx.createOscillator();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(baseFreq, now);
+                osc.connect(filter);
+                osc.start(now);
+                osc.stop(now + duration + 0.05);
+                nodes.push(osc);
+            }
+
+            filter.connect(mainGain);
+            mainGain.connect(masterGainNode);
+
+            activeVoices.set(midiNote, { nodes, gain: mainGain });
+        }
+
+        function stopInternalNote(midiNote, instant = false) {
+            if (!activeVoices.has(midiNote)) return;
+            const ctx = getAudioContext();
+            const voice = activeVoices.get(midiNote);
+            activeVoices.delete(midiNote);
+
+            if (ctx && voice) {
+                try {
+                    voice.gain.gain.cancelScheduledValues(ctx.currentTime);
+                    if (instant) {
+                        voice.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                        voice.nodes.forEach(n => { try { n.stop(); n.disconnect(); } catch (e) {} });
+                    } else {
+                        voice.gain.gain.setValueAtTime(Math.max(0.0001, voice.gain.gain.value), ctx.currentTime);
+                        voice.gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
+                        setTimeout(() => {
+                            voice.nodes.forEach(n => { try { n.stop(); n.disconnect(); } catch (e) {} });
+                        }, 60);
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function stopAllInternalNotes() {
+            for (const n of Array.from(activeVoices.keys())) stopInternalNote(n, true);
+            activeVoices.clear();
+        }
+
+        // --- WEB MIDI ACCESS ---
+        let midiAccess = null;
+        let selectedOutput = null;
+        let midiChannel = 0;
+        let currentlyPlayingMidiNotes = new Set();
+
+        async function initWebMIDI() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+
+            if (!navigator.requestMIDIAccess) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
+                statusText.textContent = 'Synth Casse Web';
+                document.getElementById('soundTargetSelect').value = 'internal';
+                return;
+            }
+
+            try {
+                midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+                const outputs = Array.from(midiAccess.outputs.values());
+                let korg = outputs.find(o => (o.name || '').toLowerCase().includes('nts') || (o.name || '').toLowerCase().includes('korg'));
+                
+                if (korg) {
+                    selectedOutput = korg;
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `Connesso: ${korg.name}`;
+                } else if (outputs.length > 0) {
+                    selectedOutput = outputs[0];
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
+                    statusText.textContent = `MIDI: ${outputs[0].name}`;
+                } else {
+                    statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 led-orange';
+                    statusText.textContent = 'Synth Casse (Nessun MIDI)';
+                }
+            } catch (e) {
+                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
+                statusText.textContent = 'Synth Casse Attivo';
+            }
+        }
+
+        function sendMidiCC(cc, val) {
+            const target = document.getElementById('soundTargetSelect').value;
+            if (target === 'internal') return;
+
+            if (selectedOutput) {
+                try {
+                    selectedOutput.send([0xB0 | (midiChannel & 0x0F), cc & 0x7F, val & 0x7F]);
+                } catch (e) {}
+            }
+        }
+
+        function sendFullPadPatch(patch) {
+            if (!patch) return;
+            sendMidiCC(53, patch.osc ?? 0);
+            sendMidiCC(54, patch.shape ?? 64);
+            sendMidiCC(55, patch.alt ?? 32);
+            sendMidiCC(43, patch.cutoff ?? 85);
+            sendMidiCC(44, patch.resonance ?? 20);
+            sendMidiCC(16, patch.attack ?? 10);
+            sendMidiCC(19, patch.release ?? 45);
+            sendMidiCC(30, patch.delayTime ?? 25);
+            sendMidiCC(35, patch.reverbMix ?? 30);
+        }
+
+        function sendNoteOn(midiNote, padPatch, durationSec) {
+            const target = document.getElementById('soundTargetSelect').value;
+
+            if (target === 'internal' || target === 'both') {
+                playInternalNoteEmulated(midiNote, padPatch, durationSec);
+            }
+
+            if (target === 'midi' || target === 'both') {
+                currentlyPlayingMidiNotes.add(midiNote);
+                if (selectedOutput) {
+                    try {
+                        selectedOutput.send([0x90 | (midiChannel & 0x0F), midiNote & 0x7F, 100]);
+                    } catch (e) {}
+                }
+            }
+        }
+
+        function sendNoteOff(midiNote) {
+            const target = document.getElementById('soundTargetSelect').value;
+
+            if (target === 'internal' || target === 'both') {
+                stopInternalNote(midiNote, false);
+            }
+
+            if (target === 'midi' || target === 'both') {
+                currentlyPlayingMidiNotes.delete(midiNote);
+                if (selectedOutput) {
+                    try {
+                        selectedOutput.send([0x80 | (midiChannel & 0x0F), midiNote & 0x7F, 0]);
+                    } catch (e) {}
+                }
+            }
+        }
+
+        function panic() {
+            stopPlayback();
+            if (selectedOutput) {
+                try {
+                    const statusCC = 0xB0 | (midiChannel & 0x0F);
+                    selectedOutput.send([statusCC, 120, 0]);
+                    selectedOutput.send([statusCC, 123, 0]);
+                    selectedOutput.send([statusCC, 64, 0]);
+                    for (let n = 0; n < 128; n++) selectedOutput.send([0x80 | (midiChannel & 0x0F), n, 0]);
+                } catch (e) {}
+            }
+            currentlyPlayingMidiNotes.clear();
+            stopAllInternalNotes();
+        }
+
+        document.getElementById('panicBtn').addEventListener('click', panic);
+
+        // --- GESTIONE DATI PAD RACK & SPOSTAMENTI ---
+        function ensurePadMatrix(pad) {
+            const rows = SCALES[pad.scaleKey].length;
+            if (!pad.matrix || pad.matrix.length !== rows) {
+                pad.matrix = Array.from({ length: rows }, () => Array(pad.steps).fill(0));
+            } else {
+                for (let r = 0; r < rows; r++) {
+                    if (pad.matrix[r].length < pad.steps) {
+                        pad.matrix[r] = pad.matrix[r].concat(Array(pad.steps - pad.matrix[r].length).fill(0));
+                    } else if (pad.matrix[r].length > pad.steps) {
+                        pad.matrix[r] = pad.matrix[r].slice(0, pad.steps);
+                    }
+                }
+            }
+            if (!pad.patch) {
+                pad.patch = { osc: pad.osc || 0, shape: 64, alt: 32, cutoff: 85, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 };
+            }
+        }
+
+        function formatDuration(secTotal) {
+            const m = Math.floor(secTotal / 60).toString().padStart(2, '0');
+            const s = (secTotal % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function isPadEmpty(pad) {
+            if (!pad.matrix) return true;
+            for (let r = 0; r < pad.matrix.length; r++) {
+                for (let s = 0; s < pad.matrix[r].length; s++) {
+                    if (pad.matrix[r][s] > 0) return false;
+                }
+            }
+            return true;
+        }
+
+        function renderPadsList() {
+            const container = document.getElementById('padsListContainer');
+            container.innerHTML = '';
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const secPerStep = (60 / bpm) / 4;
+
+            padRack.forEach((pad, idx) => {
+                ensurePadMatrix(pad);
+                const isActive = (idx === activePadIndex);
+                const padSec = Math.round(pad.steps * secPerStep);
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-xl border flex items-center justify-between gap-2 transition cursor-pointer ${
+                    isActive ? 'pad-card-active border-orange-500 shadow-md' : 'bg-zinc-900 border-zinc-800 hover:bg-zinc-850'
+                }`;
+
+                card.onclick = () => selectPad(idx);
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-6 h-6 rounded bg-zinc-800 text-orange-400 font-mono-code text-xs font-bold flex items-center justify-center shrink-0">
+                            ${idx + 1}
+                        </span>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-xs font-bold text-zinc-100 truncate">${pad.name}</span>
+                            <div class="flex items-center gap-1.5 text-[10px] font-mono-code text-zinc-400">
+                                <span class="text-orange-400 font-bold">${OSC_NAMES[pad.patch.osc] || 'OSC'}</span>
+                                <span>•</span>
+                                <span class="text-cyan-400">${pad.steps} step</span>
+                                <span>•</span>
+                                <span class="text-indigo-400 font-bold">${formatDuration(padSec)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                        <button onclick="playSinglePadFromList(${idx})" class="w-6 h-6 rounded bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 flex items-center justify-center text-[10px] transition" title="Riproduci questo singolo Pad">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <button onclick="movePad(${idx}, -1)" class="w-6 h-6 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 flex items-center justify-center text-[10px]" title="Sposta Su" ${idx === 0 ? 'disabled style="opacity:0.2;"' : ''}>
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </button>
+                        <button onclick="movePad(${idx}, 1)" class="w-6 h-6 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 flex items-center justify-center text-[10px]" title="Sposta Giù" ${idx === padRack.length - 1 ? 'disabled style="opacity:0.2;"' : ''}>
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </button>
+                        <button onclick="duplicatePad(${idx})" class="w-6 h-6 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 flex items-center justify-center text-[10px]" title="Duplica Pad">
+                            <i class="fa-solid fa-clone"></i>
+                        </button>
+                        <button onclick="removePad(${idx})" class="w-6 h-6 rounded bg-red-950/40 hover:bg-red-900 text-red-300 border border-red-800/60 flex items-center justify-center text-[10px]" title="Elimina Pad">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            syncActivePadInspector();
+            renderStepGrid();
+            compileFullABC();
+        }
+
+        function selectPad(idx) {
+            if (idx < 0 || idx >= padRack.length) return;
+            activePadIndex = idx;
+            const pad = padRack[activePadIndex];
+            sendFullPadPatch(pad.patch);
+            renderPadsList();
+        }
+
+        function movePad(idx, delta) {
+            const target = idx + delta;
+            if (target < 0 || target >= padRack.length) return;
+            const item = padRack.splice(idx, 1)[0];
+            padRack.splice(target, 0, item);
+            selectPad(target);
+        }
+
+        function duplicatePad(idx) {
+            const src = padRack[idx];
+            const copy = JSON.parse(JSON.stringify(src));
+            copy.id = Date.now();
+            copy.name = `${src.name} (Copia)`;
+            padRack.splice(idx + 1, 0, copy);
+            selectPad(idx + 1);
+        }
+
+        function removePad(idx) {
+            if (padRack.length <= 1) {
+                alert("Deve rimanere almeno un Pad nel sequencer.");
+                return;
+            }
+            padRack.splice(idx, 1);
+            if (activePadIndex >= padRack.length) activePadIndex = padRack.length - 1;
+            renderPadsList();
+        }
+
+        document.getElementById('addPadBtn').addEventListener('click', () => {
+            const newPad = {
+                id: Date.now(),
+                name: `Pad #${padRack.length + 1}`,
+                osc: 16,
+                patch: { osc: 16, shape: 64, alt: 32, cutoff: 80, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
+                scaleKey: "pentatonic_minor",
+                steps: 16,
+                matrix: []
+            };
+            padRack.push(newPad);
+            selectPad(padRack.length - 1);
+        });
+
+        // --- APPLICAZIONE TEMPLATE STRUTTURA CANZONE ---
+        document.getElementById('songTemplateSelect').addEventListener('change', (e) => {
+            const templateKey = e.target.value;
+            if (!templateKey || !SONG_TEMPLATES[templateKey]) return;
+
+            if (confirm("Vuoi creare la struttura automatica? Questa operazione configurerà i Pad della canzone.")) {
+                stopPlayback();
+                const template = SONG_TEMPLATES[templateKey];
+                padRack = template.map((item, idx) => {
+                    const newPad = {
+                        id: Date.now() + idx,
+                        name: item.name,
+                        osc: item.osc,
+                        patch: { ...item.patch },
+                        scaleKey: item.scaleKey,
+                        steps: item.steps,
+                        matrix: []
+                    };
+                    ensurePadMatrix(newPad);
+                    return newPad;
+                });
+
+                selectPad(0);
+                e.target.value = "";
+            }
+        });
+
+        // --- PRESET HARDWARE PAD ---
+        document.getElementById('padPresetSelect').addEventListener('change', (e) => {
+            const presetKey = e.target.value;
+            if (!presetKey || !PAD_PRESETS[presetKey]) return;
+
+            const p = PAD_PRESETS[presetKey];
+            const pad = padRack[activePadIndex];
+            if (!pad) return;
+
+            pad.osc = p.osc;
+            pad.patch = { ...p };
+
+            sendFullPadPatch(pad.patch);
+            syncActivePadInspector();
+            compileFullABC();
+            renderPadsList();
+            e.target.value = "";
+        });
+
+        // --- INSPECTOR PARAMETRI PAD CORRENTE & CC SLIDERS ---
+        function syncActivePadInspector() {
+            const pad = padRack[activePadIndex];
+            if (!pad) return;
+
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const secPerStep = (60 / bpm) / 4;
+            const padSec = Math.round(pad.steps * secPerStep);
+
+            document.getElementById('activePadBadge').textContent = `PAD ${activePadIndex + 1}`;
+            document.getElementById('activePadNameInput').value = pad.name;
+            document.getElementById('activePadStepsSelect').value = pad.steps;
+            document.getElementById('activePadOscSelect').value = pad.patch.osc;
+            document.getElementById('activePadScaleSelect').value = pad.scaleKey;
+            document.getElementById('activePadDurationBadge').textContent = formatDuration(padSec);
+
+            const p = pad.patch;
+            document.getElementById('paramCc54').value = p.shape ?? 64;
+            document.getElementById('valCc54').textContent = p.shape ?? 64;
+            document.getElementById('paramCc55').value = p.alt ?? 32;
+            document.getElementById('valCc55').textContent = p.alt ?? 32;
+            document.getElementById('paramCc43').value = p.cutoff ?? 85;
+            document.getElementById('valCc43').textContent = p.cutoff ?? 85;
+            document.getElementById('paramCc44').value = p.resonance ?? 20;
+            document.getElementById('valCc44').textContent = p.resonance ?? 20;
+            document.getElementById('paramCc16').value = p.attack ?? 10;
+            document.getElementById('valCc16').textContent = p.attack ?? 10;
+            document.getElementById('paramCc19').value = p.release ?? 45;
+            document.getElementById('valCc19').textContent = p.release ?? 45;
+            document.getElementById('paramCc30').value = p.delayTime ?? 25;
+            document.getElementById('valCc30').textContent = p.delayTime ?? 25;
+            document.getElementById('paramCc35').value = p.reverbMix ?? 30;
+            document.getElementById('valCc35').textContent = p.reverbMix ?? 30;
+        }
+
+        const ccRackSliders = [
+            { id: 'paramCc54', label: 'valCc54', key: 'shape', cc: 54 },
+            { id: 'paramCc55', label: 'valCc55', key: 'alt', cc: 55 },
+            { id: 'paramCc43', label: 'valCc43', key: 'cutoff', cc: 43 },
+            { id: 'paramCc44', label: 'valCc44', key: 'resonance', cc: 44 },
+            { id: 'paramCc16', label: 'valCc16', key: 'attack', cc: 16 },
+            { id: 'paramCc19', label: 'valCc19', key: 'release', cc: 19 },
+            { id: 'paramCc30', label: 'valCc30', key: 'delayTime', cc: 30 },
+            { id: 'paramCc35', label: 'valCc35', key: 'reverbMix', cc: 35 }
+        ];
+
+        ccRackSliders.forEach(s => {
+            document.getElementById(s.id).addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                document.getElementById(s.label).textContent = val;
+                const pad = padRack[activePadIndex];
+                if (pad && pad.patch) {
+                    pad.patch[s.key] = val;
+                    sendMidiCC(s.cc, val);
+                    compileFullABC();
+                }
+            });
+        });
+
+        document.getElementById('sendHwPatchBtn').addEventListener('click', () => {
+            const pad = padRack[activePadIndex];
+            if (pad && pad.patch) sendFullPadPatch(pad.patch);
+        });
+
+        document.getElementById('activePadNameInput').addEventListener('input', (e) => {
+            if (padRack[activePadIndex]) {
+                padRack[activePadIndex].name = e.target.value;
+                compileFullABC();
+            }
+        });
+
+        document.getElementById('metaTitle').addEventListener('input', compileFullABC);
+        document.getElementById('metaComposer').addEventListener('input', compileFullABC);
+
+        document.getElementById('activePadStepsSelect').addEventListener('change', (e) => {
+            if (padRack[activePadIndex]) {
+                padRack[activePadIndex].steps = parseInt(e.target.value, 10);
+                ensurePadMatrix(padRack[activePadIndex]);
+                renderStepGrid();
+                compileFullABC();
+                renderPadsList();
+            }
+        });
+
+        document.getElementById('activePadOscSelect').addEventListener('change', (e) => {
+            if (padRack[activePadIndex]) {
+                const val = parseInt(e.target.value, 10);
+                padRack[activePadIndex].osc = val;
+                padRack[activePadIndex].patch.osc = val;
+                sendMidiCC(53, val);
+                compileFullABC();
+                renderPadsList();
+            }
+        });
+
+        document.getElementById('activePadScaleSelect').addEventListener('change', (e) => {
+            if (padRack[activePadIndex]) {
+                padRack[activePadIndex].scaleKey = e.target.value;
+                const rows = SCALES[e.target.value].length;
+                padRack[activePadIndex].matrix = Array.from({ length: rows }, () => Array(padRack[activePadIndex].steps).fill(0));
+                renderStepGrid();
+                compileFullABC();
+            }
+        });
+
+        document.getElementById('clearCurrentGridBtn').addEventListener('click', () => {
+            const pad = padRack[activePadIndex];
+            if (pad) {
+                const rows = SCALES[pad.scaleKey].length;
+                pad.matrix = Array.from({ length: rows }, () => Array(pad.steps).fill(0));
+                renderStepGrid();
+                compileFullABC();
+            }
+        });
+
+        // --- STEP MATRIX INTERATTIVA (CON CLASSI DI STEP PER PLAYHEAD SCANNER) ---
+        function renderStepGrid() {
+            const pad = padRack[activePadIndex];
+            const container = document.getElementById('gridMatrixContainer');
+            container.innerHTML = '';
+            if (!pad) return;
+
+            ensurePadMatrix(pad);
+            const scale = SCALES[pad.scaleKey];
+
+            const headerRow = document.createElement("div");
+            headerRow.className = "flex items-center gap-1 mb-1.5 pl-14 sm:pl-16";
+            for (let s = 0; s < pad.steps; s++) {
+                const stepNum = document.createElement("div");
+                stepNum.className = `w-7 sm:w-8 text-center font-mono-code text-[10px] ${s % 4 === 0 ? "text-orange-400 font-bold" : "text-zinc-600"}`;
+                stepNum.textContent = s + 1;
+                stepNum.id = `step-indicator-${s}`;
+                headerRow.appendChild(stepNum);
+            }
+            container.appendChild(headerRow);
+
+            scale.forEach((item, rIdx) => {
+                const rowDiv = document.createElement("div");
+                rowDiv.className = "flex items-center gap-1 mb-1";
+
+                const labelBtn = document.createElement("button");
+                labelBtn.className = "w-12 sm:w-14 text-right pr-2 text-xs font-mono-code font-bold text-zinc-400 hover:text-orange-400 transition-colors shrink-0";
+                labelBtn.textContent = item.label;
+                labelBtn.onpointerdown = (e) => {
+                    e.preventDefault();
+                    getAudioContext();
+                    sendFullPadPatch(pad.patch);
+                    sendNoteOn(item.midi, pad.patch, 0.35);
+                    setTimeout(() => sendNoteOff(item.midi), 300);
+                };
+                rowDiv.appendChild(labelBtn);
+
+                for (let sIdx = 0; sIdx < pad.steps; sIdx++) {
+                    const cell = document.createElement("button");
+                    const isQuarterStart = (sIdx % 4 === 0);
+                    const cellState = pad.matrix[rIdx][sIdx] || 0;
+
+                    applyCellStyle(cell, cellState, isQuarterStart);
+                    cell.id = `cell-${rIdx}-${sIdx}`;
+                    cell.classList.add(`step-col-${sIdx}`);
+
+                    cell.onpointerdown = (e) => {
+                        e.preventDefault();
+                        getAudioContext();
+                        cycleCellState(rIdx, sIdx);
+                    };
+
+                    rowDiv.appendChild(cell);
+                }
+
+                container.appendChild(rowDiv);
+            });
+        }
+
+        function applyCellStyle(cell, state, isQuarterStart) {
+            if (state === 1) {
+                cell.className = "w-7 sm:w-8 h-8 rounded text-[10px] font-mono-code transition-all border shrink-0 bg-orange-500 border-orange-300 text-zinc-950 font-black shadow-md shadow-orange-500/30 flex items-center justify-center";
+                cell.textContent = "●";
+            } else if (state === 2) {
+                cell.className = "w-7 sm:w-8 h-8 rounded text-[11px] font-mono-code transition-all border shrink-0 bg-cyan-500/90 border-cyan-300 text-zinc-950 font-bold shadow-md shadow-cyan-500/30 flex items-center justify-center";
+                cell.textContent = "➔";
+            } else {
+                cell.className = `w-7 sm:w-8 h-8 rounded text-[10px] font-mono-code transition-all border shrink-0 ${
+                    isQuarterStart ? "bg-zinc-850 border-zinc-700 hover:border-zinc-500" : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"
+                }`;
+                cell.textContent = "";
+            }
+        }
+
+        function cycleCellState(r, s) {
+            const pad = padRack[activePadIndex];
+            if (!pad) return;
+
+            let curState = pad.matrix[r][s] || 0;
+            let nextState = (curState + 1) % 3;
+            pad.matrix[r][s] = nextState;
+
+            const cell = document.getElementById(`cell-${r}-${s}`);
+            applyCellStyle(cell, nextState, s % 4 === 0);
+
+            if (nextState === 1) {
+                const midi = SCALES[pad.scaleKey][r].midi;
+                sendFullPadPatch(pad.patch);
+                sendNoteOn(midi, pad.patch, 0.25);
+                setTimeout(() => sendNoteOff(midi), 200);
+            }
+
+            compileFullABC();
+        }
+
+        // --- MOTORE DI GENERAZIONE CASUALE ARMONICO & FORMALE ---
+        function generateAlgorithmicPadNotes(pad, isStructureAware = true) {
+            ensurePadMatrix(pad);
+            const scale = SCALES[pad.scaleKey];
+            const rows = scale.length;
+            const steps = pad.steps;
+
+            pad.matrix = Array.from({ length: rows }, () => Array(steps).fill(0));
+
+            const nameLow = pad.name.toLowerCase();
+            let noteDensity = 0.50;
+            let tieProbability = 0.30;
+            let minPitchRow = 0;
+            let maxPitchRow = rows - 1;
+
+            if (isStructureAware) {
+                if (nameLow.includes('intro') || nameLow.includes('outro') || nameLow.includes('drone')) {
+                    noteDensity = 0.30;
+                    tieProbability = 0.55;
+                    minPitchRow = Math.floor(rows / 2);
+                    maxPitchRow = rows - 1;
+                } else if (nameLow.includes('ritornello') || nameLow.includes('coro') || nameLow.includes('chorus') || nameLow.includes('lead')) {
+                    noteDensity = 0.70;
+                    tieProbability = 0.25;
+                    minPitchRow = 0;
+                    maxPitchRow = Math.min(rows - 1, 4);
+                } else if (nameLow.includes('bridge') || nameLow.includes('sviluppo')) {
+                    noteDensity = 0.55;
+                    tieProbability = 0.35;
+                } else {
+                    noteDensity = 0.45;
+                    tieProbability = 0.25;
+                    minPitchRow = 2;
+                    maxPitchRow = rows - 1;
+                }
+            }
+
+            let s = 0;
+            let currentPitchRow = Math.floor((minPitchRow + maxPitchRow) / 2);
+
+            while (s < steps) {
+                const isDownbeat = (s % 4 === 0);
+                const playHit = isDownbeat ? (Math.random() < 0.85) : (Math.random() < noteDensity);
+
+                if (!playHit) {
+                    s++;
+                    continue;
+                }
+
+                const delta = (Math.random() < 0.7) ? (Math.random() < 0.5 ? 1 : -1) : (Math.random() < 0.5 ? 2 : -2);
+                currentPitchRow = Math.max(minPitchRow, Math.min(maxPitchRow, currentPitchRow + delta));
+
+                pad.matrix[currentPitchRow][s] = 1;
+
+                let noteDuration = 1;
+                if (Math.random() < tieProbability && s + 1 < steps) {
+                    noteDuration = (s + 3 < steps && Math.random() < 0.3) ? 3 : 2;
+                    for (let tie = 1; tie < noteDuration && (s + tie) < steps; tie++) {
+                        pad.matrix[currentPitchRow][s + tie] = 2;
+                    }
+                }
+
+                s += noteDuration;
+            }
+        }
+
+        // Modale Randomizer
+        const randomizerModal = document.getElementById('randomizerModal');
+        document.getElementById('openRandomizerModalBtn').addEventListener('click', () => {
+            randomizerModal.classList.remove('hidden');
+        });
+
+        function closeRandomizerModal() {
+            randomizerModal.classList.add('hidden');
+        }
+
+        document.getElementById('closeRandomizerModalBtn').addEventListener('click', closeRandomizerModal);
+        document.getElementById('cancelRandomizerModalBtn').addEventListener('click', closeRandomizerModal);
+
+        document.getElementById('confirmRandomizeBtn').addEventListener('click', () => {
+            const targetMode = document.querySelector('input[name="randTargetRadio"]:checked').value;
+            const keepPatch = document.getElementById('keepPatchCheck').checked;
+            const keepDuration = document.getElementById('keepDurationCheck').checked;
+            const keepScale = document.getElementById('keepScaleCheck').checked;
+            const isStructureAware = document.getElementById('structureAwareCheck').checked;
+
+            const presetKeys = Object.keys(PAD_PRESETS);
+            const scaleKeys = Object.keys(SCALES);
+
+            padRack.forEach((pad, idx) => {
+                let shouldProcess = false;
+                if (targetMode === 'active' && idx === activePadIndex) shouldProcess = true;
+                else if (targetMode === 'empty' && isPadEmpty(pad)) shouldProcess = true;
+                else if (targetMode === 'all') shouldProcess = true;
+
+                if (!shouldProcess) return;
+
+                if (!keepDuration) {
+                    const candidateSteps = [16, 16, 24, 32];
+                    pad.steps = candidateSteps[Math.floor(Math.random() * candidateSteps.length)];
+                }
+
+                if (!keepScale) {
+                    pad.scaleKey = scaleKeys[Math.floor(Math.random() * (scaleKeys.length - 1))];
+                }
+
+                if (!keepPatch) {
+                    const chosenPresetKey = presetKeys[Math.floor(Math.random() * presetKeys.length)];
+                    const p = PAD_PRESETS[chosenPresetKey];
+                    pad.osc = p.osc;
+                    pad.patch = { ...p };
+                }
+
+                generateAlgorithmicPadNotes(pad, isStructureAware);
+            });
+
+            closeRandomizerModal();
+            renderPadsList();
+            compileFullABC();
+        });
+
+        // Variazione rapida tasto live
+        document.getElementById('quickRandomizePadBtn').addEventListener('click', () => {
+            const pad = padRack[activePadIndex];
+            if (!pad) return;
+            generateAlgorithmicPadNotes(pad, true);
+            renderStepGrid();
+            compileFullABC();
+        });
+
+        // --- COMPILATORE ABC ---
+        function compileFullABC() {
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const title = document.getElementById('metaTitle').value.trim() || 'Multi-Pad Sketch';
+            const composer = document.getElementById('metaComposer').value.trim() || 'User Composer';
+            const lines = [];
+
+            lines.push(`X: 1`);
+            lines.push(`T: ${title}`);
+            lines.push(`C: ${composer}`);
+            lines.push(`M: 4/4`);
+            lines.push(`L: 1/16`);
+            lines.push(`Q: ${bpm}`);
+            lines.push(`K: C`);
+            lines.push(``);
+
+            let totalStepsCount = 0;
+
+            padRack.forEach((pad, pIdx) => {
+                ensurePadMatrix(pad);
+                const scale = SCALES[pad.scaleKey];
+                lines.push(`% --- PAD ${pIdx + 1}: ${pad.name.toUpperCase()} (${pad.steps} Steps) ---`);
+                lines.push(`%%MIDI control 53 ${pad.patch.osc}`);
+                lines.push(`%%MIDI control 54 ${pad.patch.shape}`);
+                lines.push(`%%MIDI control 55 ${pad.patch.alt}`);
+                lines.push(`%%MIDI control 43 ${pad.patch.cutoff}`);
+                lines.push(`%%MIDI control 44 ${pad.patch.resonance}`);
+                lines.push(`%%MIDI control 16 ${pad.patch.attack}`);
+                lines.push(`%%MIDI control 19 ${pad.patch.release}`);
+                lines.push(`%%MIDI control 30 ${pad.patch.delayTime}`);
+                lines.push(`%%MIDI control 35 ${pad.patch.reverbMix}`);
+
+                let tokens = [];
+                let s = 0;
+
+                while (s < pad.steps) {
+                    totalStepsCount++;
+
+                    let trigPitches = [];
+                    for (let r = 0; r < scale.length; r++) {
+                        if (pad.matrix[r][s] === 1) {
+                            trigPitches.push({ note: scale[r].note, row: r });
+                        }
+                    }
+
+                    if (trigPitches.length === 0) {
+                        tokens.push("z");
+                        if ((s + 1) % 4 === 0 && s !== pad.steps - 1) tokens.push("|");
+                        s++;
+                    } else {
+                        let durationStepLen = 1;
+                        let lookAhead = s + 1;
+                        while (lookAhead < pad.steps) {
+                            let allTied = trigPitches.every(p => pad.matrix[p.row][lookAhead] === 2);
+                            if (allTied) {
+                                durationStepLen++;
+                                lookAhead++;
+                            } else {
+                                break;
+                            }
+                        }
+
+                        const durSuffix = durationStepLen > 1 ? String(durationStepLen) : "";
+
+                        if (trigPitches.length === 1) {
+                            tokens.push(`${trigPitches[0].note}${durSuffix}`);
+                        } else {
+                            tokens.push(`[${trigPitches.map(p => p.note).join("")}]${durSuffix}`);
+                        }
+
+                        for (let stepAdv = 0; stepAdv < durationStepLen; stepAdv++) {
+                            if ((s + stepAdv + 1) % 4 === 0 && (s + stepAdv) !== pad.steps - 1) {
+                                tokens.push("|");
+                            }
+                        }
+
+                        s += durationStepLen;
+                    }
+                }
+
+                lines.push(tokens.join(" ") + " |]");
+                lines.push(``);
+            });
+
+            const fullABC = lines.join("\n");
+            document.getElementById('liveAbcOutput').value = fullABC;
+
+            const secPerStep = (60 / bpm) / 4;
+            const totalSec = Math.round(totalStepsCount * secPerStep);
+            document.getElementById('totalSongDurationBadge').textContent = `Durata Canzone: ${formatDuration(totalSec)}`;
+        }
+
+        // --- MASTER SEQUENCER ENGINE ---
+        function startPlayback(targetPadIndex = null, forceLoopMode = null) {
+            getAudioContext();
+            stopPlayback();
+
+            isPlaying = true;
+            if (forceLoopMode) loopMode = forceLoopMode;
+
+            if (targetPadIndex !== null) {
+                currentPlayingPadIndex = targetPadIndex;
+            } else {
+                currentPlayingPadIndex = (loopMode === 'pad') ? activePadIndex : 0;
+            }
+
+            currentStepIndex = -1;
+            updateTransportUI();
+            scheduleNextStep();
+        }
+
+        function playSinglePadFromList(idx) {
+            selectPad(idx);
+            startPlayback(idx, 'off');
+        }
+
+        document.getElementById('playCurrentPad1ShotBtn').addEventListener('click', () => {
+            startPlayback(activePadIndex, 'off');
+        });
+
+        document.getElementById('loopCurrentPadBtn').addEventListener('click', () => {
+            startPlayback(activePadIndex, 'pad');
+            document.getElementById('loopLabel').textContent = "Loop: Pad Solo";
+            document.getElementById('loopModeBtn').className = "py-2.5 bg-cyan-600/20 text-cyan-400 border border-cyan-500/40 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition";
+        });
+
+        function stopPlayback() {
+            isPlaying = false;
+            clearTimeout(sequencerTimer);
+            sequencerTimer = null;
+            stopAllInternalNotes();
+
+            for (let s = 0; s < 64; s++) {
+                const ind = document.getElementById(`step-indicator-${s}`);
+                if (ind) ind.classList.remove("text-amber-400", "scale-125");
+                document.querySelectorAll(`.step-col-${s}`).forEach(c => c.classList.remove('step-col-active'));
+            }
+
+            document.getElementById('globalStepDisplay').textContent = `Pad 1 • Step 0/16`;
+            updateTransportUI();
+        }
+
+        function scheduleNextStep() {
+            if (!isPlaying) return;
+
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const gatePct = (parseInt(document.getElementById('gateSlider').value, 10) || 75) / 100;
+            const stepDurationMs = (60000 / bpm) / 4;
+
+            const pad = padRack[currentPlayingPadIndex];
+            if (!pad) {
+                stopPlayback();
+                return;
+            }
+
+            if (currentStepIndex >= 0 && currentPlayingPadIndex === activePadIndex) {
+                const prevInd = document.getElementById(`step-indicator-${currentStepIndex}`);
+                if (prevInd) prevInd.classList.remove("text-amber-400", "scale-125");
+                document.querySelectorAll(`.step-col-${currentStepIndex}`).forEach(c => c.classList.remove('step-col-active'));
+            }
+
+            currentStepIndex++;
+
+            if (currentStepIndex >= pad.steps) {
+                if (loopMode === 'song') {
+                    currentStepIndex = 0;
+                    currentPlayingPadIndex = (currentPlayingPadIndex + 1) % padRack.length;
+                } else if (loopMode === 'pad') {
+                    currentStepIndex = 0;
+                    currentPlayingPadIndex = activePadIndex;
+                } else if (loopMode === 'off') {
+                    stopPlayback();
+                    return;
+                }
+            }
+
+            const currentPad = padRack[currentPlayingPadIndex];
+            ensurePadMatrix(currentPad);
+
+            if (currentStepIndex === 0) {
+                sendFullPadPatch(currentPad.patch);
+                if (currentPlayingPadIndex !== activePadIndex && loopMode === 'song') {
+                    activePadIndex = currentPlayingPadIndex;
+                    renderPadsList();
+                }
+            }
+
+            if (currentPlayingPadIndex === activePadIndex) {
+                const curInd = document.getElementById(`step-indicator-${currentStepIndex}`);
+                if (curInd) curInd.classList.add("text-amber-400", "scale-125");
+                document.querySelectorAll(`.step-col-${currentStepIndex}`).forEach(c => c.classList.add('step-col-active'));
+            }
+
+            document.getElementById('globalStepDisplay').textContent = `Pad ${currentPlayingPadIndex + 1} (${currentPad.name}) • Step ${currentStepIndex + 1}/${currentPad.steps}`;
+
+            const scale = SCALES[currentPad.scaleKey];
+
+            for (let r = 0; r < scale.length; r++) {
+                const cellVal = currentPad.matrix[r][currentStepIndex];
+                const midi = scale[r].midi;
+
+                if (cellVal === 1) {
+                    let tieLen = 1;
+                    let look = currentStepIndex + 1;
+                    while (look < currentPad.steps && currentPad.matrix[r][look] === 2) {
+                        tieLen++;
+                        look++;
+                    }
+
+                    const noteDurationSec = ((stepDurationMs * tieLen) * (tieLen > 1 ? 0.98 : gatePct)) / 1000;
+                    sendNoteOn(midi, currentPad.patch, noteDurationSec);
+                    setTimeout(() => sendNoteOff(midi), noteDurationSec * 1000);
+                }
+            }
+
+            sequencerTimer = setTimeout(scheduleNextStep, stepDurationMs);
+        }
+
+        function updateTransportUI() {
+            const icon = document.getElementById('playPauseIcon');
+            const label = document.getElementById('playPauseLabel');
+            const playBtn = document.getElementById('playPauseBtn');
+
+            if (isPlaying) {
+                playBtn.className = "py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg";
+                icon.className = "fa-solid fa-pause";
+                label.textContent = "PAUSA";
+            } else {
+                playBtn.className = "py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-lg";
+                icon.className = "fa-solid fa-play";
+                label.textContent = "PLAY";
+            }
+        }
+
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            if (isPlaying) stopPlayback();
+            else startPlayback(null, 'song');
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', stopPlayback);
+
+        document.getElementById('loopModeBtn').addEventListener('click', () => {
+            const btn = document.getElementById('loopModeBtn');
+            const label = document.getElementById('loopLabel');
+
+            if (loopMode === 'song') {
+                loopMode = 'pad';
+                label.textContent = "Loop: Pad Solo";
+                btn.className = "py-2.5 bg-cyan-600/20 text-cyan-400 border border-cyan-500/40 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition";
+            } else if (loopMode === 'pad') {
+                loopMode = 'off';
+                label.textContent = "Loop: OFF (1-Shot)";
+                btn.className = "py-2.5 bg-zinc-800 text-zinc-400 border border-zinc-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition";
+            } else {
+                loopMode = 'song';
+                label.textContent = "Loop: Song";
+                btn.className = "py-2.5 bg-orange-600/20 text-orange-400 border border-orange-500/40 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition";
+            }
+        });
+
+        document.getElementById('bpmSlider').addEventListener('input', (e) => {
+            document.getElementById('bpmDisplay').textContent = e.target.value;
+            compileFullABC();
+            renderPadsList();
+        });
+
+        document.getElementById('gateSlider').addEventListener('input', (e) => {
+            document.getElementById('gateDisplay').textContent = `${e.target.value}%`;
+        });
+
+        // --- SISTEMA IMPORT MODALE ---
+        const universalFileInput = document.getElementById('universalFileInput');
+        document.getElementById('triggerImportBtn').addEventListener('click', () => universalFileInput.click());
+
+        universalFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('importModalFileName').textContent = file.name;
+            const name = file.name.toLowerCase();
+
+            if (name.endsWith('.json')) {
+                const text = await file.text();
+                try {
+                    const data = JSON.parse(text);
+                    const sections = extractSectionsFromAbc(data.abcCode || "");
+                    openImportModal({
+                        title: data.metadata?.title || file.name.replace(/\.[^/.]+$/, ""),
+                        composer: data.metadata?.composer || "User Composer",
+                        bpm: data.bpm || 115,
+                        sections: sections.length > 0 ? sections : [{ name: "Traccia JSON", osc: parseInt(data.mainOsc, 10) || 16, tokens: [] }]
+                    });
+                } catch (err) {
+                    alert("Errore lettura JSON: " + err.message);
+                }
+            } else if (name.endsWith('.mid') || name.endsWith('.midi')) {
+                const buffer = await file.arrayBuffer();
+                const midiSections = parseMidiToSections(buffer, file.name);
+                openImportModal({
+                    title: file.name.replace(/\.[^/.]+$/, ""),
+                    composer: "MIDI Import",
+                    bpm: 120,
+                    sections: midiSections
+                });
+            } else {
+                const text = await file.text();
+                const parsed = parseAbcHeaderAndSections(text);
+                openImportModal({
+                    title: parsed.title || file.name.replace(/\.[^/.]+$/, ""),
+                    composer: parsed.composer || "User Composer",
+                    bpm: parsed.bpm || 115,
+                    sections: parsed.sections
+                });
+            }
+
+            universalFileInput.value = '';
+        });
+
+        function parseAbcHeaderAndSections(abcText) {
+            const lines = abcText.split('\n');
+            let title = null;
+            let composer = null;
+            let bpm = null;
+
+            for (let l of lines) {
+                l = l.trim();
+                if (l.startsWith('T:') && !title) title = l.substring(2).trim();
+                if (l.startsWith('C:') && !composer) composer = l.substring(2).trim();
+                if (l.startsWith('Q:') && !bpm) {
+                    const m = l.match(/Q:\s*(\d+)/i);
+                    if (m) bpm = parseInt(m[1], 10);
+                }
+            }
+
+            const sections = extractSectionsFromAbc(abcText);
+            return { title, composer, bpm, sections };
+        }
+
+        function extractSectionsFromAbc(abcText) {
+            const lines = abcText.split('\n');
+            const sections = [];
+            let currentSec = null;
+
+            lines.forEach(line => {
+                const l = line.trim();
+                if (l.startsWith('% --- PAD') || l.startsWith('% --- SEZIONE')) {
+                    if (currentSec) sections.push(currentSec);
+                    currentSec = { name: l.replace(/[%-]/g, '').trim(), osc: 16, tokens: [] };
+                } else if (l.startsWith('%%MIDI control 53') && currentSec) {
+                    const m = l.match(/%%MIDI\s+control\s+53\s+(\d+)/i);
+                    if (m) currentSec.osc = parseInt(m[1], 10);
+                } else if (!l.startsWith('%') && !l.startsWith('X:') && !l.startsWith('T:') && !l.startsWith('M:') && !l.startsWith('L:') && !l.startsWith('Q:') && !l.startsWith('K:') && l.length > 0) {
+                    if (!currentSec) currentSec = { name: "Sezione 1", osc: 16, tokens: [] };
+                    const rawTokens = l.match(/(\[[^\]]+\][0-9]*|\^?[_]?[=]?[A-Ga-g][',]*[0-9]*\/?[0-9]*|z[0-9]*\/?[0-9]*|[|])/g) || [];
+                    rawTokens.forEach(t => {
+                        if (t !== '|' && t !== '|]') currentSec.tokens.push(t);
+                    });
+                }
+            });
+
+            if (currentSec) sections.push(currentSec);
+            return sections;
+        }
+
+        function parseMidiToSections(arrayBuffer, filename) {
+            const data = new DataView(arrayBuffer);
+            if (String.fromCharCode(data.getUint8(0), data.getUint8(1), data.getUint8(2), data.getUint8(3)) !== 'MThd') {
+                return [{ name: "MIDI Traccia", osc: 76, tokens: [] }];
+            }
+
+            const division = data.getUint16(12);
+            let offset = 14;
+            const collectedNotes = [];
+
+            while (offset < data.byteLength) {
+                if (offset + 8 > data.byteLength) break;
+                const trackChunk = String.fromCharCode(data.getUint8(offset), data.getUint8(offset + 1), data.getUint8(offset + 2), data.getUint8(offset + 3));
+                const trackLength = data.getUint32(offset + 4);
+                offset += 8;
+
+                if (trackChunk !== 'MTrk') { offset += trackLength; continue; }
+
+                let trackEnd = offset + trackLength;
+                let currentTick = 0;
+
+                while (offset < trackEnd) {
+                    let delta = 0;
+                    while (true) {
+                        const b = data.getUint8(offset++);
+                        delta = (delta << 7) | (b & 0x7F);
+                        if (!(b & 0x80)) break;
+                    }
+                    currentTick += delta;
+
+                    let status = data.getUint8(offset++);
+                    let type = status & 0xF0;
+
+                    if (type === 0x90) {
+                        let note = data.getUint8(offset++);
+                        let vel = data.getUint8(offset++);
+                        if (vel > 0) collectedNotes.push({ tick: currentTick, midi: note });
+                    } else if (type === 0x80 || type === 0xA0 || type === 0xB0 || type === 0xE0) {
+                        offset += 2;
+                    } else if (type === 0xC0 || type === 0xD0) {
+                        offset += 1;
+                    } else if (status === 0xFF) {
+                        offset++;
+                        let len = data.getUint8(offset++);
+                        offset += len;
+                    }
+                }
+            }
+
+            return [{ name: "Traccia MIDI Completa", osc: 76, rawMidiNotes: collectedNotes, division: division || 480 }];
+        }
+
+        function openImportModal(data) {
+            pendingImportData = data;
+            const container = document.getElementById('importSectionsList');
+            container.innerHTML = '';
+
+            data.sections.forEach((sec, idx) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "flex items-center justify-between p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-xs";
+
+                itemDiv.innerHTML = `
+                    <label class="flex items-center gap-2 cursor-pointer min-w-0">
+                        <input type="checkbox" data-idx="${idx}" checked class="section-import-check accent-orange-500 rounded">
+                        <span class="font-bold text-zinc-100 truncate">${sec.name}</span>
+                    </label>
+                    <span class="text-[10px] font-mono-code text-orange-400 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800">
+                        ${OSC_NAMES[sec.osc] || 'OSC'}
+                    </span>
+                `;
+                container.appendChild(itemDiv);
+            });
+
+            document.getElementById('importModal').classList.remove('hidden');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.add('hidden');
+            pendingImportData = null;
+        }
+
+        document.getElementById('closeImportModalBtn').addEventListener('click', closeImportModal);
+        document.getElementById('cancelImportBtn').addEventListener('click', closeImportModal);
+
+        document.getElementById('toggleSelectAllImportBtn').addEventListener('click', () => {
+            const checks = document.querySelectorAll('.section-import-check');
+            const allChecked = Array.from(checks).every(c => c.checked);
+            checks.forEach(c => c.checked = !allChecked);
+            document.getElementById('toggleSelectAllImportBtn').textContent = allChecked ? "Seleziona Tutte" : "Deseleziona Tutte";
+        });
+
+        document.getElementById('confirmImportBtn').addEventListener('click', () => {
+            if (!pendingImportData) return;
+
+            const selectedIndices = Array.from(document.querySelectorAll('.section-import-check:checked')).map(c => parseInt(c.dataset.idx, 10));
+            if (selectedIndices.length === 0) {
+                alert("Seleziona almeno una parte da importare.");
+                return;
+            }
+
+            const importMode = document.querySelector('input[name="importModeRadio"]:checked').value;
+
+            if (importMode === 'overwrite') {
+                if (pendingImportData.title) document.getElementById('metaTitle').value = pendingImportData.title;
+                if (pendingImportData.composer) document.getElementById('metaComposer').value = pendingImportData.composer;
+                if (pendingImportData.bpm) {
+                    document.getElementById('bpmSlider').value = pendingImportData.bpm;
+                    document.getElementById('bpmDisplay').textContent = pendingImportData.bpm;
+                }
+            }
+
+            const newPads = selectedIndices.map(idx => {
+                const sec = pendingImportData.sections[idx];
+                const steps = Math.min(64, Math.max(8, Math.ceil((sec.tokens?.length || 16) / 4) * 4 || 16));
+
+                const pad = {
+                    id: Date.now() + Math.random() * 1000,
+                    name: sec.name,
+                    osc: sec.osc || 16,
+                    patch: { osc: sec.osc || 16, shape: 64, alt: 32, cutoff: 85, resonance: 20, attack: 10, release: 45, delayTime: 25, reverbMix: 30 },
+                    scaleKey: sec.rawMidiNotes ? "chromatic" : "pentatonic_minor",
+                    steps: steps,
+                    matrix: []
+                };
+                ensurePadMatrix(pad);
+
+                const scale = SCALES[pad.scaleKey];
+
+                if (sec.rawMidiNotes) {
+                    const stepTicks = (sec.division || 480) / 4;
+                    sec.rawMidiNotes.forEach(ev => {
+                        const sIdx = Math.round(ev.tick / stepTicks);
+                        if (sIdx < pad.steps) {
+                            scale.forEach((sc, rIdx) => {
+                                if (sc.midi === ev.midi) pad.matrix[rIdx][sIdx] = 1;
+                            });
+                        }
+                    });
+                } else if (sec.tokens) {
+                    let s = 0;
+                    sec.tokens.forEach(tok => {
+                        if (s >= steps) return;
+                        if (!tok.startsWith('z')) {
+                            const durMatch = tok.match(/(\d+)$/);
+                            const durLen = durMatch ? parseInt(durMatch[1], 10) : 1;
+
+                            scale.forEach((sc, rIdx) => {
+                                if (tok.includes(sc.note)) {
+                                    pad.matrix[rIdx][s] = 1;
+                                    for (let tie = 1; tie < durLen && (s + tie) < steps; tie++) {
+                                        pad.matrix[rIdx][s + tie] = 2;
+                                    }
+                                }
+                            });
+                            s += durLen;
+                        } else {
+                            s++;
+                        }
+                    });
+                }
+
+                return pad;
+            });
+
+            if (importMode === 'overwrite') {
+                padRack = newPads;
+                selectPad(0);
+            } else if (importMode === 'append') {
+                padRack = padRack.concat(newPads);
+                selectPad(padRack.length - newPads.length);
+            } else if (importMode === 'prepend') {
+                padRack = newPads.concat(padRack);
+                selectPad(0);
+            }
+
+            closeImportModal();
+        });
+
+        // --- SISTEMA EXPORT: ABC, MID, WAV, JSON ---
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+
+        document.getElementById('exportAbcBtn').addEventListener('click', () => {
+            const abc = document.getElementById('liveAbcOutput').value;
+            const title = document.getElementById('metaTitle').value.trim() || 'sketch';
+            downloadBlob(new Blob([abc], { type: 'text/plain;charset=utf-8' }), `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}.abc`);
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', () => {
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const title = document.getElementById('metaTitle').value.trim() || 'sketch';
+            const composer = document.getElementById('metaComposer').value.trim() || 'User Composer';
+            const firstPad = padRack[0] || { patch: { osc: 76 } };
+
+            const bundle = {
+                generator: "Korg NTS-1 Suite - Multi-Pad Composer",
+                version: "1.8.0",
+                timestamp: new Date().toISOString(),
+                metadata: {
+                    title: title,
+                    composer: composer,
+                    meter: "4/4"
+                },
+                genre: "electronic",
+                bpm: bpm,
+                mainOsc: String(firstPad.patch.osc),
+                patch: firstPad.patch,
+                abcCode: document.getElementById('liveAbcOutput').value
+            };
+
+            downloadBlob(new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' }), `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`);
+        });
+
+        document.getElementById('exportMidiBtn').addEventListener('click', () => {
+            const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+            const ticksPerQuarter = 480;
+            const microsecondsPerQuarter = Math.round(60000000 / bpm);
+            const trackBytes = [];
+
+            function writeVarLen(val) {
+                let buffer = val & 0x7F;
+                while ((val >>= 7)) {
+                    buffer <<= 8;
+                    buffer |= ((val & 0x7F) | 0x80);
+                }
+                while (true) {
+                    trackBytes.push(buffer & 0xFF);
+                    if (buffer & 0x80) buffer >>= 8;
+                    else break;
+                }
+            }
+
+            trackBytes.push(0x00, 0xFF, 0x51, 0x03);
+            trackBytes.push((microsecondsPerQuarter >> 16) & 0xFF);
+            trackBytes.push((microsecondsPerQuarter >> 8) & 0xFF);
+            trackBytes.push(microsecondsPerQuarter & 0xFF);
+
+            const stepTicks = ticksPerQuarter / 4;
+            let pendingDelta = 0;
+
+            padRack.forEach(pad => {
+                ensurePadMatrix(pad);
+                const scale = SCALES[pad.scaleKey];
+
+                let s = 0;
+                while (s < pad.steps) {
+                    const trigNotes = [];
+                    for (let r = 0; r < scale.length; r++) {
+                        if (pad.matrix[r][s] === 1) {
+                            let tieLen = 1;
+                            let look = s + 1;
+                            while (look < pad.steps && pad.matrix[r][look] === 2) {
+                                tieLen++;
+                                look++;
+                            }
+                            trigNotes.push({ midi: scale[r].midi, len: tieLen });
+                        }
+                    }
+
+                    if (trigNotes.length === 0) {
+                        pendingDelta += stepTicks;
+                        s++;
+                    } else {
+                        const maxTieLen = Math.max(...trigNotes.map(n => n.len));
+                        const totalTicks = stepTicks * maxTieLen;
+                        const noteDurationTicks = Math.round(totalTicks * 0.85);
+                        const restTicks = totalTicks - noteDurationTicks;
+
+                        trigNotes.forEach((tNote, idx) => {
+                            writeVarLen(idx === 0 ? pendingDelta : 0);
+                            if (idx === 0) pendingDelta = 0;
+                            trackBytes.push(0x90, tNote.midi & 0x7F, 100);
+                        });
+
+                        trigNotes.forEach((tNote, idx) => {
+                            writeVarLen(idx === 0 ? noteDurationTicks : 0);
+                            trackBytes.push(0x80, tNote.midi & 0x7F, 0);
+                        });
+
+                        pendingDelta += restTicks;
+                        s += maxTieLen;
+                    }
+                }
+            });
+
+            writeVarLen(pendingDelta);
+            trackBytes.push(0xFF, 0x2F, 0x00);
+
+            const header = [
+                0x4D, 0x54, 0x68, 0x64,
+                0x00, 0x00, 0x00, 0x06,
+                0x00, 0x00,
+                0x00, 0x01,
+                (ticksPerQuarter >> 8) & 0xFF, ticksPerQuarter & 0xFF
+            ];
+
+            const trackLength = trackBytes.length;
+            const trackHeader = [
+                0x4D, 0x54, 0x72, 0x6B,
+                (trackLength >> 24) & 0xFF,
+                (trackLength >> 16) & 0xFF,
+                (trackLength >> 8) & 0xFF,
+                trackLength & 0xFF
+            ];
+
+            const fullBytes = new Uint8Array(header.length + trackHeader.length + trackBytes.length);
+            fullBytes.set(header, 0);
+            fullBytes.set(trackHeader, header.length);
+            fullBytes.set(trackBytes, header.length + trackHeader.length);
+
+            const title = document.getElementById('metaTitle').value.trim() || 'sketch';
+            downloadBlob(new Blob([fullBytes], { type: 'audio/midi' }), `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mid`);
+        });
+
+        function audioBufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1;
+            const bitDepth = 16;
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            const numSamples = buffer.length;
+            const dataSize = numSamples * blockAlign;
+            const headerSize = 44;
+            const totalSize = headerSize + dataSize;
+            const arrayBuffer = new ArrayBuffer(totalSize);
+            const view = new DataView(arrayBuffer);
+
+            function writeString(offset, string) {
+                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+            }
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, totalSize - 8, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            let offset = 44;
+            for (let i = 0; i < numSamples; i++) {
+                for (let channel = 0; channel < numChannels; channel++) {
+                    let sample = buffer.getChannelData(channel)[i];
+                    sample = Math.max(-1, Math.min(1, sample));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        document.getElementById('exportWavBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('exportWavBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Render...';
+            btn.disabled = true;
+
+            try {
+                const bpm = parseInt(document.getElementById('bpmSlider').value, 10) || 115;
+                const secPerStep = (60 / bpm) / 4;
+                let totalSteps = 0;
+                padRack.forEach(p => totalSteps += p.steps);
+
+                const totalDurationSec = Math.max(1, (totalSteps * secPerStep) + 0.5);
+                const sampleRate = 44100;
+                const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, Math.ceil(totalDurationSec * sampleRate), sampleRate);
+
+                let currentTimeSec = 0;
+
+                padRack.forEach(pad => {
+                    ensurePadMatrix(pad);
+                    const scale = SCALES[pad.scaleKey];
+
+                    let s = 0;
+                    while (s < pad.steps) {
+                        for (let r = 0; r < scale.length; r++) {
+                            if (pad.matrix[r][s] === 1) {
+                                let tieLen = 1;
+                                let look = s + 1;
+                                while (look < pad.steps && pad.matrix[r][look] === 2) {
+                                    tieLen++;
+                                    look++;
+                                }
+
+                                const midi = scale[r].midi;
+                                const osc = offlineCtx.createOscillator();
+                                const gain = offlineCtx.createGain();
+                                const filter = offlineCtx.createBiquadFilter();
+
+                                const freq = 440 * Math.pow(2, (midi - 69) / 12);
+                                osc.frequency.setValueAtTime(freq, currentTimeSec);
+                                osc.type = pad.patch.osc === 16 ? 'triangle' : (pad.patch.osc === 32 ? 'square' : 'sawtooth');
+
+                                const cutoffFreq = 200 + (Math.pow((pad.patch.cutoff || 85) / 127, 2) * 9800);
+                                filter.type = 'lowpass';
+                                filter.frequency.setValueAtTime(cutoffFreq, currentTimeSec);
+
+                                const noteDurSec = secPerStep * tieLen;
+                                gain.gain.setValueAtTime(0.0001, currentTimeSec);
+                                gain.gain.exponentialRampToValueAtTime(0.20, currentTimeSec + 0.015);
+                                gain.gain.setValueAtTime(0.20, currentTimeSec + (noteDurSec * 0.85));
+                                gain.gain.exponentialRampToValueAtTime(0.0001, currentTimeSec + noteDurSec);
+
+                                osc.connect(filter);
+                                filter.connect(gain);
+                                gain.connect(offlineCtx.destination);
+
+                                osc.start(currentTimeSec);
+                                osc.stop(currentTimeSec + noteDurSec + 0.05);
+                            }
+                        }
+                        currentTimeSec += secPerStep;
+                        s++;
+                    }
+                });
+
+                const renderedBuffer = await offlineCtx.startRendering();
+                const wavBlob = audioBufferToWav(renderedBuffer);
+                const title = document.getElementById('metaTitle').value.trim() || 'sketch';
+                downloadBlob(wavBlob, `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}.wav`);
+            } catch (e) {
+                alert("Errore nel rendering audio WAV: " + e.message);
+            } finally {
+                btn.innerHTML = orig;
+                btn.disabled = false;
+            }
+        });
+
+        // Inizializzazione al caricamento
+        window.addEventListener('DOMContentLoaded', () => {
+            setupCollapsibleSections();
+            renderPadsList();
+            initWebMIDI();
+        });
+    </script>
+</body>
+</html>

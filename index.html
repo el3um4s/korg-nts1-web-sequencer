@@ -35,7 +35,7 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">KORG NTS-1 SUITE</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">HUB v1.0.0</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">HUB v1.1.0</span>
                 </div>
                 <p class="text-xs text-zinc-400">Dashboard di Sistema, Routing Micro-App, Diagnostica MIDI & Guida Hardware</p>
             </div>
@@ -56,7 +56,7 @@
     <!-- Main Grid Content -->
     <main class="max-w-7xl mx-auto w-full flex flex-col gap-6 flex-grow">
 
-        <!-- 1. APP LAUNCHER GRID (4 MICRO-APPS) -->
+        <!-- 1. APP LAUNCHER GRID (5 MICRO-APPS) -->
         <section class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
                 <h2 class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
@@ -65,7 +65,7 @@
                 <span class="text-[10px] text-zinc-500 font-mono-code">Architettura Modulare a Singola Pagina</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 
                 <!-- App 1: ABC Generator -->
                 <a href="./abc-generator/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-orange-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
@@ -78,7 +78,7 @@
                         </div>
                         <h3 class="text-base font-bold text-zinc-100 group-hover:text-orange-400 transition-colors">1. ABC Generator</h3>
                         <p class="text-xs text-zinc-400 leading-relaxed">
-                            Generatore e arrangiatore modale. Motore metrico multilingua (IT, EN, Toki Pona) e composizione reattiva con testi[cite: 1].
+                            Generatore e arrangiatore modale[cite: 6]. Motore metrico multilingua (IT, EN, Toki Pona) e composizione reattiva con testi[cite: 1, 6].
                         </p>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-orange-400/80 font-semibold pt-2 border-t border-zinc-800/80">
@@ -98,7 +98,7 @@
                         </div>
                         <h3 class="text-base font-bold text-zinc-100 group-hover:text-purple-400 transition-colors">2. Player & Radio</h3>
                         <p class="text-xs text-zinc-400 leading-relaxed">
-                            Player file singoli e Radio Generativa continua[cite: 1]. 9 oscillatori, progressioni armoniche dinamiche e Master Presets rapidi[cite: 1].
+                            Player file singoli e Radio Generativa continua[cite: 1, 6]. 9 oscillatori, progressioni armoniche dinamiche e Master Presets rapidi[cite: 1, 6].
                         </p>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-purple-400/80 font-semibold pt-2 border-t border-zinc-800/80">
@@ -118,7 +118,7 @@
                         </div>
                         <h3 class="text-base font-bold text-zinc-100 group-hover:text-indigo-400 transition-colors">3. Playlist Builder</h3>
                         <p class="text-xs text-zinc-400 leading-relaxed">
-                            Assemblatore scalette con calcolo automatico durate, editor dei parametri timbrici NTS-1 per traccia ed export sommario disco[cite: 1].
+                            Assemblatore scalette con calcolo automatico durate, editor dei parametri timbrici NTS-1 per traccia ed export sommario disco[cite: 1, 6].
                         </p>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-indigo-400/80 font-semibold pt-2 border-t border-zinc-800/80">
@@ -138,11 +138,31 @@
                         </div>
                         <h3 class="text-base font-bold text-zinc-100 group-hover:text-emerald-400 transition-colors">4. Zen Jukebox</h3>
                         <p class="text-xs text-zinc-400 leading-relaxed">
-                            Esecutore continuo per sessioni di pittura e studio[cite: 1]. Auto-Patch switch, Timer Pomodoro, Pad Matrix e Zen Mode fullscreen[cite: 1].
+                            Esecutore continuo per sessioni di pittura e studio[cite: 1, 6]. Auto-Patch switch, Timer Pomodoro, Pad Matrix e Zen Mode fullscreen[cite: 1, 6].
                         </p>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-emerald-400/80 font-semibold pt-2 border-t border-zinc-800/80">
                         <span>Avvia Sessione Zen</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
+
+                <!-- App 5: Multi-Pad Composer (Nuovo Prototipo 5) -->
+                <a href="./grid-composer/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
+                                <i class="fa-solid fa-table-cells text-lg"></i>
+                            </div>
+                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-cyan-300 border border-zinc-800">v1.8.0</span>
+                        </div>
+                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-cyan-400 transition-colors">5. Grid Composer</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Step Composer a Pad sequenziali con note lunghe (Tie), fino a 64 step, template di struttura, randomizer formale ed export MIDI/ABC.
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-cyan-400/80 font-semibold pt-2 border-t border-zinc-800/80">
+                        <span>Componi Pad</span>
                         <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </div>
                 </a>
@@ -176,11 +196,24 @@
                     </div>
                     <div class="flex flex-col gap-1">
                         <label for="midiChannelSelect" class="text-[10px] font-semibold text-zinc-400">Canale MIDI (Korg default: 1):</label>
-                        <select id="midiChannelSelect" class="bg-zinc-950 border border-zinc-700 text-zinc-200 rounded-lg px-2 py-1.5 text-xs font-mono-code focus:outline-none focus:border-orange-500 cursor-pointer">
-                            <option value="0">Canale 1</option>
+                        <select id="midiChannelSelect"
+                            class="bg-zinc-950 border border-zinc-700 text-zinc-200 rounded-lg px-2 py-1.5 text-xs font-mono-code focus:outline-none focus:border-orange-500 cursor-pointer">
+                            <option value="0" selected>Canale 1 (Default Korg)</option>
                             <option value="1">Canale 2</option>
                             <option value="2">Canale 3</option>
                             <option value="3">Canale 4</option>
+                            <option value="4">Canale 5</option>
+                            <option value="5">Canale 6</option>
+                            <option value="6">Canale 7</option>
+                            <option value="7">Canale 8</option>
+                            <option value="8">Canale 9</option>
+                            <option value="9">Canale 10</option>
+                            <option value="10">Canale 11</option>
+                            <option value="11">Canale 12</option>
+                            <option value="12">Canale 13</option>
+                            <option value="13">Canale 14</option>
+                            <option value="14">Canale 15</option>
+                            <option value="15">Canale 16</option>
                         </select>
                     </div>
                 </div>
@@ -219,12 +252,12 @@
                         </span>
                         <h2 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Mappa CC & Oscillatori NTS-1</h2>
                     </div>
-                    <span class="text-[9px] text-zinc-500 font-mono-code">MIDI CC Standard[cite: 1]</span>
+                    <span class="text-[9px] text-zinc-500 font-mono-code">MIDI CC Standard[cite: 1, 6]</span>
                 </div>
 
                 <!-- 9 Motori di Sintesi Sinottica -->
                 <div class="flex flex-col gap-1 text-[11px]">
-                    <span class="text-[10px] text-zinc-400 font-semibold">9 Oscillatori (MIDI CC 53)[cite: 1]:</span>
+                    <span class="text-[10px] text-zinc-400 font-semibold">9 Oscillatori (MIDI CC 53)[cite: 1, 6]:</span>
                     <div class="grid grid-cols-3 gap-1 text-[10px] font-mono-code">
                         <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-zinc-300"><strong>0</strong>: SAW (Sawtooth)</div>
                         <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-amber-300"><strong>16</strong>: TRI (Triangle)</div>
@@ -240,7 +273,7 @@
 
                 <!-- Parametri Hardware CC Rapidi -->
                 <div class="flex flex-col gap-1 text-[11px] pt-1 border-t border-zinc-800">
-                    <span class="text-[10px] text-zinc-400 font-semibold">Parametri Controlli Fisici[cite: 1]:</span>
+                    <span class="text-[10px] text-zinc-400 font-semibold">Parametri Controlli Fisici[cite: 1, 6]:</span>
                     <div class="grid grid-cols-4 gap-1 text-[10px] font-mono-code text-center">
                         <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-zinc-400"><span class="text-zinc-500 block">Shape</span>CC 54</div>
                         <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-zinc-400"><span class="text-zinc-500 block">Alt</span>CC 55</div>
@@ -260,8 +293,8 @@
 
     <!-- Footer -->
     <footer class="max-w-7xl mx-auto w-full mt-6 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>Korg NTS-1 Modular Suite • Single Page Architecture (No Build Tools, No NPM)[cite: 1]</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">HUB SYSTEM v1.0.0</span>
+        <p>Korg NTS-1 Modular Suite • Single Page Architecture (No Build Tools, No NPM)[cite: 1, 6]</p>
+        <span class="font-mono-code text-[11px] text-zinc-400">HUB SYSTEM v1.1.0</span>
     </footer>
 
     <!-- Hub Script Logic -->

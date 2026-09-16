@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Korg NTS-1 — ABC Grid Composer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Scrollbar sottile e custom per mobile */
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    /* Disabilita selezione e tap highlight su touch screen */
+    .no-select {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans no-select">
+
+  <!-- Header & MIDI / Audio Bar -->
+  <header class="bg-slate-900 border-b border-slate-800 p-3 sm:p-4 sticky top-0 z-30 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Titolo & Breadcrumb -->
+      <div class="flex items-center space-x-2">
+        <a href="../index.html" class="text-slate-400 hover:text-cyan-400 transition-colors text-sm font-mono flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          Hub
+        </a>
+        <span class="text-slate-600">/</span>
+        <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+          ABC Grid Composer
+        </h1>
+        <span class="text-[10px] bg-slate-800 text-cyan-400 font-mono px-1.5 py-0.5 rounded border border-slate-700">v1.0.0</span>
+      </div>
+
+      <!-- MIDI Output Status -->
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded border border-slate-800 text-xs font-mono">
+          <span id="midi-dot" class="w-2 h-2 rounded-full bg-red-500"></span>
+          <select id="midi-select" class="bg-transparent text-slate-300 focus:outline-none max-w-[130px] sm:max-w-[180px] truncate">
+            <option value="none">Solo Audio Web</option>
+          </select>
+        </div>
+        <button id="panic-btn" title="MIDI Panic (All Sound Off)" class="bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/60 px-2 py-1 rounded text-xs font-mono active:scale-95 transition">
+          PANIC
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 flex flex-col gap-4">
+
+    <!-- Top Rack: Patch NTS-1 & Pattern Control -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      
+      <!-- NTS-1 Hardware Controller -->
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Korg NTS-1 Patch</span>
+          <span id="patch-indicator" class="text-[11px] font-mono text-cyan-400">CC53: 16 (Triangle)</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <label class="block text-slate-400 mb-0.5 text-[10px] uppercase">Oscillator</label>
+            <select id="osc-select" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-slate-200 font-mono focus:border-cyan-500 focus:outline-none">
+              <option value="0">0: SAW (Sawtooth)</option>
+              <option value="16" selected>16: tr 1 (Triangle)</option>
+              <option value="32">32: S9r (Square)</option>
+              <option value="48">48: UPN (VPM FM)</option>
+              <option value="64">64: WAVES (Wavetable)</option>
+              <option value="76">76: Volcano (Volca Bass)</option>
+              <option value="88">88: Chords (Chord-Osc)</option>
+              <option value="100">100: Proba-b (Glitch)</option>
+              <option value="112">112: J6 (Juno-6)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-0.5 text-[10px] uppercase">Filter Cutoff (CC 43)</label>
+            <input type="range" id="cutoff-knob" min="0" max="127" value="80" class="w-full accent-cyan-500 mt-1 cursor-pointer">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sequencer Controls -->
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 flex flex-col justify-between gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Sequencer Transport</span>
+          <span id="current-step-display" class="text-[11px] font-mono text-slate-500">Step: --/16</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="play-btn" class="flex-1 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold py-1.5 px-3 rounded flex items-center justify-center gap-1.5 text-sm transition">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <span>Play</span>
+          </button>
+          <button id="stop-btn" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 py-1.5 px-3 rounded text-sm transition font-mono">
+            Stop
+          </button>
+          <button id="clear-btn" class="bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-200 py-1.5 px-2.5 rounded text-sm transition font-mono" title="Pulisci Griglia">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Modalità & Metrica -->
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 flex flex-col justify-between gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Scala & Tempo</span>
+          <div class="flex items-center gap-1">
+            <span class="text-[10px] text-slate-400">BPM:</span>
+            <input type="number" id="bpm-input" value="105" min="40" max="220" class="w-12 bg-slate-950 border border-slate-700 text-center font-mono text-xs rounded text-cyan-400 focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <label class="block text-slate-400 mb-0.5 text-[10px] uppercase">Scala Righe</label>
+            <select id="scale-select" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-slate-200 font-mono focus:border-cyan-500 focus:outline-none">
+              <option value="pentatonic_minor">Pentatonica Minore (La)</option>
+              <option value="dorian">Dorica (Re)</option>
+              <option value="major">Maggiore (Do)</option>
+              <option value="hirajoshi">Hirajoshi (Giapponese)</option>
+              <option value="chromatic">Cromatica (1 Ottava)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-0.5 text-[10px] uppercase">Durata Step</label>
+            <select id="step-rate" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-slate-200 font-mono focus:border-cyan-500 focus:outline-none">
+              <option value="16th" selected>1/16 (Sedicesimi)</option>
+              <option value="8th">1/8 (Ottavi)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Step Grid Interactive Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 flex flex-col gap-2">
+      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+        <span>Tocca una cella per accendere/spegnere la nota. Da PC puoi usare la tastiera.</span>
+        <span class="font-mono text-cyan-400 hidden sm:inline">16 Step (1 Battuta 4/4)</span>
+      </div>
+
+      <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded bg-slate-950 pb-2">
+        <div id="grid-container" class="inline-block min-w-full p-2">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ABC Live View & Exporter -->
+    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 flex flex-col gap-3">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Codice Notazione ABC</span>
+          <button id="copy-abc-btn" class="text-xs text-cyan-400 hover:underline font-mono">Copia negli appunti</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="download-abc-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded text-xs font-mono transition">
+            .ABC
+          </button>
+          <button id="download-json-btn" class="bg-cyan-900/60 hover:bg-cyan-800 text-cyan-200 border border-cyan-700/50 px-2.5 py-1 rounded text-xs font-mono transition">
+            .JSON (Suite Bundle)
+          </button>
+        </div>
+      </div>
+
+      <textarea id="abc-output" readonly rows="4" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs font-mono text-emerald-400 focus:outline-none resize-none"></textarea>
+    </div>
+
+  </main>
+
+  <!-- Script Logica App -->
+  <script>
+    // --- Scale e Note Musicali ---
+    const SCALES = {
+      pentatonic_minor: [
+        { note: "e'", midi: 76, label: "E5" },
+        { note: "d'", midi: 74, label: "D5" },
+        { note: "c'", midi: 72, label: "C5" },
+        { note: "A", midi: 69, label: "A4" },
+        { note: "G", midi: 67, label: "G4" },
+        { note: "E", midi: 64, label: "E4" },
+        { note: "D", midi: 62, label: "D4" },
+        { note: "C", midi: 60, label: "C4" }
+      ],
+      dorian: [
+        { note: "d'", midi: 74, label: "D5" },
+        { note: "c'", midi: 72, label: "C5" },
+        { note: "B", midi: 71, label: "B4" },
+        { note: "A", midi: 69, label: "A4" },
+        { note: "G", midi: 67, label: "G4" },
+        { note: "F", midi: 65, label: "F4" },
+        { note: "E", midi: 64, label: "E4" },
+        { note: "D", midi: 62, label: "D4" }
+      ],
+      major: [
+        { note: "c'", midi: 72, label: "C5" },
+        { note: "B", midi: 71, label: "B4" },
+        { note: "A", midi: 69, label: "A4" },
+        { note: "G", midi: 67, label: "G4" },
+        { note: "F", midi: 65, label: "F4" },
+        { note: "E", midi: 64, label: "E4" },
+        { note: "D", midi: 62, label: "D4" },
+        { note: "C", midi: 60, label: "C4" }
+      ],
+      hirajoshi: [
+        { note: "c'", midi: 72, label: "C5" },
+        { note: "b", midi: 71, label: "B4" },
+        { note: "g", midi: 67, label: "G4" },
+        { note: "f", midi: 65, label: "F4" },
+        { note: "c", midi: 60, label: "C4" },
+        { note: "B,", midi: 59, label: "B3" },
+        { note: "G,", midi: 55, label: "G3" },
+        { note: "F,", midi: 53, label: "F3" }
+      ],
+      chromatic: [
+        { note: "c'", midi: 72, label: "C5" },
+        { note: "^A", midi: 70, label: "A#4" },
+        { note: "A", midi: 69, label: "A4" },
+        { note: "^G", midi: 68, label: "G#4" },
+        { note: "G", midi: 67, label: "G4" },
+        { note: "^F", midi: 66, label: "F#4" },
+        { note: "F", midi: 65, label: "F4" },
+        { note: "E", midi: 64, label: "E4" },
+        { note: "^D", midi: 63, label: "D#4" },
+        { note: "D", midi: 62, label: "D4" },
+        { note: "^C", midi: 61, label: "C#4" },
+        { note: "C", midi: 60, label: "C4" }
+      ]
+    };
+
+    const TOTAL_STEPS = 16;
+    let currentScaleKey = "pentatonic_minor";
+    let gridMatrix = []; // [righe][step] = boolean
+    let isPlaying = false;
+    let currentStep = -1;
+    let stepTimer = null;
+
+    // Web Audio Engine Standalone
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    }
+
+    function playInternalSynth(midiNote, duration = 0.15) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+
+      // Tipo di onda in base all'oscillatore selezionato
+      const oscVal = parseInt(document.getElementById("osc-select").value);
+      if (oscVal === 0 || oscVal === 76) osc.type = "sawtooth";
+      else if (oscVal === 16) osc.type = "triangle";
+      else if (oscVal === 32 || oscVal === 100) osc.type = "square";
+      else osc.type = "sine";
+
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // --- Web MIDI Integration ---
+    let midiAccess = null;
+    let activeMidiOutput = null;
+
+    async function initMIDI() {
+      if (!navigator.requestMIDIAccess) return;
+      try {
+        midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+        populateMidiOutputs();
+        midiAccess.onstatechange = populateMidiOutputs;
+      } catch (err) {
+        console.warn("Accesso Web MIDI non concesso o non supportato.", err);
+      }
+    }
+
+    function populateMidiOutputs() {
+      const select = document.getElementById("midi-select");
+      const dot = document.getElementById("midi-dot");
+      select.innerHTML = '<option value="none">Solo Audio Web</option>';
+
+      if (!midiAccess) return;
+
+      const outputs = Array.from(midiAccess.outputs.values());
+      outputs.forEach(output => {
+        const opt = document.createElement("option");
+        opt.value = output.id;
+        opt.textContent = output.name;
+        select.appendChild(opt);
+      });
+
+      // Rilevamento automatico Korg NTS-1
+      const nts1 = outputs.find(o => o.name.toLowerCase().includes("nts-1") || o.name.toLowerCase().includes("korg"));
+      if (nts1) {
+        select.value = nts1.id;
+        activeMidiOutput = nts1;
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+      } else if (outputs.length > 0) {
+        activeMidiOutput = null;
+        dot.className = "w-2 h-2 rounded-full bg-amber-500";
+      } else {
+        activeMidiOutput = null;
+        dot.className = "w-2 h-2 rounded-full bg-red-500";
+      }
+    }
+
+    document.getElementById("midi-select").addEventListener("change", (e) => {
+      const dot = document.getElementById("midi-dot");
+      if (e.target.value === "none") {
+        activeMidiOutput = null;
+        dot.className = "w-2 h-2 rounded-full bg-slate-500";
+      } else if (midiAccess) {
+        activeMidiOutput = midiAccess.outputs.get(e.target.value);
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+      }
+    });
+
+    function sendMidiNote(midiNote, durationMs = 150) {
+      if (!activeMidiOutput) return;
+      const noteOn = [0x90, midiNote, 100];
+      const noteOff = [0x80, midiNote, 0];
+      activeMidiOutput.send(noteOn);
+      setTimeout(() => {
+        if (activeMidiOutput) activeMidiOutput.send(noteOff);
+      }, durationMs);
+    }
+
+    function sendMidiCC(cc, value) {
+      if (!activeMidiOutput) return;
+      activeMidiOutput.send([0xB0, cc, value]);
+    }
+
+    // Panic Sweep
+    document.getElementById("panic-btn").addEventListener("click", () => {
+      if (!activeMidiOutput) return;
+      activeMidiOutput.send([0xB0, 120, 0]); // All Sound Off
+      activeMidiOutput.send([0xB0, 123, 0]); // All Notes Off
+      activeMidiOutput.send([0xB0, 64, 0]);  // Sustain Off
+      for (let i = 0; i < 128; i++) {
+        activeMidiOutput.send([0x80, i, 0]);
+      }
+    });
+
+    // Modifiche Parametri NTS-1
+    document.getElementById("osc-select").addEventListener("change", (e) => {
+      const val = parseInt(e.target.value);
+      sendMidiCC(53, val);
+      document.getElementById("patch-indicator").textContent = `CC53: ${val} (${e.target.options[e.target.selectedIndex].text.split(':')[1].trim()})`;
+      updateABC();
+    });
+
+    document.getElementById("cutoff-knob").addEventListener("input", (e) => {
+      sendMidiCC(43, parseInt(e.target.value));
+    });
+
+    // --- Gestione Matrice Griglia ---
+    function resetMatrix() {
+      const rows = SCALES[currentScaleKey].length;
+      gridMatrix = Array.from({ length: rows }, () => Array(TOTAL_STEPS).fill(false));
+    }
+
+    function renderGrid() {
+      const container = document.getElementById("grid-container");
+      container.innerHTML = "";
+
+      const scale = SCALES[currentScaleKey];
+
+      // Header degli step (1-16)
+      const headerRow = document.createElement("div");
+      headerRow.className = "flex items-center gap-1 mb-1.5 pl-14 sm:pl-16";
+      for (let s = 0; s < TOTAL_STEPS; s++) {
+        const stepNum = document.createElement("div");
+        stepNum.className = `w-7 sm:w-8 text-center font-mono text-[10px] ${s % 4 === 0 ? "text-cyan-400 font-bold" : "text-slate-600"}`;
+        stepNum.textContent = s + 1;
+        stepNum.id = `step-indicator-${s}`;
+        headerRow.appendChild(stepNum);
+      }
+      container.appendChild(headerRow);
+
+      // Righe delle Note
+      scale.forEach((item, rIdx) => {
+        const rowDiv = document.createElement("div");
+        rowDiv.className = "flex items-center gap-1 mb-1";
+
+        // Label della Nota (fissa a sinistra)
+        const labelDiv = document.createElement("button");
+        labelDiv.className = "w-12 sm:w-14 text-right pr-2 text-xs font-mono font-bold text-slate-400 hover:text-cyan-300 transition-colors shrink-0";
+        labelDiv.textContent = item.label;
+        labelDiv.addEventListener("click", () => {
+          initAudio();
+          playInternalSynth(item.midi);
+          sendMidiNote(item.midi);
+        });
+        rowDiv.appendChild(labelDiv);
+
+        // Colonne Cella Step
+        for (let sIdx = 0; sIdx < TOTAL_STEPS; sIdx++) {
+          const cell = document.createElement("button");
+          const isQuarterStart = sIdx % 4 === 0;
+          const isActive = gridMatrix[rIdx][sIdx];
+
+          cell.className = `w-7 sm:w-8 h-8 rounded text-[10px] font-mono transition-all border shrink-0 ${
+            isActive 
+              ? "bg-cyan-500 border-cyan-300 text-slate-950 font-bold shadow-md shadow-cyan-500/30" 
+              : isQuarterStart
+                ? "bg-slate-800/80 border-slate-700 hover:border-slate-500" 
+                : "bg-slate-900 border-slate-800 hover:border-slate-600"
+          }`;
+          cell.dataset.row = rIdx;
+          cell.dataset.step = sIdx;
+          cell.id = `cell-${rIdx}-${sIdx}`;
+
+          // Gestione click / touch
+          cell.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            initAudio();
+            toggleCell(rIdx, sIdx);
+          });
+
+          rowDiv.appendChild(cell);
+        }
+
+        container.appendChild(rowDiv);
+      });
+    }
+
+    function toggleCell(r, s) {
+      gridMatrix[r][s] = !gridMatrix[r][s];
+      const cell = document.getElementById(`cell-${r}-${s}`);
+      const isQuarterStart = s % 4 === 0;
+
+      if (gridMatrix[r][s]) {
+        cell.className = "w-7 sm:w-8 h-8 rounded text-[10px] font-mono transition-all border shrink-0 bg-cyan-500 border-cyan-300 text-slate-950 font-bold shadow-md shadow-cyan-500/30";
+        const midi = SCALES[currentScaleKey][r].midi;
+        playInternalSynth(midi);
+        sendMidiNote(midi);
+      } else {
+        cell.className = `w-7 sm:w-8 h-8 rounded text-[10px] font-mono transition-all border shrink-0 ${
+          isQuarterStart ? "bg-slate-800/80 border-slate-700 hover:border-slate-500" : "bg-slate-900 border-slate-800 hover:border-slate-600"
+        }`;
+      }
+
+      updateABC();
+    }
+
+    // Cambio Scala
+    document.getElementById("scale-select").addEventListener("change", (e) => {
+      currentScaleKey = e.target.value;
+      resetMatrix();
+      renderGrid();
+      updateABC();
+    });
+
+    // Pulisci Griglia
+    document.getElementById("clear-btn").addEventListener("click", () => {
+      resetMatrix();
+      renderGrid();
+      updateABC();
+    });
+
+    // --- Generatore & Compilatore ABC ---
+    function updateABC() {
+      const bpm = document.getElementById("bpm-input").value || 105;
+      const rate = document.getElementById("step-rate").value;
+      const scale = SCALES[currentScaleKey];
+      const is16th = rate === "16th";
+
+      let abcNotes = [];
+
+      for (let s = 0; s < TOTAL_STEPS; s++) {
+        let activeInStep = [];
+        for (let r = 0; r < scale.length; r++) {
+          if (gridMatrix[r][s]) {
+            activeInStep.push(scale[r].note);
+          }
+        }
+
+        if (activeInStep.length === 0) {
+          abcNotes.push("z"); // Pausa
+        } else if (activeInStep.length === 1) {
+          abcNotes.push(activeInStep[0]);
+        } else {
+          // Accordo tra parentesi quadre
+          abcNotes.push(`[${activeInStep.join("")}]`);
+        }
+
+        // Barra di battuta ogni 4 o 8 step per leggibilità metrica
+        const barStep = is16th ? 4 : 4;
+        if ((s + 1) % barStep === 0 && s !== TOTAL_STEPS - 1) {
+          abcNotes.push("|");
+        }
+      }
+
+      const lUnit = is16th ? "1/16" : "1/8";
+      const meter = is16th ? "4/4" : "2/4";
+
+      const header = 
+`X: 1
+T: Grid Composer Sketch
+M: ${meter}
+L: ${lUnit}
+Q: ${bpm}
+K: C
+`;
+
+      const fullABC = `${header}${abcNotes.join(" ")} |]`;
+      document.getElementById("abc-output").value = fullABC;
+    }
+
+    // --- Sequencer Playback Loop ---
+    function startSequencer() {
+      if (isPlaying) return;
+      initAudio();
+      isPlaying = true;
+      currentStep = -1;
+
+      const playBtn = document.getElementById("play-btn");
+      playBtn.className = "flex-1 bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-bold py-1.5 px-3 rounded flex items-center justify-center gap-1.5 text-sm transition";
+      playBtn.querySelector("span").textContent = "Pause";
+
+      scheduleNextStep();
+    }
+
+    function stopSequencer() {
+      isPlaying = false;
+      clearTimeout(stepTimer);
+      stepTimer = null;
+
+      const playBtn = document.getElementById("play-btn");
+      playBtn.className = "flex-1 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold py-1.5 px-3 rounded flex items-center justify-center gap-1.5 text-sm transition";
+      playBtn.querySelector("span").textContent = "Play";
+
+      document.getElementById("current-step-display").textContent = "Step: --/16";
+
+      // Reset visuale step
+      for (let s = 0; s < TOTAL_STEPS; s++) {
+        const ind = document.getElementById(`step-indicator-${s}`);
+        if (ind) ind.classList.remove("text-amber-400", "scale-125");
+      }
+    }
+
+    function scheduleNextStep() {
+      if (!isPlaying) return;
+
+      const bpm = parseInt(document.getElementById("bpm-input").value) || 105;
+      const rate = document.getElementById("step-rate").value;
+      
+      // Calcolo intervallo temporale: 1/16 = (60 / bpm / 4) * 1000 ms
+      const stepDurationMs = rate === "16th" ? (60000 / bpm) / 4 : (60000 / bpm) / 2;
+
+      // Ripristina highlight step precedente
+      if (currentStep >= 0) {
+        const prevInd = document.getElementById(`step-indicator-${currentStep}`);
+        if (prevInd) prevInd.classList.remove("text-amber-400", "scale-125");
+      }
+
+      // Avanzamento step ciclico
+      currentStep = (currentStep + 1) % TOTAL_STEPS;
+
+      // Evidenzia step attuale
+      const curInd = document.getElementById(`step-indicator-${currentStep}`);
+      if (curInd) curInd.classList.add("text-amber-400", "scale-125");
+      document.getElementById("current-step-display").textContent = `Step: ${currentStep + 1}/16`;
+
+      // Suona le note attive nello step
+      const scale = SCALES[currentScaleKey];
+      for (let r = 0; r < scale.length; r++) {
+        if (gridMatrix[r][currentStep]) {
+          const midi = scale[r].midi;
+          playInternalSynth(midi, stepDurationMs / 1000);
+          sendMidiNote(midi, stepDurationMs * 0.9);
+        }
+      }
+
+      stepTimer = setTimeout(scheduleNextStep, stepDurationMs);
+    }
+
+    document.getElementById("play-btn").addEventListener("click", () => {
+      if (isPlaying) stopSequencer();
+      else startSequencer();
+    });
+
+    document.getElementById("stop-btn").addEventListener("click", stopSequencer);
+
+    // --- Exporting (.ABC & .JSON interoperabile) ---
+    document.getElementById("copy-abc-btn").addEventListener("click", () => {
+      const textarea = document.getElementById("abc-output");
+      navigator.clipboard.writeText(textarea.value).then(() => {
+        const btn = document.getElementById("copy-abc-btn");
+        const orig = btn.textContent;
+        btn.textContent = "Copiato!";
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    });
+
+    document.getElementById("download-abc-btn").addEventListener("click", () => {
+      const content = document.getElementById("abc-output").value;
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "grid-sketch.abc";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById("download-json-btn").addEventListener("click", () => {
+      const bpm = parseInt(document.getElementById("bpm-input").value) || 105;
+      const osc = parseInt(document.getElementById("osc-select").value);
+      const cutoff = parseInt(document.getElementById("cutoff-knob").value);
+      const abcCode = document.getElementById("abc-output").value;
+
+      const bundle = {
+        generator: "Korg NTS-1 Suite - Grid Composer",
+        version: "1.0.0",
+        timestamp: new Date().toISOString(),
+        metadata: {
+          title: "Grid Composer Pattern",
+          composer: "User Composer",
+          meter: document.getElementById("step-rate").value === "16th" ? "4/4" : "2/4",
+          scale: currentScaleKey
+        },
+        genre: "electronic",
+        bpm: bpm,
+        patch: {
+          osc: osc,
+          shape: 64,
+          alt: 32,
+          cutoff: cutoff,
+          resonance: 20,
+          attack: 10,
+          release: 45,
+          delayTime: 25,
+          reverbMix: 30
+        },
+        abcCode: abcCode
+      };
+
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "grid-sketch.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Inizializzazione al caricamento
+    window.addEventListener("DOMContentLoaded", () => {
+      resetMatrix();
+      renderGrid();
+      updateABC();
+      initMIDI();
+    });
+  </script>
+</body>
+</html>
