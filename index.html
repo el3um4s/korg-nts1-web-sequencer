@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -35,9 +35,9 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">KORG NTS-1 SUITE</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">HUB v1.1.0</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">HUB v1.2.0</span>
                 </div>
-                <p class="text-xs text-zinc-400">Dashboard di Sistema, Routing Micro-App, Diagnostica MIDI & Guida Hardware</p>
+                <p class="text-xs text-zinc-400">Dashboard di Sistema, Routing Micro-App (7 Moduli), Diagnostica MIDI & Guida Hardware</p>
             </div>
         </div>
 
@@ -47,7 +47,7 @@
                 <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"></span>
                 <span id="statusText" class="text-zinc-300">Inizializzazione MIDI...</span>
             </div>
-            <button id="panicBtn" class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow" title="Interrompe tutte le note e reimposta i canali MIDI">
+            <button id="panicBtn" class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow active:scale-95" title="Interrompe tutte le note e reimposta i canali MIDI">
                 <i class="fa-solid fa-triangle-exclamation text-red-400"></i> PANIC
             </button>
         </div>
@@ -56,16 +56,16 @@
     <!-- Main Grid Content -->
     <main class="max-w-7xl mx-auto w-full flex flex-col gap-6 flex-grow">
 
-        <!-- 1. APP LAUNCHER GRID (5 MICRO-APPS) -->
+        <!-- 1. APP LAUNCHER GRID (7 MICRO-APPS) -->
         <section class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
                 <h2 class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-rocket text-orange-400"></i> Micro-Web App della Suite
+                    <i class="fa-solid fa-rocket text-orange-400"></i> Micro-Web App della Suite (7 Moduli)
                 </h2>
                 <span class="text-[10px] text-zinc-500 font-mono-code">Architettura Modulare a Singola Pagina</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 
                 <!-- App 1: ABC Generator -->
                 <a href="./abc-generator/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-orange-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
@@ -78,7 +78,7 @@
                         </div>
                         <h3 class="text-base font-bold text-zinc-100 group-hover:text-orange-400 transition-colors">1. ABC Generator</h3>
                         <p class="text-xs text-zinc-400 leading-relaxed">
-                            Generatore e arrangiatore modale[cite: 6]. Motore metrico multilingua (IT, EN, Toki Pona) e composizione reattiva con testi[cite: 1, 6].
+                            Generatore e arrangiatore modale. Motore metrico multilingua (IT, EN, Toki Pona) e composizione reattiva con testi.
                         </p>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-orange-400/80 font-semibold pt-2 border-t border-zinc-800/80">
@@ -98,7 +98,7 @@
                         </div>
                         <h3 class="text-base font-bold text-zinc-100 group-hover:text-purple-400 transition-colors">2. Player & Radio</h3>
                         <p class="text-xs text-zinc-400 leading-relaxed">
-                            Player file singoli e Radio Generativa continua[cite: 1, 6]. 9 oscillatori, progressioni armoniche dinamiche e Master Presets rapidi[cite: 1, 6].
+                            Player file singoli e Radio Generativa continua. 9 oscillatori, progressioni armoniche dinamiche e Master Presets rapidi.
                         </p>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-purple-400/80 font-semibold pt-2 border-t border-zinc-800/80">
@@ -118,7 +118,7 @@
                         </div>
                         <h3 class="text-base font-bold text-zinc-100 group-hover:text-indigo-400 transition-colors">3. Playlist Builder</h3>
                         <p class="text-xs text-zinc-400 leading-relaxed">
-                            Assemblatore scalette con calcolo automatico durate, editor dei parametri timbrici NTS-1 per traccia ed export sommario disco[cite: 1, 6].
+                            Assemblatore scalette con calcolo automatico durate, editor dei parametri timbrici NTS-1 per traccia ed export sommario disco.
                         </p>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-indigo-400/80 font-semibold pt-2 border-t border-zinc-800/80">
@@ -138,7 +138,7 @@
                         </div>
                         <h3 class="text-base font-bold text-zinc-100 group-hover:text-emerald-400 transition-colors">4. Zen Jukebox</h3>
                         <p class="text-xs text-zinc-400 leading-relaxed">
-                            Esecutore continuo per sessioni di pittura e studio[cite: 1, 6]. Auto-Patch switch, Timer Pomodoro, Pad Matrix e Zen Mode fullscreen[cite: 1, 6].
+                            Esecutore continuo per sessioni di pittura e studio. Auto-Patch switch, Timer Pomodoro, Pad Matrix e Zen Mode fullscreen.
                         </p>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-emerald-400/80 font-semibold pt-2 border-t border-zinc-800/80">
@@ -147,7 +147,7 @@
                     </div>
                 </a>
 
-                <!-- App 5: Multi-Pad Composer (Nuovo Prototipo 5) -->
+                <!-- App 5: Multi-Pad Composer -->
                 <a href="./grid-composer/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
                     <div class="flex flex-col gap-2">
                         <div class="flex items-center justify-between">
@@ -167,6 +167,46 @@
                     </div>
                 </a>
 
+                <!-- App 6: Live Step Sequencer -->
+                <a href="./live-sequencer/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-rose-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:scale-105 transition-transform">
+                                <i class="fa-solid fa-drum text-lg"></i>
+                            </div>
+                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-rose-300 border border-zinc-800">v1.0.0</span>
+                        </div>
+                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-rose-400 transition-colors">6. Live Sequencer</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Step sequencer orientato alla performance live. Registrazione realtime overdub con metronomo, modalità touch & hold e tastiera QWERTY.
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-rose-400/80 font-semibold pt-2 border-t border-zinc-800/80">
+                        <span>Suona Live</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
+
+                <!-- App 7: Mobile Linear Sequencer -->
+                <a href="./mobile-linear-sequencer/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
+                                <i class="fa-solid fa-mobile-screen-button text-lg"></i>
+                            </div>
+                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800 font-bold">MOBILE XL</span>
+                        </div>
+                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-amber-400 transition-colors">7. Mobile Sequencer</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Nastro elastico verticale a lunghezza variabile per smartphone. Tasti XL quantizzati, cambi timbrici mid-song, sezioni formali, loop e tap tempo.
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-amber-400/80 font-semibold pt-2 border-t border-zinc-800/80">
+                        <span>Avvia su Mobile</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
+
             </div>
         </section>
 
@@ -182,7 +222,7 @@
                         </span>
                         <h2 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Diagnostica & Routing MIDI</h2>
                     </div>
-                    <button id="refreshMidiBtn" class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition flex items-center gap-1">
+                    <button id="refreshMidiBtn" class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition flex items-center gap-1 active:scale-95">
                         <i class="fa-solid fa-arrows-rotate text-[9px]"></i> Riscansiona
                     </button>
                 </div>
@@ -222,10 +262,10 @@
                 <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 flex flex-col gap-2">
                     <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Test Note & Sweep Frequenze</span>
                     <div class="grid grid-cols-4 gap-1.5 text-xs">
-                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="48">C3 (Basso)</button>
-                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="60">C4 (Medio)</button>
-                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="72">C5 (Alto)</button>
-                        <button id="testChordBtn" class="py-1.5 rounded bg-orange-950/40 hover:bg-orange-900/60 text-orange-300 border border-orange-700/60 font-mono-code font-bold transition">Accordo C</button>
+                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="48">C3 (Basso)</button>
+                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="60">C4 (Medio)</button>
+                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="72">C5 (Alto)</button>
+                        <button id="testChordBtn" class="py-1.5 rounded bg-orange-950/40 hover:bg-orange-900/60 active:bg-orange-800 text-orange-300 border border-orange-700/60 font-mono-code font-bold transition">Accordo C</button>
                     </div>
                 </div>
 
@@ -252,12 +292,12 @@
                         </span>
                         <h2 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Mappa CC & Oscillatori NTS-1</h2>
                     </div>
-                    <span class="text-[9px] text-zinc-500 font-mono-code">MIDI CC Standard[cite: 1, 6]</span>
+                    <span class="text-[9px] text-zinc-500 font-mono-code">MIDI CC Standard</span>
                 </div>
 
                 <!-- 9 Motori di Sintesi Sinottica -->
                 <div class="flex flex-col gap-1 text-[11px]">
-                    <span class="text-[10px] text-zinc-400 font-semibold">9 Oscillatori (MIDI CC 53)[cite: 1, 6]:</span>
+                    <span class="text-[10px] text-zinc-400 font-semibold">9 Oscillatori (MIDI CC 53):</span>
                     <div class="grid grid-cols-3 gap-1 text-[10px] font-mono-code">
                         <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-zinc-300"><strong>0</strong>: SAW (Sawtooth)</div>
                         <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-amber-300"><strong>16</strong>: TRI (Triangle)</div>
@@ -273,7 +313,7 @@
 
                 <!-- Parametri Hardware CC Rapidi -->
                 <div class="flex flex-col gap-1 text-[11px] pt-1 border-t border-zinc-800">
-                    <span class="text-[10px] text-zinc-400 font-semibold">Parametri Controlli Fisici[cite: 1, 6]:</span>
+                    <span class="text-[10px] text-zinc-400 font-semibold">Parametri Controlli Fisici:</span>
                     <div class="grid grid-cols-4 gap-1 text-[10px] font-mono-code text-center">
                         <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-zinc-400"><span class="text-zinc-500 block">Shape</span>CC 54</div>
                         <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-zinc-400"><span class="text-zinc-500 block">Alt</span>CC 55</div>
@@ -293,8 +333,8 @@
 
     <!-- Footer -->
     <footer class="max-w-7xl mx-auto w-full mt-6 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>Korg NTS-1 Modular Suite • Single Page Architecture (No Build Tools, No NPM)[cite: 1, 6]</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">HUB SYSTEM v1.1.0</span>
+        <p>Korg NTS-1 Modular Suite • Single Page Architecture (No Build Tools, No NPM)</p>
+        <span class="font-mono-code text-[11px] text-zinc-400">HUB SYSTEM v1.2.0</span>
     </footer>
 
     <!-- Hub Script Logic -->
