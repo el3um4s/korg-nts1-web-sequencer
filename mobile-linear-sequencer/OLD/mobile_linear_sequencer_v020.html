@@ -25,6 +25,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #09090b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        .led-active { box-shadow: 0 0 10px #22c55e, inset 0 0 4px #4ade80; }
+        .led-orange { box-shadow: 0 0 10px #f97316, inset 0 0 4px #fb923c; }
         
         .tape-step-row {
             transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -69,7 +71,7 @@
             <!-- Pulsante BPM XL -->
             <button id="btn-bpm-modal" class="h-9 px-2.5 rounded-xl bg-zinc-950 border border-zinc-700/80 hover:border-orange-500 text-xs font-mono-code font-bold flex items-center gap-1 text-zinc-200 transition active:scale-95 shadow">
                 <span class="text-[10px] text-zinc-500">⏱️</span>
-                <span id="display-bpm" class="text-orange-400 text-xs">124</span>
+                <span id="display-bpm" class="text-orange-400 text-xs">120</span>
             </button>
 
             <!-- Selettore Metrica -->
@@ -107,8 +109,8 @@
         <div class="flex items-center justify-between gap-1.5">
             <div class="flex items-center gap-1.5 min-w-0">
                 <span class="text-zinc-400 font-medium text-[11px]">Nastro:</span>
-                <span id="tape-step-count" class="font-mono-code font-bold text-orange-400 text-xs">32</span>
-                <span id="tape-bar-count" class="text-[10px] text-zinc-500 font-mono-code">(~2.0 battute)</span>
+                <span id="tape-step-count" class="font-mono-code font-bold text-orange-400 text-xs">16</span>
+                <span id="tape-bar-count" class="text-[10px] text-zinc-500 font-mono-code">(~1.0 battute)</span>
             </div>
 
             <div class="flex items-center gap-1 flex-shrink-0">
@@ -264,13 +266,13 @@
             </div>
         </div>
 
-        <!-- TASTIERA TOUCH XL QUANTIZZATA -->
+        <!-- TASTIERA TOUCH XL QUANTIZZATA (TASTI LARGHI PER POLLICE) -->
         <div id="keyboard-touch-container" class="px-2 pt-1 pb-1 flex gap-1.5 h-[96px] w-full overflow-x-auto custom-scrollbar">
             <!-- I grandi tasti delle note vengono generati dinamicamente -->
         </div>
     </footer>
 
-    <div id="toast-container" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col gap-1 items-center"></div>
+    <!-- ==================== MODALI DI SISTEMA ==================== -->
 
     <!-- MODALE 1: BPM & TAP TEMPO XL -->
     <div id="modal-bpm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 select-none">
@@ -283,24 +285,28 @@
                 <button class="modal-close-btn text-zinc-400 hover:text-zinc-100 text-lg">✕</button>
             </div>
 
+            <!-- Display BPM Gigante -->
             <div class="flex flex-col items-center justify-center py-2 bg-zinc-950 rounded-xl border border-zinc-800">
-                <span id="bpm-modal-val" class="font-mono-code text-5xl font-black text-orange-400">124</span>
+                <span id="bpm-modal-val" class="font-mono-code text-5xl font-black text-orange-400">120</span>
                 <span class="text-[10px] uppercase font-bold text-zinc-500 tracking-widest mt-1">BATTITI AL MINUTO</span>
             </div>
 
+            <!-- Pulsante Gigante TAP TEMPO per il pollice -->
             <button id="btn-tap-tempo-xl" class="w-full h-16 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 active:scale-95 transition-all duration-75 text-white font-black text-base shadow-xl flex items-center justify-center gap-2 border border-orange-400">
                 <span class="text-2xl">🖐️</span>
                 <span>TOCCA A TEMPO (TAP TEMPO)</span>
             </button>
 
+            <!-- Slider Continuo -->
             <div class="flex flex-col gap-1.5">
                 <div class="flex justify-between text-[11px] text-zinc-400 font-mono-code font-semibold">
                     <span>40 BPM</span>
                     <span>240 BPM</span>
                 </div>
-                <input id="bpm-modal-slider" type="range" min="40" max="240" value="124" class="w-full accent-orange-500 h-2 bg-zinc-800 rounded-lg cursor-pointer">
+                <input id="bpm-modal-slider" type="range" min="40" max="240" value="120" class="w-full accent-orange-500 h-2 bg-zinc-800 rounded-lg cursor-pointer">
             </div>
 
+            <!-- Micro Aggiustamenti & Preset di Genere -->
             <div class="grid grid-cols-4 gap-1.5">
                 <button class="bpm-step-btn py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-xs font-mono-code font-bold active:scale-95" data-delta="-5">-5</button>
                 <button class="bpm-step-btn py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-xs font-mono-code font-bold active:scale-95" data-delta="-1">-1</button>
@@ -330,6 +336,7 @@
                 <button class="modal-close-btn text-zinc-400 hover:text-zinc-100 text-lg">✕</button>
             </div>
 
+            <!-- Scelte Rapide Metriche Standard -->
             <div class="flex flex-col gap-2">
                 <button class="meter-choice-btn w-full p-3 rounded-xl bg-zinc-950 hover:bg-zinc-850 border border-zinc-800 flex items-center justify-between active:scale-95" data-meter="4/4" data-steps="16">
                     <div class="flex items-center gap-3">
@@ -365,6 +372,7 @@
                 </button>
             </div>
 
+            <!-- Regolazione Libera Step per Misura -->
             <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-semibold text-zinc-300">Step per Battuta Personalizzati:</span>
@@ -399,45 +407,6 @@
                     </div>
                     <span class="font-mono-code font-bold">8 Step</span>
                 </button>
-
-                <button class="add-section-choice-btn p-2.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-700/60 flex items-center justify-between text-purple-300 active:scale-95" data-section="Strofa" data-steps="16" data-osc="76">
-                    <div class="flex items-center gap-2">
-                        <span>🟣</span>
-                        <strong class="text-zinc-100">Strofa (Verse)</strong>
-                        <span class="text-[10px] text-zinc-400">(Volca Bass)</span>
-                    </div>
-                    <span class="font-mono-code font-bold">16 Step</span>
-                </button>
-
-                <button class="add-section-choice-btn p-2.5 rounded-xl bg-orange-950/40 hover:bg-orange-900/60 border border-orange-700/60 flex items-center justify-between text-orange-300 active:scale-95" data-section="Ritornello" data-steps="16" data-osc="112">
-                    <div class="flex items-center gap-2">
-                        <span>🟠</span>
-                        <strong class="text-zinc-100">Ritornello (Chorus)</strong>
-                        <span class="text-[10px] text-zinc-400">(Juno-6 Lead)</span>
-                    </div>
-                    <span class="font-mono-code font-bold">16 Step</span>
-                </button>
-
-                <button class="add-section-choice-btn p-2.5 rounded-xl bg-amber-950/40 hover:bg-amber-900/60 border border-amber-700/60 flex items-center justify-between text-amber-300 active:scale-95" data-section="Bridge" data-steps="8" data-osc="88">
-                    <div class="flex items-center gap-2">
-                        <span>🟤</span>
-                        <strong class="text-zinc-100">Bridge (Ponte)</strong>
-                        <span class="text-[10px] text-zinc-400">(Poly Chords)</span>
-                    </div>
-                    <span class="font-mono-code font-bold">8 Step</span>
-                </button>
-
-                <button class="add-section-choice-btn p-2.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-700/60 flex items-center justify-between text-emerald-300 active:scale-95" data-section="Outro" data-steps="8" data-osc="16">
-                    <div class="flex items-center gap-2">
-                        <span>🟢</span>
-                        <strong class="text-zinc-100">Outro (Finale)</strong>
-                        <span class="text-[10px] text-zinc-400">(Zen Triangle)</span>
-                    </div>
-                    <span class="font-mono-code font-bold">8 Step</span>
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- MODALE 4: PRESET TIMBRICI MID-SONG NTS-1 (LAYOUT IDENTICO ALLO SCREENSHOT) -->
     <div id="modal-patch" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 select-none">
@@ -491,7 +460,7 @@
                 </div>
             </div>
 
-            <!-- Riquadro Regolazione Diretta Parametri -->
+            <!-- Riquadro Regolazione Diretta Parametri (Oscillatore, Cutoff, Risonanza) -->
             <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 flex flex-col gap-2.5 text-xs">
                 <div class="flex items-center justify-between gap-2">
                     <label for="patch-modal-osc-select" class="text-[10px] text-zinc-300 font-semibold font-mono-code">Oscillatore (CC 53)</label>
@@ -526,7 +495,7 @@
                 </div>
             </div>
 
-            <!-- Pulsanti Inferiori -->
+            <!-- Pulsanti Inferiori: Rimuovi Preset / Applica allo Step -->
             <div class="grid grid-cols-2 gap-2 pt-1">
                 <button id="btn-remove-step-patch" class="py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 font-bold text-xs transition active:scale-95 flex items-center justify-center">
                     Rimuovi Preset
@@ -600,7 +569,7 @@
                 </div>
             </div>
 
-            <!-- Incolla Testo Diretto -->
+            <!-- Incolla Testo / Codice Diretto -->
             <div class="flex flex-col gap-1 pt-1 border-t border-zinc-800">
                 <span class="text-[11px] font-semibold text-zinc-400">Incolla codice ABC o JSON:</span>
                 <textarea id="import-text-area" rows="3" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 font-mono-code text-[10px] text-zinc-300 focus:outline-none focus:border-indigo-500 custom-scrollbar resize-none" placeholder="Incolla testo qui..."></textarea>
@@ -652,7 +621,7 @@
                     </select>
                 </div>
 
-                <!-- Spiegazione Riscansione MIDI -->
+                <!-- Spiegazione Chiara e Ridenominazione del pulsante Riscansiona -->
                 <div class="flex flex-col gap-1 pt-1 border-t border-zinc-800/80">
                     <div class="flex items-center gap-1.5">
                         <button id="btn-refresh-midi" class="flex-1 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-cyan-300 border border-cyan-700/60 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95" title="Cerca e connette nuovamente periferiche USB collegate dopo l'apertura">
@@ -668,18 +637,20 @@
                 </div>
             </div>
 
-            <!-- SEZIONE ESPORTAZIONE MULTIPLA -->
+            <!-- SEZIONE ESPORTAZIONE MULTIPLA: MIDI, AUDIO WAV, JSON, ABC -->
             <div class="flex flex-col gap-2 pt-1 border-t border-zinc-800">
                 <span class="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
                     <i class="fa-solid fa-cloud-arrow-down text-orange-400"></i> Esportazione & Download
                 </span>
 
                 <div class="grid grid-cols-2 gap-2">
+                    <!-- Export File MIDI Standard (.MID) -->
                     <button id="btn-export-midi" class="py-2.5 px-2 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shadow">
                         <i class="fa-solid fa-file-audio text-emerald-400"></i>
                         <span>Scarica MIDI (.MID)</span>
                     </button>
 
+                    <!-- Export Rendering Audio (.WAV) -->
                     <button id="btn-export-wav" class="py-2.5 px-2 bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-700/60 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shadow">
                         <i class="fa-solid fa-volume-high text-sky-400"></i>
                         <span>Render Audio (.WAV)</span>
@@ -687,11 +658,13 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
+                    <!-- Salva Pacchetto Sessione (.JSON) -->
                     <button id="btn-export-json" class="py-2 px-2 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shadow">
                         <i class="fa-solid fa-floppy-disk text-indigo-400"></i>
                         <span>Sessione (.JSON)</span>
                     </button>
 
+                    <!-- Copia Partitura (.ABC) -->
                     <button id="btn-export-abc" class="py-2 px-2 bg-zinc-950 hover:bg-zinc-850 text-orange-300 border border-zinc-700/60 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shadow">
                         <i class="fa-solid fa-copy text-orange-400"></i>
                         <span>Copia (.ABC)</span>
@@ -703,8 +676,9 @@
 
     <!-- ==================== APPLICAZIONE JAVASCRIPT ==================== -->
     <script>
+        // --- 1. STATO GLOBALE DELL'APPLICAZIONE ---
         const state = {
-            bpm: 124,
+            bpm: 120,
             meter: '4/4',
             stepsPerBar: 16,
             isLooping: true,
@@ -731,6 +705,7 @@
             steps: []
         };
 
+        // --- SCALE MUSICALI QUANTIZZATE ---
         const SCALES = {
             pentatonic_minor: [0, 3, 5, 7, 10, 12],
             pentatonic_major: [0, 2, 4, 7, 9, 12],
@@ -742,23 +717,9 @@
 
         const NOTE_NAMES_ALL = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            const colorClass = type === 'error' ? 'bg-red-900/90 text-red-200 border-red-500' :
-                               type === 'success' ? 'bg-emerald-900/90 text-emerald-200 border-emerald-500' :
-                               'bg-zinc-800/90 text-orange-300 border-orange-500';
-            toast.className = `px-4 py-2 rounded-xl text-xs font-semibold border shadow-2xl backdrop-blur-md transition-all duration-300 ${colorClass}`;
-            toast.textContent = message;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 2200);
-        }
-
+        // --- 2. GESTIONE WEB AUDIO SYNTH NTS-1 ---
         let audioCtx = null;
+        let activeVoices = new Map();
 
         function getAudioContext() {
             if (!audioCtx) {
@@ -776,12 +737,14 @@
             const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
             const now = ctx.currentTime;
 
+            // Filtro principale passa-basso
             const filter = ctx.createBiquadFilter();
             filter.type = 'lowpass';
             const cutoffFreq = 200 + (patch.cutoff / 127) * 7500;
             filter.frequency.setValueAtTime(cutoffFreq, now);
             filter.Q.setValueAtTime((patch.resonance / 127) * 18, now);
 
+            // Inviluppo ampiezza Gain
             const gain = ctx.createGain();
             const peakGain = 0.22;
             const attackTime = 0.005 + (patch.attack / 127) * 0.08;
@@ -792,10 +755,12 @@
             gain.gain.setValueAtTime(peakGain, now + durationSec);
             gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec + releaseTime);
 
+            // Generazione Oscillatori in base al CC 53
             const oscList = [];
             const oscType = parseInt(patch.osc, 10) || 0;
 
             if (oscType === 76) {
+                // Volca Bass: 3 Saw detunati
                 [-10, 0, 10].forEach(detuneCent => {
                     const osc = ctx.createOscillator();
                     osc.type = 'sawtooth';
@@ -805,6 +770,7 @@
                     oscList.push(osc);
                 });
             } else if (oscType === 112) {
+                // J6 Juno: Saw + Sub Square a -1 ottava
                 const oscMain = ctx.createOscillator();
                 oscMain.type = 'sawtooth';
                 oscMain.frequency.setValueAtTime(freq, now);
@@ -820,6 +786,7 @@
                 subGain.connect(filter);
                 oscList.push(oscSub);
             } else if (oscType === 88) {
+                // Poly Chords: Triade (Fondamentale, Terza, Quinta)
                 [0, 4, 7].forEach(semi => {
                     const osc = ctx.createOscillator();
                     osc.type = 'sawtooth';
@@ -828,6 +795,7 @@
                     oscList.push(osc);
                 });
             } else if (oscType === 48) {
+                // VPM / FM Sintesi a 2 operatori
                 const carrier = ctx.createOscillator();
                 carrier.type = 'sine';
                 carrier.frequency.setValueAtTime(freq, now);
@@ -845,18 +813,21 @@
 
                 oscList.push(carrier, modulator);
             } else if (oscType === 16) {
+                // Zen Triangle puro
                 const osc = ctx.createOscillator();
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(freq, now);
                 osc.connect(filter);
                 oscList.push(osc);
             } else if (oscType === 32) {
+                // Square 8-Bit
                 const osc = ctx.createOscillator();
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(freq, now);
                 osc.connect(filter);
                 oscList.push(osc);
             } else if (oscType === 64) {
+                // Waves Armonica
                 [1, 2, 3].forEach((mult, idx) => {
                     const osc = ctx.createOscillator();
                     osc.type = 'sine';
@@ -868,6 +839,7 @@
                     oscList.push(osc);
                 });
             } else {
+                // SAW standard
                 const osc = ctx.createOscillator();
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(freq, now);
@@ -887,11 +859,13 @@
             });
         }
 
+        // --- 3. GESTIONE WEB MIDI ---
         let midiAccess = null;
         let selectedMidiOutput = null;
 
         async function initWebMIDI() {
             const statusBadge = document.getElementById('header-midi-status');
+            const selectOutput = document.getElementById('settings-midi-output');
 
             if (!navigator.requestMIDIAccess) {
                 if (statusBadge) statusBadge.textContent = 'Audio Casse (No MIDI)';
@@ -934,7 +908,6 @@
 
             selectedMidiOutput = korgOutput || outputs[0];
             if (statusBadge) statusBadge.textContent = `MIDI: ${selectedMidiOutput.name}`;
-            showToast(`MIDI Connesso: ${selectedMidiOutput.name}`, 'success');
         }
 
         function sendMidiNote(midiNote, durationSec = 0.25) {
@@ -977,9 +950,9 @@
                     }
                 } catch (e) {}
             }
-            showToast('🚨 Tutte le note azzerate (Panic)');
         }
 
+        // --- 4. TRASPORTO E PLAYBACK A NASTRO VERTICALE ---
         let isPlaying = false;
         let playbackTimer = null;
         let currentPlayIndex = 0;
@@ -1016,6 +989,7 @@
             const step = state.steps[currentPlayIndex];
             const stepDurationSec = (60 / state.bpm) * 0.25;
 
+            // Evidenziazione visiva dello step in riproduzione
             document.querySelectorAll('.tape-step-row').forEach(row => row.classList.remove('tape-step-playing'));
             const activeRow = document.querySelector(`.tape-step-row[data-index="${currentPlayIndex}"]`);
             if (activeRow) {
@@ -1023,11 +997,13 @@
                 activeRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
+            // Se lo step ha un cambio timbrico mid-song, aggiorna la patch attiva
             if (step.preset) {
                 state.currentPatch = Object.assign({}, state.currentPatch, step.preset);
                 sendMidiPatch(state.currentPatch);
             }
 
+            // Esecuzione nota, tie o pausa
             if (step.type === 'note') {
                 let dur = stepDurationSec;
                 let lookAhead = currentPlayIndex + 1;
@@ -1064,6 +1040,7 @@
             }
         }
 
+        // --- 5. GESTIONE INPUT NOTE & TIMELINE ---
         function handleNoteInput(midiNote) {
             const newStep = {
                 type: 'note',
@@ -1072,6 +1049,7 @@
                 section: null
             };
 
+            // Emette suono immediato
             if (state.audioTarget === 'both' || state.audioTarget === 'internal') {
                 playWebAudioTone(midiNote, 0.35);
             }
@@ -1079,6 +1057,7 @@
                 sendMidiNote(midiNote, 0.35);
             }
 
+            // Inserimento secondo modalità attiva
             if (state.inputMode === 'append') {
                 state.steps.push(newStep);
                 state.selectedStepIndex = state.steps.length - 1;
@@ -1132,21 +1111,18 @@
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
+        // --- 6. RENDERING NASTRO VERTICALE ELASTICO ---
         function renderTape() {
             const container = document.getElementById('tape-content-list');
-            if (!container) return;
             container.innerHTML = '';
 
             const total = state.steps.length;
-            const countEl = document.getElementById('tape-step-count');
-            if (countEl) countEl.textContent = total;
-            const barCountEl = document.getElementById('tape-bar-count');
-            if (barCountEl) {
-                const barCount = (total / state.stepsPerBar).toFixed(1);
-                barCountEl.textContent = `(~${barCount} battute)`;
-            }
+            document.getElementById('tape-step-count').textContent = total;
+            const barCount = (total / state.stepsPerBar).toFixed(1);
+            document.getElementById('tape-bar-count').textContent = `(~${barCount} battute)`;
 
             state.steps.forEach((step, idx) => {
+                // Banner Sezione Formale
                 if (step.section) {
                     const secBanner = document.createElement('div');
                     secBanner.className = 'w-full py-1 px-3 rounded-lg bg-purple-950/70 border border-purple-600/60 flex items-center justify-between text-xs my-1 font-bold text-purple-200';
@@ -1160,11 +1136,13 @@
                     container.appendChild(secBanner);
                 }
 
+                // Riga del singolo step temporale
                 const row = document.createElement('div');
                 const isSelected = (idx === state.selectedStepIndex);
                 row.className = `tape-step-row w-full p-2 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between gap-2 cursor-pointer ${isSelected ? 'tape-step-active' : 'hover:bg-zinc-850'}`;
                 row.dataset.index = idx;
 
+                // Numero step e tipo
                 let noteLabel = '• Pausa (Rest)';
                 let noteClass = 'text-zinc-500 font-mono-code';
                 if (step.type === 'note') {
@@ -1177,6 +1155,7 @@
                     noteClass = 'text-cyan-400 font-bold font-mono-code text-xs';
                 }
 
+                // Badge patch se presente
                 let patchBadge = '';
                 if (step.preset) {
                     patchBadge = `
@@ -1209,6 +1188,7 @@
 
                 container.appendChild(row);
 
+                // Linea di fine battuta visibile
                 if ((idx + 1) % state.stepsPerBar === 0) {
                     const barNum = Math.floor((idx + 1) / state.stepsPerBar);
                     const barDivider = document.createElement('div');
@@ -1225,34 +1205,35 @@
         function updateStepContextDrawer() {
             const idx = state.selectedStepIndex;
             const drawer = document.getElementById('step-context-drawer');
-            if (!drawer) return;
             if (state.steps.length === 0 || idx >= state.steps.length) {
                 drawer.classList.add('opacity-50', 'pointer-events-none');
                 return;
             }
             drawer.classList.remove('opacity-50', 'pointer-events-none');
 
-            const indexEl = document.getElementById('ctx-step-index');
-            if (indexEl) {
-                indexEl.textContent = (idx + 1).toString().padStart(2, '0');
-            }
+            const step = state.steps[idx];
+            document.getElementById('ctx-step-index').textContent = (idx + 1).toString().padStart(2, '0');
 
-            const activeSecEl = document.getElementById('active-section-label');
-            if (activeSecEl && state.steps[idx] && state.steps[idx].section) {
-                activeSecEl.textContent = state.steps[idx].section;
+            let desc = 'Pausa';
+            if (step.type === 'note') {
+                const oct = Math.floor(step.midi / 12) - 1;
+                desc = `${NOTE_NAMES_ALL[step.midi % 12]}${oct}`;
+            } else if (step.type === 'tie') {
+                desc = 'Legato (➔)';
             }
+            document.getElementById('ctx-step-desc').textContent = desc;
         }
 
+        // --- 7. TASTIERA TOUCH XL QUANTIZZATA ---
         function renderKeyboard() {
             const container = document.getElementById('keyboard-touch-container');
-            if (!container) return;
             container.innerHTML = '';
 
             const rootOffset = NOTE_NAMES_ALL.indexOf(state.rootNote);
             const intervals = SCALES[state.scaleMode] || SCALES.pentatonic_minor;
             const baseMidi = (state.currentOctave + 1) * 12 + rootOffset;
 
-            intervals.forEach((interval) => {
+            intervals.forEach((interval, keyIdx) => {
                 const noteMidi = baseMidi + interval;
                 const noteOct = Math.floor(noteMidi / 12) - 1;
                 const noteName = NOTE_NAMES_ALL[noteMidi % 12];
@@ -1284,6 +1265,7 @@
             });
         }
 
+        // --- 8. PARSER & GENERATORI: FORMATO MIDI (SMF 0), AUDIO WAV & JSON ---
         function createStandardMidiBinary(steps, bpm) {
             const ticksPerQuarter = 480;
             const microsecondsPerQuarter = Math.round(60000000 / bpm);
@@ -1302,13 +1284,14 @@
                 }
             }
 
+            // Set Tempo Event
             trackBytes.push(0x00, 0xFF, 0x51, 0x03);
             trackBytes.push((microsecondsPerQuarter >> 16) & 0xFF);
             trackBytes.push((microsecondsPerQuarter >> 8) & 0xFF);
             trackBytes.push(microsecondsPerQuarter & 0xFF);
 
             let pendingDelta = 0;
-            const stepTicks = Math.round(ticksPerQuarter * 0.25);
+            const stepTicks = Math.round(ticksPerQuarter * 0.25); // 16-th note
 
             let i = 0;
             while (i < steps.length) {
@@ -1327,9 +1310,11 @@
                     const noteOnTicks = Math.max(10, Math.round(totalTicks * 0.85));
                     const noteOffWait = totalTicks - noteOnTicks;
 
+                    // Note ON
                     writeVarLen(pendingDelta);
                     trackBytes.push(0x90 | (state.midiChannel & 0x0F), s.midi & 0x7F, 100);
 
+                    // Note OFF
                     writeVarLen(noteOnTicks);
                     trackBytes.push(0x80 | (state.midiChannel & 0x0F), s.midi & 0x7F, 0);
 
@@ -1342,7 +1327,7 @@
             }
 
             writeVarLen(pendingDelta);
-            trackBytes.push(0xFF, 0x2F, 0x00);
+            trackBytes.push(0xFF, 0x2F, 0x00); // End of Track
 
             const header = [
                 0x4D, 0x54, 0x68, 0x64,
@@ -1446,7 +1431,7 @@
             writeStr(8, 'WAVE');
             writeStr(12, 'fmt ');
             view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true);
+            view.setUint16(20, 1, true); // PCM
             view.setUint16(22, numChannels, true);
             view.setUint32(24, sampleRate, true);
             view.setUint32(28, sampleRate * blockAlign, true);
@@ -1516,7 +1501,8 @@
             setTimeout(() => URL.revokeObjectURL(url), 2000);
         }
 
-        let importTargetMode = 'replace';
+        // --- 9. IMPORTAZIONE CANZONI (JSON, ABC, MIDI) ---
+        let importTargetMode = 'replace'; // 'replace' | 'append'
 
         function loadSessionData(jsonObj) {
             if (importTargetMode === 'replace') {
@@ -1525,20 +1511,16 @@
 
             if (jsonObj.bpm) {
                 state.bpm = jsonObj.bpm;
-                const b1 = document.getElementById('display-bpm');
-                if (b1) b1.textContent = state.bpm;
-                const b2 = document.getElementById('bpm-modal-val');
-                if (b2) b2.textContent = state.bpm;
+                document.getElementById('display-bpm').textContent = state.bpm;
+                document.getElementById('bpm-modal-val').textContent = state.bpm;
             }
             if (jsonObj.meter || jsonObj.metadata?.meter) {
                 state.meter = jsonObj.meter || jsonObj.metadata.meter;
-                const m1 = document.getElementById('display-meter');
-                if (m1) m1.textContent = state.meter;
+                document.getElementById('display-meter').textContent = state.meter;
             }
             if (jsonObj.stepsPerBar) {
                 state.stepsPerBar = jsonObj.stepsPerBar;
-                const ms1 = document.getElementById('display-meter-steps');
-                if (ms1) ms1.textContent = `${state.stepsPerBar}st`;
+                document.getElementById('display-meter-steps').textContent = `${state.stepsPerBar}st`;
             }
             if (jsonObj.patch) {
                 state.currentPatch = Object.assign({}, state.currentPatch, jsonObj.patch);
@@ -1554,7 +1536,6 @@
             renderTape();
             updateStepContextDrawer();
             closeAllModals();
-            showToast('Brano caricato con successo', 'success');
         }
 
         function parseAbcIntoSteps(abcText) {
@@ -1587,7 +1568,6 @@
             renderTape();
             updateStepContextDrawer();
             closeAllModals();
-            showToast('Partitura ABC importata', 'success');
         }
 
         function loadDemoSong(type) {
@@ -1632,8 +1612,7 @@
                     stepsPerBar: 12,
                     patch: { osc: 64, name: 'Waves Ambient', cutoff: 75, resonance: 10 },
                     steps: [
-                        { type: 'note', midi: 48, section: 'Waltz Theme', preset: { osc: 64, name: 'Waves Ambient' } },
-                        { type: 'tie' }, { type: 'rest' }, { type: 'rest' },
+                        { type: 'note', midi: 48, section: 'Waltz Theme' }, { type: 'tie' }, { type: 'rest' }, { type: 'rest' },
                         { type: 'note', midi: 60 }, { type: 'tie' }, { type: 'rest' }, { type: 'rest' },
                         { type: 'note', midi: 64 }, { type: 'tie' }, { type: 'rest' }, { type: 'rest' },
                         { type: 'note', midi: 53 }, { type: 'tie' }, { type: 'rest' }, { type: 'rest' },
@@ -1644,6 +1623,7 @@
             }
         }
 
+        // --- 10. GESTIONE MODALI E INTERAZIONI ---
         function openModal(id) {
             const el = document.getElementById(id);
             if (el) el.classList.remove('hidden');
@@ -1655,11 +1635,14 @@
             });
         }
 
+        // --- 11. INIZIALIZZAZIONE & EVENT LISTENERS ---
         window.addEventListener('DOMContentLoaded', () => {
+            // Demo iniziale di partenza
             loadDemoSong('synthwave');
             renderKeyboard();
             initWebMIDI();
 
+            // Chiusura Modali
             document.querySelectorAll('.modal-close-btn').forEach(b => b.addEventListener('click', closeAllModals));
             document.querySelectorAll('#modal-bpm, #modal-meter, #modal-section, #modal-patch, #modal-import, #modal-settings').forEach(m => {
                 m.addEventListener('click', (e) => {
@@ -1667,56 +1650,42 @@
                 });
             });
 
-            const btnBpm = document.getElementById('btn-bpm-modal');
-            if (btnBpm) btnBpm.addEventListener('click', () => openModal('modal-bpm'));
-            
-            const btnMeter = document.getElementById('btn-meter-modal');
-            if (btnMeter) btnMeter.addEventListener('click', () => openModal('modal-meter'));
-
-            const btnImport = document.getElementById('btn-open-import');
-            if (btnImport) btnImport.addEventListener('click', () => openModal('modal-import'));
-
-            const btnSection = document.getElementById('btn-open-section-modal');
-            if (btnSection) btnSection.addEventListener('click', () => openModal('modal-section'));
-
-            const btnPatchDeck = document.getElementById('btn-open-patch-deck');
-            if (btnPatchDeck) btnPatchDeck.addEventListener('click', () => {
-                const badge = document.getElementById('patch-modal-step-idx');
-                if (badge) badge.textContent = `#${(state.selectedStepIndex + 1).toString().padStart(2, '0')}`;
+            // Apertura Modali
+            document.getElementById('btn-bpm-modal').addEventListener('click', () => openModal('modal-bpm'));
+            document.getElementById('btn-meter-modal').addEventListener('click', () => openModal('modal-meter'));
+            document.getElementById('btn-open-import').addEventListener('click', () => openModal('modal-import'));
+            document.getElementById('btn-open-section-modal').addEventListener('click', () => openModal('modal-section'));
+            document.getElementById('btn-open-patch-deck').addEventListener('click', () => {
+                document.getElementById('patch-modal-step-idx').textContent = `#${(state.selectedStepIndex + 1).toString().padStart(2, '0')}`;
                 openModal('modal-patch');
             });
+            document.getElementById('btn-settings-modal').addEventListener('click', () => openModal('modal-settings'));
 
-            const btnSettings = document.getElementById('btn-settings-modal');
-            if (btnSettings) btnSettings.addEventListener('click', () => openModal('modal-settings'));
-
-            const btnPlay = document.getElementById('btn-play-pause');
-            if (btnPlay) btnPlay.addEventListener('click', () => {
+            // Play / Pause & Loop Toggle
+            document.getElementById('btn-play-pause').addEventListener('click', () => {
                 if (isPlaying) stopPlayback();
                 else startPlayback();
             });
 
-            const btnLoop = document.getElementById('btn-loop-toggle');
-            if (btnLoop) btnLoop.addEventListener('click', () => {
+            document.getElementById('btn-loop-toggle').addEventListener('click', () => {
                 state.isLooping = !state.isLooping;
+                const btn = document.getElementById('btn-loop-toggle');
                 const lbl = document.getElementById('loop-mode-label');
                 if (state.isLooping) {
-                    btnLoop.className = 'h-9 px-2.5 rounded-xl bg-orange-600/20 border border-orange-500 text-orange-400 font-bold text-xs flex items-center gap-1 transition active:scale-95 shadow';
-                    if (lbl) lbl.textContent = 'LOOP';
-                    showToast('Modalità Loop Continuo attiva');
+                    btn.className = 'h-9 px-2.5 rounded-xl bg-orange-600/20 border border-orange-500 text-orange-400 font-bold text-xs flex items-center gap-1 transition active:scale-95 shadow';
+                    lbl.textContent = 'LOOP';
                 } else {
-                    btnLoop.className = 'h-9 px-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-zinc-400 font-bold text-xs flex items-center gap-1 transition active:scale-95 shadow';
-                    if (lbl) lbl.textContent = '1-SHOT';
-                    showToast('Modalità 1-Shot (Esecuzione singola)');
+                    btn.className = 'h-9 px-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-zinc-400 font-bold text-xs flex items-center gap-1 transition active:scale-95 shadow';
+                    lbl.textContent = '1-SHOT';
                 }
             });
 
-            const btnInsStart = document.getElementById('btn-insert-at-start');
-            if (btnInsStart) btnInsStart.addEventListener('click', () => {
+            // Strumenti nastro: Taglia, Raddoppia, Svuota, Inizio
+            document.getElementById('btn-insert-at-start').addEventListener('click', () => {
                 state.steps.unshift({ type: 'note', midi: 60, preset: null, section: null });
                 state.selectedStepIndex = 0;
                 renderTape();
                 updateStepContextDrawer();
-                showToast('Step aggiunto in testa (#01)');
             });
 
             const topBannerBtn = document.getElementById('btn-insert-top-banner');
@@ -1726,37 +1695,35 @@
                     state.selectedStepIndex = 0;
                     renderTape();
                     updateStepContextDrawer();
-                    showToast('Step aggiunto in testa (#01)');
                 });
             }
 
-            const btnCrop = document.getElementById('btn-crop-from-here');
-            if (btnCrop) btnCrop.addEventListener('click', () => {
-                state.steps = state.steps.slice(0, state.selectedStepIndex + 1);
-                renderTape();
-                updateStepContextDrawer();
-                showToast(`Nastro troncato a ${state.steps.length} step`);
+            document.getElementById('btn-crop-from-here').addEventListener('click', () => {
+                if (confirm('Vuoi tagliare tutti gli step successivi a quello attivo?')) {
+                    state.steps = state.steps.slice(0, state.selectedStepIndex + 1);
+                    renderTape();
+                    updateStepContextDrawer();
+                }
             });
 
-            const btnDouble = document.getElementById('btn-double-tape');
-            if (btnDouble) btnDouble.addEventListener('click', () => {
+            document.getElementById('btn-double-tape').addEventListener('click', () => {
                 const clone = JSON.parse(JSON.stringify(state.steps));
                 state.steps = state.steps.concat(clone);
                 renderTape();
                 updateStepContextDrawer();
-                showToast(`Sequenza raddoppiata (${state.steps.length} step)`);
             });
 
-            const btnClear = document.getElementById('btn-clear-tape');
-            if (btnClear) btnClear.addEventListener('click', () => {
-                stopPlayback();
-                state.steps = [{ type: 'note', midi: 60, preset: null, section: 'Inizio' }];
-                state.selectedStepIndex = 0;
-                renderTape();
-                updateStepContextDrawer();
-                showToast('Nastro svuotato');
+            document.getElementById('btn-clear-tape').addEventListener('click', () => {
+                if (confirm('Svuotare interamente il nastro?')) {
+                    stopPlayback();
+                    state.steps = [{ type: 'note', midi: 60, preset: null, section: 'Inizio' }];
+                    state.selectedStepIndex = 0;
+                    renderTape();
+                    updateStepContextDrawer();
+                }
             });
 
+            // Copia Intera Battuta
             const copyBarBtn = document.getElementById('btn-copy-bar');
             if (copyBarBtn) {
                 copyBarBtn.addEventListener('click', () => {
@@ -1766,11 +1733,11 @@
                         state.clipboardStep = barSteps;
                         copyBarBtn.textContent = '✓ Copiata!';
                         setTimeout(() => copyBarBtn.innerHTML = '📋 Copia Battuta', 1200);
-                        showToast(`Copiata battuta intera (${barSteps.length} step)`);
                     }
                 });
             }
 
+            // Modalità Input Note (Allunga / Inserisci / Sovrascrivi)
             const modeBtns = {
                 append: document.getElementById('mode-append'),
                 insert: document.getElementById('mode-insert'),
@@ -1780,42 +1747,31 @@
             function setInputMode(mode) {
                 state.inputMode = mode;
                 Object.keys(modeBtns).forEach(k => {
-                    if (modeBtns[k]) {
-                        if (k === mode) {
-                            modeBtns[k].className = 'flex-1 py-1.5 rounded-lg bg-orange-600 text-white shadow text-center transition';
-                        } else {
-                            modeBtns[k].className = 'flex-1 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 text-center transition';
-                        }
+                    if (k === mode) {
+                        modeBtns[k].className = 'flex-1 py-1.5 rounded-lg bg-orange-600 text-white shadow text-center transition';
+                    } else {
+                        modeBtns[k].className = 'flex-1 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 text-center transition';
                     }
                 });
             }
 
-            if (modeBtns.append) modeBtns.append.addEventListener('click', () => setInputMode('append'));
-            if (modeBtns.insert) modeBtns.insert.addEventListener('click', () => setInputMode('insert'));
-            if (modeBtns.overwrite) modeBtns.overwrite.addEventListener('click', () => setInputMode('overwrite'));
+            modeBtns.append.addEventListener('click', () => setInputMode('append'));
+            modeBtns.insert.addEventListener('click', () => setInputMode('insert'));
+            modeBtns.overwrite.addEventListener('click', () => setInputMode('overwrite'));
 
-            const bRest = document.getElementById('btn-input-rest');
-            if (bRest) bRest.addEventListener('click', handleRestInput);
-            
-            const bTie = document.getElementById('btn-input-tie');
-            if (bTie) bTie.addEventListener('click', handleTieInput);
-            
-            const bPaste = document.getElementById('btn-input-paste');
-            if (bPaste) bPaste.addEventListener('click', () => {
+            // Smart Deck Buttons
+            document.getElementById('btn-input-rest').addEventListener('click', handleRestInput);
+            document.getElementById('btn-input-tie').addEventListener('click', handleTieInput);
+            document.getElementById('btn-input-paste').addEventListener('click', () => {
                 if (state.clipboardStep) {
                     if (Array.isArray(state.clipboardStep)) {
                         state.clipboardStep.forEach(s => insertStepByMode(JSON.parse(JSON.stringify(s))));
                     } else {
                         insertStepByMode(JSON.parse(JSON.stringify(state.clipboardStep)));
                     }
-                    showToast('Step incollati con successo');
-                } else {
-                    showToast('Appunti vuoti: copia prima uno step', 'error');
                 }
             });
-
-            const bBsp = document.getElementById('btn-input-backspace');
-            if (bBsp) bBsp.addEventListener('click', () => {
+            document.getElementById('btn-input-backspace').addEventListener('click', () => {
                 if (state.steps.length > 1) {
                     state.steps.splice(state.selectedStepIndex, 1);
                     state.selectedStepIndex = Math.max(0, state.selectedStepIndex - 1);
@@ -1824,40 +1780,32 @@
                 }
             });
 
-            const selRoot = document.getElementById('select-root-note');
-            if (selRoot) selRoot.addEventListener('change', (e) => {
+            // Selettori Scala, Root & Ottave
+            document.getElementById('select-root-note').addEventListener('change', (e) => {
                 state.rootNote = e.target.value;
                 renderKeyboard();
             });
-
-            const selScale = document.getElementById('select-scale-mode');
-            if (selScale) selScale.addEventListener('change', (e) => {
+            document.getElementById('select-scale-mode').addEventListener('change', (e) => {
                 state.scaleMode = e.target.value;
                 renderKeyboard();
             });
-
-            const bOctDown = document.getElementById('btn-octave-down');
-            if (bOctDown) bOctDown.addEventListener('click', () => {
+            document.getElementById('btn-octave-down').addEventListener('click', () => {
                 if (state.currentOctave > 1) {
                     state.currentOctave--;
-                    const d = document.getElementById('display-octave');
-                    if (d) d.textContent = `O${state.currentOctave}`;
+                    document.getElementById('display-octave').textContent = `O${state.currentOctave}`;
                     renderKeyboard();
                 }
             });
-
-            const bOctUp = document.getElementById('btn-octave-up');
-            if (bOctUp) bOctUp.addEventListener('click', () => {
+            document.getElementById('btn-octave-up').addEventListener('click', () => {
                 if (state.currentOctave < 6) {
                     state.currentOctave++;
-                    const d = document.getElementById('display-octave');
-                    if (d) d.textContent = `O${state.currentOctave}`;
+                    document.getElementById('display-octave').textContent = `O${state.currentOctave}`;
                     renderKeyboard();
                 }
             });
 
-            const ctxUp = document.getElementById('ctx-btn-up');
-            if (ctxUp) ctxUp.addEventListener('click', () => {
+            // Context Drawer Listeners
+            document.getElementById('ctx-btn-up').addEventListener('click', () => {
                 const i = state.selectedStepIndex;
                 if (i > 0) {
                     const tmp = state.steps[i];
@@ -1868,9 +1816,7 @@
                     updateStepContextDrawer();
                 }
             });
-
-            const ctxDown = document.getElementById('ctx-btn-down');
-            if (ctxDown) ctxDown.addEventListener('click', () => {
+            document.getElementById('ctx-btn-down').addEventListener('click', () => {
                 const i = state.selectedStepIndex;
                 if (i < state.steps.length - 1) {
                     const tmp = state.steps[i];
@@ -1881,43 +1827,33 @@
                     updateStepContextDrawer();
                 }
             });
-
-            const ctxCopy = document.getElementById('ctx-btn-copy');
-            if (ctxCopy) ctxCopy.addEventListener('click', () => {
+            document.getElementById('ctx-btn-copy').addEventListener('click', () => {
                 state.clipboardStep = state.steps[state.selectedStepIndex];
-                ctxCopy.textContent = '✓';
-                setTimeout(() => ctxCopy.textContent = '📋', 1000);
-                showToast(`Step #${state.selectedStepIndex + 1} copiato`);
+                const btn = document.getElementById('ctx-btn-copy');
+                btn.textContent = '✓';
+                setTimeout(() => btn.textContent = '📋', 1000);
             });
-
-            const ctxAdd = document.getElementById('ctx-btn-add-after');
-            if (ctxAdd) ctxAdd.addEventListener('click', () => {
+            document.getElementById('ctx-btn-add-after').addEventListener('click', () => {
                 state.steps.splice(state.selectedStepIndex + 1, 0, { type: 'note', midi: 60, preset: null, section: null });
                 state.selectedStepIndex++;
                 renderTape();
                 updateStepContextDrawer();
-                showToast('Nuovo step inserito');
             });
-
-            const ctxDel = document.getElementById('ctx-btn-delete');
-            if (ctxDel) ctxDel.addEventListener('click', () => {
+            document.getElementById('ctx-btn-delete').addEventListener('click', () => {
                 if (state.steps.length > 1) {
                     state.steps.splice(state.selectedStepIndex, 1);
                     state.selectedStepIndex = Math.max(0, state.selectedStepIndex - 1);
                     renderTape();
                     updateStepContextDrawer();
-                    showToast('Step eliminato');
                 }
             });
-
-            const ctxPatch = document.getElementById('ctx-btn-patch');
-            if (ctxPatch) ctxPatch.addEventListener('click', () => {
-                const badge = document.getElementById('patch-modal-step-idx');
-                if (badge) badge.textContent = `#${(state.selectedStepIndex + 1).toString().padStart(2, '0')}`;
+            document.getElementById('ctx-btn-patch').addEventListener('click', () => {
+                document.getElementById('patch-modal-step-idx').textContent = `#${(state.selectedStepIndex + 1).toString().padStart(2, '0')}`;
                 openModal('modal-patch');
             });
 
-            let draftPatch = { osc: 76, name: 'Volca Acid Bass', cutoff: 85, resonance: 25 };
+            // Modale Patch Mid-Song Selection
+            let draftPatch = { osc: 64, name: 'Waves Ambient', cutoff: 65, resonance: 15 };
 
             document.querySelectorAll('.patch-choice-btn').forEach(b => {
                 b.addEventListener('click', () => {
@@ -1928,44 +1864,33 @@
 
                     draftPatch = { osc, name, cutoff, resonance: res };
                     
-                    const oscSel = document.getElementById('patch-modal-osc-select');
-                    if (oscSel) oscSel.value = String(osc);
-                    const cSlider = document.getElementById('patch-slider-cutoff');
-                    if (cSlider) cSlider.value = cutoff;
-                    const cVal = document.getElementById('patch-val-cutoff');
-                    if (cVal) cVal.textContent = cutoff;
-                    const rSlider = document.getElementById('patch-slider-res');
-                    if (rSlider) rSlider.value = res;
-                    const rVal = document.getElementById('patch-val-res');
-                    if (rVal) rVal.textContent = res;
+                    document.getElementById('patch-modal-osc-select').value = String(osc);
+                    document.getElementById('patch-slider-cutoff').value = cutoff;
+                    document.getElementById('patch-val-cutoff').textContent = cutoff;
+                    document.getElementById('patch-slider-res').value = res;
+                    document.getElementById('patch-val-res').textContent = res;
 
                     playWebAudioTone(60, 0.35, draftPatch);
                 });
             });
 
-            const oscSelect = document.getElementById('patch-modal-osc-select');
-            if (oscSelect) oscSelect.addEventListener('change', (e) => {
+            document.getElementById('patch-modal-osc-select').addEventListener('change', (e) => {
                 draftPatch.osc = parseInt(e.target.value, 10);
                 draftPatch.name = e.target.options[e.target.selectedIndex].text;
                 playWebAudioTone(60, 0.3, draftPatch);
             });
 
-            const cSlider = document.getElementById('patch-slider-cutoff');
-            if (cSlider) cSlider.addEventListener('input', (e) => {
+            document.getElementById('patch-slider-cutoff').addEventListener('input', (e) => {
                 draftPatch.cutoff = parseInt(e.target.value, 10);
-                const v = document.getElementById('patch-val-cutoff');
-                if (v) v.textContent = draftPatch.cutoff;
+                document.getElementById('patch-val-cutoff').textContent = draftPatch.cutoff;
             });
 
-            const rSlider = document.getElementById('patch-slider-res');
-            if (rSlider) rSlider.addEventListener('input', (e) => {
+            document.getElementById('patch-slider-res').addEventListener('input', (e) => {
                 draftPatch.resonance = parseInt(e.target.value, 10);
-                const v = document.getElementById('patch-val-res');
-                if (v) v.textContent = draftPatch.resonance;
+                document.getElementById('patch-val-res').textContent = draftPatch.resonance;
             });
 
-            const bApplyPatch = document.getElementById('btn-apply-step-patch');
-            if (bApplyPatch) bApplyPatch.addEventListener('click', () => {
+            document.getElementById('btn-apply-step-patch').addEventListener('click', () => {
                 if (state.steps[state.selectedStepIndex]) {
                     state.steps[state.selectedStepIndex].preset = Object.assign({}, draftPatch);
                     state.currentPatch = Object.assign({}, state.currentPatch, draftPatch);
@@ -1973,27 +1898,26 @@
                     playWebAudioTone(60, 0.4, state.currentPatch);
                     renderTape();
                     updateStepContextDrawer();
-                    showToast(`Patch "${draftPatch.name}" applicata allo step #${state.selectedStepIndex + 1}`, 'success');
                 }
                 closeAllModals();
             });
 
-            const bRemovePatch = document.getElementById('btn-remove-step-patch');
-            if (bRemovePatch) bRemovePatch.addEventListener('click', () => {
+            document.getElementById('btn-remove-step-patch').addEventListener('click', () => {
                 if (state.steps[state.selectedStepIndex]) {
                     state.steps[state.selectedStepIndex].preset = null;
-                    renderTape();
-                    showToast(`Preset rimosso dallo step #${state.selectedStepIndex + 1}`);
                 }
+                renderTape();
                 closeAllModals();
             });
 
+            // Modale Sezione Formale
             document.querySelectorAll('.add-section-choice-btn').forEach(b => {
                 b.addEventListener('click', () => {
                     const sec = b.dataset.section;
                     const stepsCount = parseInt(b.dataset.steps, 10) || 16;
                     const osc = parseInt(b.dataset.osc, 10) || 76;
 
+                    // Aggiunge la sezione completa
                     for (let s = 0; s < stepsCount; s++) {
                         const isFirst = (s === 0);
                         state.steps.push({
@@ -2007,41 +1931,33 @@
                     renderTape();
                     updateStepContextDrawer();
                     closeAllModals();
-                    showToast(`Sezione "${sec}" aggiunta (${stepsCount} step)`, 'success');
                 });
             });
 
+            // Modale Metrica
             document.querySelectorAll('.meter-choice-btn').forEach(b => {
                 b.addEventListener('click', () => {
                     state.meter = b.dataset.meter;
                     state.stepsPerBar = parseInt(b.dataset.steps, 10);
-                    const dm = document.getElementById('display-meter');
-                    if (dm) dm.textContent = state.meter;
-                    const dms = document.getElementById('display-meter-steps');
-                    if (dms) dms.textContent = `${state.stepsPerBar}st`;
-                    const csd = document.getElementById('custom-steps-display');
-                    if (csd) csd.textContent = state.stepsPerBar;
-                    const css = document.getElementById('custom-steps-slider');
-                    if (css) css.value = state.stepsPerBar;
+                    document.getElementById('display-meter').textContent = state.meter;
+                    document.getElementById('display-meter-steps').textContent = `${state.stepsPerBar}st`;
+                    document.getElementById('custom-steps-display').textContent = state.stepsPerBar;
+                    document.getElementById('custom-steps-slider').value = state.stepsPerBar;
                     renderTape();
                     closeAllModals();
-                    showToast(`Metrica impostata a ${state.meter} (${state.stepsPerBar} step per battuta)`);
                 });
             });
 
-            const customStepsSlider = document.getElementById('custom-steps-slider');
-            if (customStepsSlider) customStepsSlider.addEventListener('input', (e) => {
+            document.getElementById('custom-steps-slider').addEventListener('input', (e) => {
                 state.stepsPerBar = parseInt(e.target.value, 10);
-                const csd = document.getElementById('custom-steps-display');
-                if (csd) csd.textContent = state.stepsPerBar;
-                const dms = document.getElementById('display-meter-steps');
-                if (dms) dms.textContent = `${state.stepsPerBar}st`;
+                document.getElementById('custom-steps-display').textContent = state.stepsPerBar;
+                document.getElementById('display-meter-steps').textContent = `${state.stepsPerBar}st`;
                 renderTape();
             });
 
+            // Modale BPM & Tap Tempo
             let tapTimes = [];
-            const btnTapTempo = document.getElementById('btn-tap-tempo-xl');
-            if (btnTapTempo) btnTapTempo.addEventListener('click', () => {
+            document.getElementById('btn-tap-tempo-xl').addEventListener('click', () => {
                 const now = performance.now();
                 tapTimes.push(now);
                 if (tapTimes.length > 4) tapTimes.shift();
@@ -2053,101 +1969,82 @@
                     const calcBpm = Math.max(40, Math.min(240, Math.round(60000 / avgMs)));
 
                     state.bpm = calcBpm;
-                    const db = document.getElementById('display-bpm');
-                    if (db) db.textContent = state.bpm;
-                    const bmv = document.getElementById('bpm-modal-val');
-                    if (bmv) bmv.textContent = state.bpm;
-                    const bms = document.getElementById('bpm-modal-slider');
-                    if (bms) bms.value = state.bpm;
+                    document.getElementById('display-bpm').textContent = state.bpm;
+                    document.getElementById('bpm-modal-val').textContent = state.bpm;
+                    document.getElementById('bpm-modal-slider').value = state.bpm;
                 }
             });
 
-            const bpmSlider = document.getElementById('bpm-modal-slider');
-            if (bpmSlider) bpmSlider.addEventListener('input', (e) => {
+            document.getElementById('bpm-modal-slider').addEventListener('input', (e) => {
                 state.bpm = parseInt(e.target.value, 10);
-                const db = document.getElementById('display-bpm');
-                if (db) db.textContent = state.bpm;
-                const bmv = document.getElementById('bpm-modal-val');
-                if (bmv) bmv.textContent = state.bpm;
+                document.getElementById('display-bpm').textContent = state.bpm;
+                document.getElementById('bpm-modal-val').textContent = state.bpm;
             });
 
             document.querySelectorAll('.bpm-step-btn').forEach(b => {
                 b.addEventListener('click', () => {
                     const delta = parseInt(b.dataset.delta, 10);
                     state.bpm = Math.max(40, Math.min(240, state.bpm + delta));
-                    const db = document.getElementById('display-bpm');
-                    if (db) db.textContent = state.bpm;
-                    const bmv = document.getElementById('bpm-modal-val');
-                    if (bmv) bmv.textContent = state.bpm;
-                    const bms = document.getElementById('bpm-modal-slider');
-                    if (bms) bms.value = state.bpm;
+                    document.getElementById('display-bpm').textContent = state.bpm;
+                    document.getElementById('bpm-modal-val').textContent = state.bpm;
+                    document.getElementById('bpm-modal-slider').value = state.bpm;
                 });
             });
 
             document.querySelectorAll('.bpm-preset-btn').forEach(b => {
                 b.addEventListener('click', () => {
                     state.bpm = parseInt(b.dataset.bpm, 10);
-                    const db = document.getElementById('display-bpm');
-                    if (db) db.textContent = state.bpm;
-                    const bmv = document.getElementById('bpm-modal-val');
-                    if (bmv) bmv.textContent = state.bpm;
-                    const bms = document.getElementById('bpm-modal-slider');
-                    if (bms) bms.value = state.bpm;
-                    showToast(`BPM impostato a ${state.bpm}`);
+                    document.getElementById('display-bpm').textContent = state.bpm;
+                    document.getElementById('bpm-modal-val').textContent = state.bpm;
+                    document.getElementById('bpm-modal-slider').value = state.bpm;
                 });
             });
 
+            // Modale Import: File Picker, Demo Songs & Text
             const browseBtn = document.getElementById('btn-browse-file');
             const fileInput = document.getElementById('import-file-input');
 
-            if (browseBtn && fileInput) {
-                browseBtn.addEventListener('click', () => fileInput.click());
-                fileInput.addEventListener('change', async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
+            browseBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
 
-                    const filename = file.name.toLowerCase();
-                    if (filename.endsWith('.mid') || filename.endsWith('.midi')) {
-                        const buf = await file.arrayBuffer();
-                        parseMidiBinaryFile(new Uint8Array(buf));
-                    } else {
-                        const text = await file.text();
-                        try {
-                            const json = JSON.parse(text);
-                            loadSessionData(json);
-                        } catch (err) {
-                            parseAbcIntoSteps(text);
-                        }
+                const filename = file.name.toLowerCase();
+                if (filename.endsWith('.mid') || filename.endsWith('.midi')) {
+                    // File MIDI standard
+                    const buf = await file.arrayBuffer();
+                    parseMidiBinaryFile(new Uint8Array(buf));
+                } else {
+                    // Testo ABC o JSON
+                    const text = await file.text();
+                    try {
+                        const json = JSON.parse(text);
+                        loadSessionData(json);
+                    } catch (err) {
+                        parseAbcIntoSteps(text);
                     }
-                    fileInput.value = '';
-                });
-            }
+                }
+                fileInput.value = '';
+            });
 
-            const bReplace = document.getElementById('import-mode-replace');
-            const bAppend = document.getElementById('import-mode-append');
-            if (bReplace && bAppend) {
-                bReplace.addEventListener('click', () => {
-                    importTargetMode = 'replace';
-                    bReplace.className = 'py-1.5 rounded-lg bg-orange-600 text-white font-bold transition';
-                    bAppend.className = 'py-1.5 rounded-lg bg-zinc-950 text-zinc-400 border border-zinc-800 font-bold transition';
-                });
+            document.getElementById('import-mode-replace').addEventListener('click', () => {
+                importTargetMode = 'replace';
+                document.getElementById('import-mode-replace').className = 'py-1.5 rounded-lg bg-orange-600 text-white font-bold transition';
+                document.getElementById('import-mode-append').className = 'py-1.5 rounded-lg bg-zinc-950 text-zinc-400 border border-zinc-800 font-bold transition';
+            });
 
-                bAppend.addEventListener('click', () => {
-                    importTargetMode = 'append';
-                    bAppend.className = 'py-1.5 rounded-lg bg-orange-600 text-white font-bold transition';
-                    bReplace.className = 'py-1.5 rounded-lg bg-zinc-950 text-zinc-400 border border-zinc-800 font-bold transition';
-                });
-            }
+            document.getElementById('import-mode-append').addEventListener('click', () => {
+                importTargetMode = 'append';
+                document.getElementById('import-mode-append').className = 'py-1.5 rounded-lg bg-orange-600 text-white font-bold transition';
+                document.getElementById('import-mode-replace').className = 'py-1.5 rounded-lg bg-zinc-950 text-zinc-400 border border-zinc-800 font-bold transition';
+            });
 
             document.querySelectorAll('.demo-song-btn').forEach(b => {
                 b.addEventListener('click', () => loadDemoSong(b.dataset.demo));
             });
 
-            const bImportText = document.getElementById('btn-import-text');
-            if (bImportText) bImportText.addEventListener('click', () => {
-                const area = document.getElementById('import-text-area');
-                if (!area) return;
-                const val = area.value.trim();
+            document.getElementById('btn-import-text').addEventListener('click', () => {
+                const val = document.getElementById('import-text-area').value.trim();
                 if (!val) return;
                 try {
                     const json = JSON.parse(val);
@@ -2157,6 +2054,7 @@
                 }
             });
 
+            // Modale Impostazioni & Export
             document.querySelectorAll('.audio-target-btn').forEach(b => {
                 b.addEventListener('click', () => {
                     state.audioTarget = b.dataset.target;
@@ -2165,53 +2063,46 @@
                             ? 'audio-target-btn py-1.5 rounded-lg bg-orange-600 text-white font-bold'
                             : 'audio-target-btn py-1.5 rounded-lg bg-zinc-950 text-zinc-400 border border-zinc-800';
                     });
-                    showToast(`Uscita audio: ${b.textContent}`);
                 });
             });
 
-            const selMidiOut = document.getElementById('settings-midi-output');
-            if (selMidiOut) selMidiOut.addEventListener('change', (e) => {
+            document.getElementById('settings-midi-output').addEventListener('change', (e) => {
                 if (midiAccess) selectedMidiOutput = midiAccess.outputs.get(e.target.value);
             });
 
-            const selMidiCh = document.getElementById('settings-midi-channel');
-            if (selMidiCh) selMidiCh.addEventListener('change', (e) => {
+            document.getElementById('settings-midi-channel').addEventListener('change', (e) => {
                 state.midiChannel = parseInt(e.target.value, 10) || 0;
             });
 
-            const bRefMidi = document.getElementById('btn-refresh-midi');
-            if (bRefMidi) bRefMidi.addEventListener('click', refreshMidiPorts);
+            document.getElementById('btn-refresh-midi').addEventListener('click', refreshMidiPorts);
+            document.getElementById('btn-panic-all').addEventListener('click', panic);
 
-            const bPanic = document.getElementById('btn-panic-all');
-            if (bPanic) bPanic.addEventListener('click', panic);
-
-            const bExpMidi = document.getElementById('btn-export-midi');
-            if (bExpMidi) bExpMidi.addEventListener('click', () => {
+            // Esportazione MIDI (.MID)
+            document.getElementById('btn-export-midi').addEventListener('click', () => {
                 const midiBlob = createStandardMidiBinary(state.steps, state.bpm);
                 downloadBlob(midiBlob, `nts1_linear_track_${Date.now().toString().slice(-4)}.mid`);
-                showToast('File MIDI scaricato (.MID)', 'success');
             });
 
-            const bExpWav = document.getElementById('btn-export-wav');
-            if (bExpWav) bExpWav.addEventListener('click', async () => {
-                const orig = bExpWav.innerHTML;
-                bExpWav.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Rendering...';
-                bExpWav.disabled = true;
+            // Esportazione Audio WAV Render
+            document.getElementById('btn-export-wav').addEventListener('click', async () => {
+                const btn = document.getElementById('btn-export-wav');
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Rendering WAV...';
+                btn.disabled = true;
 
                 try {
                     const wavBlob = await renderOfflineWavAudio(state.steps, state.bpm);
                     downloadBlob(wavBlob, `nts1_linear_audio_${Date.now().toString().slice(-4)}.wav`);
-                    showToast('Audio WAV scaricato (.WAV)', 'success');
                 } catch (err) {
-                    showToast('Errore durante il rendering audio', 'error');
+                    alert('Errore durante il rendering audio');
                 } finally {
-                    bExpWav.innerHTML = orig;
-                    bExpWav.disabled = false;
+                    btn.innerHTML = orig;
+                    btn.disabled = false;
                 }
             });
 
-            const bExpJson = document.getElementById('btn-export-json');
-            if (bExpJson) bExpJson.addEventListener('click', () => {
+            // Esportazione Pacchetto (.JSON)
+            document.getElementById('btn-export-json').addEventListener('click', () => {
                 const bundle = {
                     generator: "Korg NTS-1 Suite - Mobile Linear Sequencer",
                     version: "1.9.0",
@@ -2229,47 +2120,41 @@
                 };
                 const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
                 downloadBlob(blob, `nts1_session_${Date.now().toString().slice(-4)}.json`);
-                showToast('Sessione JSON scaricata (.JSON)', 'success');
             });
 
-            const bExpAbc = document.getElementById('btn-export-abc');
-            if (bExpAbc) bExpAbc.addEventListener('click', async () => {
+            // Copia Formato ABC
+            document.getElementById('btn-export-abc').addEventListener('click', async () => {
                 const abc = generateAbcFromSteps();
                 try {
-                    const tempText = document.createElement('textarea');
-                    tempText.value = abc;
-                    document.body.appendChild(tempText);
-                    tempText.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempText);
-
-                    const orig = bExpAbc.innerHTML;
-                    bExpAbc.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copiato!';
-                    setTimeout(() => bExpAbc.innerHTML = orig, 1800);
-                    showToast('Partitura ABC copiata negli appunti!', 'success');
+                    await navigator.clipboard.writeText(abc);
+                    const btn = document.getElementById('btn-export-abc');
+                    const orig = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copiato!';
+                    setTimeout(() => btn.innerHTML = orig, 1800);
                 } catch (e) {
-                    showToast('Errore durante la copia negli appunti', 'error');
+                    alert('Spartito ABC:\n\n' + abc);
                 }
             });
         });
 
+        // Parser MIDI Binario Semplificato per SMF 0
         function parseMidiBinaryFile(bytes) {
             if (importTargetMode === 'replace') state.steps = [];
             try {
+                // Ricerca tracce note base
                 for (let i = 0; i < bytes.length - 3; i++) {
                     const status = bytes[i] & 0xF0;
-                    if (status === 0x90 && bytes[i + 2] > 0) {
+                    if (status === 0x90 && bytes[i + 2] > 0) { // Note ON con velocity
                         const note = bytes[i + 1];
                         state.steps.push({ type: 'note', midi: note, preset: null, section: null });
-                        if (state.steps.length >= 64) break;
+                        if (state.steps.length >= 64) break; // Limite di sicurezza
                     }
                 }
                 renderTape();
                 updateStepContextDrawer();
                 closeAllModals();
-                showToast(`MIDI importato (${state.steps.length} note caricate)`, 'success');
             } catch (err) {
-                showToast('Impossibile interpretare il file MIDI', 'error');
+                alert('Impossibile interpretare il file MIDI.');
             }
         }
     </script>
