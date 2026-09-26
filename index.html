@@ -35,9 +35,9 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">KORG NTS-1 SUITE</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">HUB v1.2.0</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">HUB v1.3.0</span>
                 </div>
-                <p class="text-xs text-zinc-400">Dashboard di Sistema, Routing Micro-App (7 Moduli), Diagnostica MIDI & Guida Hardware</p>
+                <p class="text-xs text-zinc-400">Dashboard di Sistema, Routing Micro-App (8 Moduli), Diagnostica MIDI & Guida Hardware</p>
             </div>
         </div>
 
@@ -56,11 +56,11 @@
     <!-- Main Grid Content -->
     <main class="max-w-7xl mx-auto w-full flex flex-col gap-6 flex-grow">
 
-        <!-- 1. APP LAUNCHER GRID (7 MICRO-APPS) -->
+        <!-- 1. APP LAUNCHER GRID (8 MICRO-APPS) -->
         <section class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
                 <h2 class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-rocket text-orange-400"></i> Micro-Web App della Suite (7 Moduli)
+                    <i class="fa-solid fa-rocket text-orange-400"></i> Micro-Web App della Suite (8 Moduli)
                 </h2>
                 <span class="text-[10px] text-zinc-500 font-mono-code">Architettura Modulare a Singola Pagina</span>
             </div>
@@ -207,6 +207,26 @@
                     </div>
                 </a>
 
+                <!-- App 8: Koala Bridge Studio (Nuovo Modulo) -->
+                <a href="./koala-bridge/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-amber-500/30 hover:border-amber-400 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group ring-1 ring-amber-500/20">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 group-hover:scale-105 transition-transform text-xl">
+                                🐨
+                            </div>
+                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/40 font-bold">v1.7.0</span>
+                        </div>
+                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-amber-400 transition-colors">8. Koala Bridge</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Bridge per Koala Sampler & NTS-1. Multi-banco 4×4 (A–D), pitch tuning per pad, decompiler MIDI, auto-BPM esatto ed export WAV offline.
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-amber-400 font-semibold pt-2 border-t border-zinc-800/80">
+                        <span>Apri Koala Bridge</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
+
             </div>
         </section>
 
@@ -334,7 +354,7 @@
     <!-- Footer -->
     <footer class="max-w-7xl mx-auto w-full mt-6 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p>Korg NTS-1 Modular Suite • Single Page Architecture (No Build Tools, No NPM)</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">HUB SYSTEM v1.2.0</span>
+        <span class="font-mono-code text-[11px] text-zinc-400">HUB SYSTEM v1.3.0</span>
     </footer>
 
     <!-- Hub Script Logic -->

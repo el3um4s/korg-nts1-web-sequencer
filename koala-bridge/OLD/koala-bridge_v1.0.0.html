@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koala Sampler & ABC MIDI Bridge Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen font-sans p-4 md:p-6">
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-neutral-800 pb-4 gap-4">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-amber-400 flex items-center gap-2">
+          🐨 Koala Sampler & ABC MIDI Bridge
+        </h1>
+        <p class="text-sm text-neutral-400">Editor ABC, compilatore/decompiler MIDI e visualizzatore Pad 4×4 per Koala Sampler & Korg NTS-1</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs rounded border border-neutral-700 cursor-pointer transition">
+          📂 Carica ABC
+          <input type="file" id="fileAbcInput" accept=".abc,.txt" class="hidden">
+        </label>
+        <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs rounded border border-neutral-700 cursor-pointer transition">
+          🎹 Carica MIDI (.mid)
+          <input type="file" id="fileMidiInput" accept=".mid,.midi" class="hidden">
+        </label>
+        <button id="btnExportMidi" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold rounded shadow transition">
+          💾 Scarica .MID
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Colonna Sinistra: Editor ABC & Controlli -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-lg p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase text-neutral-400">Codice Partitura ABC</span>
+            <div class="flex items-center gap-2">
+              <button id="btnInsertChord" class="text-xs bg-neutral-800 hover:bg-neutral-700 px-2 py-1 rounded text-neutral-300">
+                + Accordo [C E G]
+              </button>
+              <button id="btnClear" class="text-xs text-neutral-400 hover:text-red-400">Pulisci</button>
+            </div>
+          </div>
+          <textarea id="abcEditor" rows="14" class="w-full bg-neutral-950 font-mono text-sm p-3 rounded border border-neutral-800 focus:border-amber-400 focus:outline-none leading-relaxed text-amber-200" spellcheck="false"></textarea>
+          <div class="flex items-center justify-between text-xs text-neutral-400">
+            <span id="statusBar">Pronto. Note caricate: 0</span>
+            <div class="flex gap-2">
+              <button id="btnPreview" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded text-neutral-200">▶️ Anteprima Audio</button>
+              <button id="btnStop" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded text-neutral-200">⏹️ Ferma</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mappa Commenti Pad Suggeriti -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Note & Timbri Koala (Meta Info)</h2>
+          <div id="activePadsSummary" class="text-xs font-mono space-y-1 text-neutral-300 max-h-36 overflow-y-auto pr-2">
+            Nessuna nota analizzata.
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonna Destra: Matrice 4x4 Pad Koala -->
+      <div class="lg:col-span-5 space-y-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-lg p-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">Banco A Koala (Pads 1–16)</h2>
+            <span class="text-[11px] text-neutral-500">C1 (36) ➔ D#2 (51)</span>
+          </div>
+
+          <!-- Matrice 4x4 Pads -->
+          <div id="padGrid" class="grid grid-cols-4 gap-2">
+            <!-- I 16 Pad vengono generati dinamicamente via JS -->
+          </div>
+
+          <div class="p-3 bg-neutral-950 border border-neutral-800/80 rounded text-xs space-y-2 text-neutral-400">
+            <p><strong class="text-neutral-200">💡 Trucco Polifonia & NTS-1:</strong></p>
+            <ul class="list-disc list-inside space-y-1">
+              <li>Le note tra parentesi quadre <code class="text-amber-300">[C,, E,, G,,]</code> vengono suonate simultaneamente.</li>
+              <li>Per Koala corrispondono a più campioni contemporanei (es. cassa + rullante o accordi di piano).</li>
+              <li>Se inviate all'NTS-1 via cavo MIDI, imposta l'oscillatore su <strong class="text-neutral-300">Chords (CC 53: 88)</strong> per la sintesi polifonica hardware[cite: 1, 2].</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Mappa predefinita dei 16 Pad di Koala Sampler (Banco A)
+    const KOALA_PAD_MAP = [
+      { pad: 1,  midi: 36, abc: "C,,",  name: "Kick / Sub",       type: "drum" },
+      { pad: 2,  midi: 37, abc: "^C,,", name: "Rim / Stick",      type: "drum" },
+      { pad: 3,  midi: 38, abc: "D,,",  name: "Snare Drum",       type: "drum" },
+      { pad: 4,  midi: 39, abc: "^D,,", name: "Clap",             type: "drum" },
+      { pad: 5,  midi: 40, abc: "E,,",  name: "Snare Alt",        type: "drum" },
+      { pad: 6,  midi: 41, abc: "F,,",  name: "Low Tom",          type: "drum" },
+      { pad: 7,  midi: 42, abc: "^F,,", name: "Closed Hat",       type: "drum" },
+      { pad: 8,  midi: 43, abc: "G,,",  name: "Mid Tom",          type: "drum" },
+      { pad: 9,  midi: 44, abc: "^G,,", name: "Pedal Hat",        type: "drum" },
+      { pad: 10, midi: 45, abc: "A,,",  name: "High Tom",         type: "drum" },
+      { pad: 11, midi: 46, abc: "^A,,", name: "Open Hat",         type: "drum" },
+      { pad: 12, midi: 47, abc: "B,,",  name: "Crash Cymbal",     type: "drum" },
+      { pad: 13, midi: 48, abc: "C,",   name: "Chop 1 / Chord",   type: "sample" },
+      { pad: 14, midi: 49, abc: "^C,",  name: "Chop 2 / Synth",   type: "sample" },
+      { pad: 15, midi: 50, abc: "D,",   name: "Chop 3 / Bass",    type: "sample" },
+      { pad: 16, midi: 51, abc: "^D,",  name: "NTS-1 FX Loop",    type: "sample" }
+    ];
+
+    const DEFAULT_ABC = `X: 1
+T: Koala Groove #1
+M: 4/4
+L: 1/16
+Q: 90
+K: C
+% KOALA TEMPLATE SETUP:
+% Pad 1 (C,,) = Kick | Pad 3 (D,,) = Snare | Pad 7 (^F,,) = Closed Hat | Pad 13 (C,) = Sample Chop
+[C,, ^F,,]2 ^F,,2 [D,, ^F,,]2 ^F,,2 [C,, ^F,,]2 [C,, ^F,,]2 [D,, ^F,,]2 ^F,,2 |
+[C,, ^F,,]2 ^F,,2 [D,, ^F,,]2 [C, ^F,,]2 [C,, ^F,,]2 ^F,,2 [D,, ^F,,]2 [^D, ^F,,]2 |]`;
+
+    const abcEditor = document.getElementById('abcEditor');
+    const padGrid = document.getElementById('padGrid');
+    const activePadsSummary = document.getElementById('activePadsSummary');
+    const statusBar = document.getElementById('statusBar');
+
+    // Rendering dei Pad 4x4
+    function renderPads() {
+      padGrid.innerHTML = '';
+      KOALA_PAD_MAP.forEach(item => {
+        const btn = document.createElement('button');
+        btn.id = `pad-${item.midi}`;
+        btn.className = `p-3 rounded-lg border flex flex-col justify-between text-left h-24 transition duration-150 relative select-none
+          bg-neutral-850 bg-neutral-900 border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-800`;
+        
+        btn.innerHTML = `
+          <div class="flex items-center justify-between w-full">
+            <span class="text-[10px] font-bold text-neutral-400">#${item.pad}</span>
+            <span class="text-[10px] font-mono text-neutral-500">${item.abc}</span>
+          </div>
+          <div class="my-auto">
+            <div class="text-xs font-semibold text-neutral-200 truncate">${item.name}</div>
+            <div class="text-[10px] text-neutral-500">MIDI ${item.midi}</div>
+          </div>
+        `;
+
+        btn.addEventListener('click', () => {
+          insertNoteAtCursor(item.abc + "2 ");
+          analyzeActivePads();
+          triggerAudioPreview([item.midi], 0.15);
+        });
+
+        padGrid.appendChild(btn);
+      });
+    }
+
+    // Inserisce una nota o accordo nel punto in cui si trova il cursore
+    function insertNoteAtCursor(text) {
+      const start = abcEditor.selectionStart;
+      const end = abcEditor.selectionEnd;
+      abcEditor.value = abcEditor.value.substring(0, start) + text + abcEditor.value.substring(end);
+      abcEditor.selectionStart = abcEditor.selectionEnd = start + text.length;
+      abcEditor.focus();
+    }
+
+    // Conversione altezze ABC in numero MIDI
+    function abcNoteToMidi(token) {
+      const baseMap = { 'C': 60, 'D': 62, 'E': 64, 'F': 65, 'G': 67, 'A': 69, 'B': 71,
+                        'c': 72, 'd': 74, 'e': 76, 'f': 77, 'g': 79, 'a': 81, 'b': 83 };
+      let accidental = 0;
+      let clean = token.replace(/[\d\/]/g, '');
+
+      if (clean.includes('^^')) { accidental = 2; clean = clean.replace('^^', ''); }
+      else if (clean.includes('^')) { accidental = 1; clean = clean.replace('^', ''); }
+      else if (clean.includes('__')) { accidental = -2; clean = clean.replace('__', ''); }
+      else if (clean.includes('_')) { accidental = -1; clean = clean.replace('_', ''); }
+      else if (clean.includes('=')) { clean = clean.replace('=', ''); }
+
+      let letter = clean.charAt(0);
+      if (!baseMap[letter]) return null;
+
+      let midi = baseMap[letter] + accidental;
+      const commas = (clean.match(/,/g) || []).length;
+      const apostrophes = (clean.match(/'/g) || []).length;
+      midi -= commas * 12;
+      midi += apostrophes * 12;
+      return midi;
+    }
+
+    // Analizza le note scritte nell'ABC per illuminare i Pad attivi
+    function analyzeActivePads() {
+      const text = abcEditor.value;
+      const regex = /(\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*(\d+)?/g;
+      const matches = text.match(regex) || [];
+      const foundMidi = new Set();
+
+      matches.forEach(m => {
+        const midi = abcNoteToMidi(m);
+        if (midi !== null) foundMidi.add(midi);
+      });
+
+      // Reset stili pad
+      KOALA_PAD_MAP.forEach(item => {
+        const el = document.getElementById(`pad-${item.midi}`);
+        if (!el) return;
+        if (foundMidi.has(item.midi)) {
+          el.className = `p-3 rounded-lg border flex flex-col justify-between text-left h-24 transition duration-150 relative select-none
+            bg-amber-950/40 border-amber-500 text-amber-200 shadow-md shadow-amber-950/20 ring-1 ring-amber-400/40`;
+        } else {
+          el.className = `p-3 rounded-lg border flex flex-col justify-between text-left h-24 transition duration-150 relative select-none
+            bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-700`;
+        }
+      });
+
+      // Aggiorna sommario testuale
+      statusBar.innerText = `Pronto. Pad Koala attivi rilevati: ${foundMidi.size}`;
+      if (foundMidi.size === 0) {
+        activePadsSummary.innerHTML = `<span class="text-neutral-500">Nessuna nota corrispondente al Banco A di Koala trovata.</span>`;
+      } else {
+        let html = '';
+        KOALA_PAD_MAP.filter(k => foundMidi.has(k.midi)).forEach(k => {
+          html += `<div class="flex items-center justify-between border-b border-neutral-800 py-0.5">
+            <span class="text-amber-400 font-bold">Pad ${k.pad} (${k.abc}):</span>
+            <span class="text-neutral-200">${k.name}</span>
+            <span class="text-[10px] text-neutral-500">MIDI ${k.midi}</span>
+          </div>`;
+        });
+        activePadsSummary.innerHTML = html;
+      }
+    }
+
+    // Parser di eventi da codice ABC
+    function parseAbcEvents(abc) {
+      let bpm = 120;
+      const bpmMatch = abc.match(/Q:\s*(\d+)/);
+      if (bpmMatch) bpm = parseInt(bpmMatch[1], 10);
+
+      const events = [];
+      const lines = abc.split('\n');
+      let scoreText = '';
+
+      for (let l of lines) {
+        l = l.trim();
+        if (l.startsWith('%') || l.startsWith('X:') || l.startsWith('T:') || l.startsWith('M:') || l.startsWith('L:') || l.startsWith('Q:') || l.startsWith('K:')) {
+          continue;
+        }
+        scoreText += ' ' + l;
+      }
+
+      // Riconosce accordi [C,,E,,] oppure note singole C,, o pause z
+      const tokenRegex = /(\[[^\]]+\]\d*|[A-Ga-g\^=_',]+\d*|z\d*)/g;
+      const tokens = scoreText.match(tokenRegex) || [];
+
+      tokens.forEach(tok => {
+        let durationUnits = 1;
+        const durMatch = tok.match(/\d+$/);
+        if (durMatch) durationUnits = parseInt(durMatch[0], 10);
+
+        if (tok.startsWith('z')) {
+          events.push({ type: 'rest', duration: durationUnits });
+        } else if (tok.startsWith('[')) {
+          const notesInside = tok.replace(/[\[\]\d]/g, '').match(/(\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*/g) || [];
+          const midis = notesInside.map(abcNoteToMidi).filter(m => m !== null);
+          if (midis.length > 0) {
+            events.push({ type: 'chord', midis: midis, duration: durationUnits });
+          }
+        } else {
+          const noteOnly = tok.replace(/\d+/g, '');
+          const m = abcNoteToMidi(noteOnly);
+          if (m !== null) {
+            events.push({ type: 'note', midi: m, duration: durationUnits });
+          }
+        }
+      });
+
+      return { bpm, events };
+    }
+
+    // Variable-Length Quantity (VLQ) per Standard MIDI
+    function writeVLQ(value) {
+      let buffer = [];
+      let val = value;
+      buffer.push(val & 0x7F);
+      while ((val >>= 7) > 0) {
+        buffer.push((val & 0x7F) | 0x80);
+      }
+      return buffer.reverse();
+    }
+
+    // Compilatore binario Standard MIDI File (Formato 0)
+    function buildMidiBinary(bpm, events) {
+      const division = 480; // 480 ticks per quarter note
+      const ticksPer16th = 120;
+      let trackBytes = [];
+
+      // Meta Event: Tempo (BPM)
+      const microseconds = Math.round(60000000 / bpm);
+      trackBytes.push(0x00, 0xFF, 0x51, 0x03,
+        (microseconds >> 16) & 0xFF,
+        (microseconds >> 8) & 0xFF,
+        microseconds & 0xFF
+      );
+
+      // Meta Event: Nome traccia / Descrizione per Koala
+      const trackName = "Koala Bridge Track";
+      trackBytes.push(0x00, 0xFF, 0x03, trackName.length, ...trackName.split('').map(c => c.charCodeAt(0)));
+
+      let pendingDelta = 0;
+
+      events.forEach(ev => {
+        const stepTicks = (ev.duration || 1) * ticksPer16th;
+
+        if (ev.type === 'rest') {
+          pendingDelta += stepTicks;
+        } else if (ev.type === 'note') {
+          // Note On
+          trackBytes.push(...writeVLQ(pendingDelta), 0x90, ev.midi, 0x64);
+          // Note Off con delta della durata
+          trackBytes.push(...writeVLQ(stepTicks), 0x80, ev.midi, 0x00);
+          pendingDelta = 0;
+        } else if (ev.type === 'chord') {
+          // Accordo: Note On con delta 0 tra le note
+          ev.midis.forEach((m, idx) => {
+            const dt = (idx === 0) ? pendingDelta : 0;
+            trackBytes.push(...writeVLQ(dt), 0x90, m, 0x64);
+          });
+          // Note Off con durata
+          ev.midis.forEach((m, idx) => {
+            const dt = (idx === 0) ? stepTicks : 0;
+            trackBytes.push(...writeVLQ(dt), 0x80, m, 0x00);
+          });
+          pendingDelta = 0;
+        }
+      });
+
+      // End of Track
+      trackBytes.push(...writeVLQ(pendingDelta), 0xFF, 0x2F, 0x00);
+
+      // Costruzione Header MThd
+      const header = [
+        0x4D, 0x54, 0x68, 0x64, // 'MThd'
+        0x00, 0x00, 0x00, 0x06, // Lunghezza 6 byte
+        0x00, 0x00,             // Formato 0
+        0x00, 0x01,             // 1 Traccia
+        (division >> 8) & 0xFF, division & 0xFF
+      ];
+
+      // Chunk Traccia MTrk
+      const trackLen = trackBytes.length;
+      const trackHeader = [
+        0x4D, 0x54, 0x72, 0x6B, // 'MTrk'
+        (trackLen >> 24) & 0xFF,
+        (trackLen >> 16) & 0xFF,
+        (trackLen >> 8) & 0xFF,
+        trackLen & 0xFF
+      ];
+
+      return new Uint8Array([...header, ...trackHeader, ...trackBytes]);
+    }
+
+    // Decompiler binario MIDI -> ABC
+    function midiToAbc(arrayBuffer) {
+      const data = new DataView(arrayBuffer);
+      let offset = 0;
+
+      // Verifica Header 'MThd'
+      const mthd = String.fromCharCode(...new Uint8Array(arrayBuffer, 0, 4));
+      if (mthd !== 'MThd') throw new Error("File MIDI non valido");
+      offset += 14; // Salta Header
+
+      // Cerca il chunk 'MTrk'
+      while (offset < data.byteLength) {
+        const id = String.fromCharCode(...new Uint8Array(arrayBuffer, offset, 4));
+        const len = data.getUint32(offset + 4);
+        offset += 8;
+
+        if (id === 'MTrk') {
+          return parseTrackToAbc(data, offset, len);
+        }
+        offset += len;
+      }
+      throw new Error("Traccia MIDI non trovata");
+    }
+
+    function midiNumberToAbc(midi) {
+      const pad = KOALA_PAD_MAP.find(k => k.midi === midi);
+      if (pad) return pad.abc;
+      const noteNames = ["C", "^C", "D", "^D", "E", "F", "^F", "G", "^G", "A", "^A", "B"];
+      const octave = Math.floor(midi / 12) - 1;
+      const noteIdx = midi % 12;
+      let name = noteNames[noteIdx];
+      if (octave >= 5) {
+        name = name.toLowerCase() + "'".repeat(octave - 5);
+      } else if (octave === 4) {
+        name = name.toLowerCase();
+      } else {
+        name = name + ",".repeat(Math.max(0, 3 - octave));
+      }
+      return name;
+    }
+
+    function parseTrackToAbc(view, start, len) {
+      let offset = start;
+      const end = start + len;
+      let notes = [];
+      let lastStatus = 0;
+
+      function readVLQ() {
+        let val = 0;
+        let byte = 0;
+        do {
+          byte = view.getUint8(offset++);
+          val = (val << 7) | (byte & 0x7F);
+        } while (byte & 0x80);
+        return val;
+      }
+
+      while (offset < end) {
+        const dt = readVLQ();
+        let status = view.getUint8(offset);
+
+        if (status >= 0x80) {
+          offset++;
+          lastStatus = status;
+        } else {
+          status = lastStatus;
+        }
+
+        const msgType = status & 0xF0;
+
+        if (msgType === 0x90) { // Note-On
+          const note = view.getUint8(offset++);
+          const vel = view.getUint8(offset++);
+          if (vel > 0) {
+            notes.push({ dt: dt, note: note });
+          }
+        } else if (msgType === 0x80) { // Note-Off
+          offset += 2;
+        } else if (status === 0xFF) { // Meta Event
+          offset++; // type
+          const metaLen = readVLQ();
+          offset += metaLen;
+        } else if (msgType === 0xB0 || msgType === 0xE0) {
+          offset += 2;
+        } else if (msgType === 0xC0 || msgType === 0xD0) {
+          offset += 1;
+        }
+      }
+
+      let generatedAbc = `X: 1\nT: MIDI Imported to Koala\nM: 4/4\nL: 1/16\nQ: 100\nK: C\n`;
+      let barCount = 0;
+      notes.forEach((n, i) => {
+        const abcName = midiNumberToAbc(n.note);
+        generatedAbc += abcName + "2 ";
+        barCount += 2;
+        if (barCount >= 16) {
+          generatedAbc += "| ";
+          barCount = 0;
+        }
+      });
+      generatedAbc += "|]";
+      return generatedAbc;
+    }
+
+    // Mini Motore Audio Web Audio API per l'ascolto
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function triggerAudioPreview(midis, duration) {
+      const ctx = getAudioContext();
+      midis.forEach(m => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const freq = 440 * Math.pow(2, (m - 69) / 12);
+        osc.type = (m < 45) ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      });
+    }
+
+    let playbackTimer = null;
+    function playAbcPreview() {
+      stopAbcPreview();
+      const parsed = parseAbcEvents(abcEditor.value);
+      if (parsed.events.length === 0) return;
+
+      const secondsPer16th = (60 / parsed.bpm) / 4;
+      let currentIdx = 0;
+
+      function step() {
+        if (currentIdx >= parsed.events.length) {
+          stopAbcPreview();
+          return;
+        }
+        const ev = parsed.events[currentIdx];
+        if (ev.type === 'note') {
+          triggerAudioPreview([ev.midi], (ev.duration || 1) * secondsPer16th);
+        } else if (ev.type === 'chord') {
+          triggerAudioPreview(ev.midis, (ev.duration || 1) * secondsPer16th);
+        }
+        currentIdx++;
+        playbackTimer = setTimeout(step, (ev.duration || 1) * secondsPer16th * 1000);
+      }
+
+      step();
+    }
+
+    function stopAbcPreview() {
+      if (playbackTimer) {
+        clearTimeout(playbackTimer);
+        playbackTimer = null;
+      }
+    }
+
+    // Esportazione MIDI Download
+    document.getElementById('btnExportMidi').addEventListener('click', () => {
+      const parsed = parseAbcEvents(abcEditor.value);
+      const bytes = buildMidiBinary(parsed.bpm, parsed.events);
+      const blob = new Blob([bytes], { type: 'audio/midi' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'koala_sequence.mid';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Caricamento File ABC
+    document.getElementById('fileAbcInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        abcEditor.value = evt.target.result;
+        analyzeActivePads();
+      };
+      reader.readAsText(file);
+    });
+
+    // Caricamento File MIDI (.mid)
+    document.getElementById('fileMidiInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const abc = midiToAbc(evt.target.result);
+          abcEditor.value = abc;
+          analyzeActivePads();
+        } catch (err) {
+          alert("Errore nella conversione del file MIDI: " + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // Eventi di interfaccia
+    abcEditor.addEventListener('input', analyzeActivePads);
+    document.getElementById('btnInsertChord').addEventListener('click', () => {
+      insertNoteAtCursor("[C,, E,, G,,]4 ");
+      analyzeActivePads();
+    });
+    document.getElementById('btnClear').addEventListener('click', () => {
+      abcEditor.value = '';
+      analyzeActivePads();
+    });
+    document.getElementById('btnPreview').addEventListener('click', playAbcPreview);
+    document.getElementById('btnStop').addEventListener('click', stopAbcPreview);
+
+    // Inizializzazione
+    abcEditor.value = DEFAULT_ABC;
+    renderPads();
+    analyzeActivePads();
+  </script>
+</body>
+</html>

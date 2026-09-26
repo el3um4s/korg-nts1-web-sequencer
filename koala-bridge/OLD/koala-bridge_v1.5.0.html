@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koala Sampler & ABC MIDI Bridge Studio v1.5.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Transizioni e stati attivi rinforzati */
+    button, input, select, textarea {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    button:active {
+      transform: scale(0.96);
+    }
+    .focus-ring:focus {
+      outline: none;
+      border-color: #fbbf24 !important;
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.35);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast-anim {
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen font-sans p-4 md:p-6 select-none relative">
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header con Versione ed Export Completo -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-neutral-800 pb-4 gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-2xl font-bold tracking-tight text-amber-400">
+            🐨 Koala Sampler & ABC Studio Pro
+          </h1>
+          <span class="text-[10px] font-mono font-bold bg-neutral-800 text-amber-400 border border-neutral-700 px-2 py-0.5 rounded">
+            v1.5.0
+          </span>
+        </div>
+        <p class="text-xs text-neutral-400">Bank & Pad Remapper, Visual Active State Feedback, Master WAV Render, Auto-BPM</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 text-xs rounded border border-neutral-700 cursor-pointer transition active:scale-95">
+          📂 Importa ABC / JSON
+          <input type="file" id="fileUniversalInput" accept=".abc,.txt,.json" class="hidden">
+        </label>
+        <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 text-xs rounded border border-neutral-700 cursor-pointer transition active:scale-95">
+          🎹 Importa MIDI (.mid)
+          <input type="file" id="fileMidiInput" accept=".mid,.midi" class="hidden">
+        </label>
+        
+        <div class="h-6 w-px bg-neutral-800 mx-1"></div>
+
+        <button id="btnExportAbc" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica partitura ABC">
+          📄 .ABC
+        </button>
+        <button id="btnExportJson" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica bundle interoperabile JSON">
+          📦 .JSON
+        </button>
+        <button id="btnExportMidi" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica file MIDI">
+          💾 .MID
+        </button>
+        <button id="btnExportMasterWav" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold rounded shadow transition flex items-center gap-1.5" title="Render offline ad alta velocità">
+          <span>🎧 Scarica .WAV</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Layout Principale -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Colonna Sinistra: Metadati, Durata, Remapper & Editor ABC -->
+      <div class="lg:col-span-6 space-y-4">
+        
+        <!-- Box Metadati & Durata Target Auto-BPM -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Metadati & Durata Esatta</span>
+            <span id="durationBadge" class="text-xs font-mono px-2 py-0.5 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300">
+              ⏱️ 00:00
+            </span>
+          </div>
+
+          <!-- Metadati Brano -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div>
+              <label class="block text-neutral-400 text-[10px] mb-1">TITOLO (T:)</label>
+              <input type="text" id="metaTitle" placeholder="Titolo traccia" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring">
+            </div>
+            <div>
+              <label class="block text-neutral-400 text-[10px] mb-1">AUTORE (C:)</label>
+              <input type="text" id="metaComposer" placeholder="Nome autore" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring">
+            </div>
+            <div>
+              <label class="block text-neutral-400 text-[10px] mb-1">METRO (M:)</label>
+              <input type="text" id="metaMeter" value="4/4" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring font-mono">
+            </div>
+          </div>
+
+          <!-- Target Durata & Ricalcolo Q: -->
+          <div class="pt-2 border-t border-neutral-800/80 space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="text-neutral-400 text-[11px]">Modalità:</span>
+                <select id="durationMode" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-neutral-300 text-xs focus-ring">
+                  <option value="free">Libera (Usa BPM manuale)</option>
+                  <option value="exact">Durata Esatta</option>
+                  <option value="min">Durata Minima (Non meno di)</option>
+                  <option value="max">Durata Massima (Non più di)</option>
+                </select>
+              </div>
+
+              <div id="targetDurationWrap" class="flex items-center gap-1.5">
+                <span class="text-neutral-400 text-[11px]">Target:</span>
+                <input type="number" id="targetSeconds" min="5" max="900" value="60" class="w-16 bg-neutral-950 border border-neutral-800 rounded px-1.5 py-1 text-amber-300 font-mono text-xs focus-ring">
+                <span class="text-neutral-500 text-[11px]">sec</span>
+              </div>
+            </div>
+
+            <!-- Preset Rapidi Durata -->
+            <div class="flex items-center gap-1 text-[11px]">
+              <span class="text-neutral-500 mr-1">Preset:</span>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="30">30s</button>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="60">60s (1m)</button>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="90">90s</button>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="120">2 min</button>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="180">3 min</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strumento Rimappatura Pad & Sezioni Intere -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4">
+          
+          <!-- Sezione 1: Rimappa Interi Banchi -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-400">🎛️ Rimappa Intera Sezione / Banco</span>
+              <span class="text-[11px] text-neutral-500">16 note in blocco</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <div class="flex items-center gap-1">
+                <span class="text-neutral-400 text-[11px]">Da Banco:</span>
+                <select id="remapSourceBank" class="bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1 text-amber-300 font-bold focus-ring">
+                  <option value="A">Banco A (Drums)</option>
+                  <option value="B">Banco B (Bass/Chords)</option>
+                  <option value="C">Banco C (Leads/Bells)</option>
+                  <option value="D">Banco D (Glitch/NTS-1)</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="text-neutral-400 text-[11px]">A Banco:</span>
+                <select id="remapTargetBank" class="bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1 text-amber-300 font-bold focus-ring">
+                  <option value="B">Banco B (Bass/Chords)</option>
+                  <option value="A">Banco A (Drums)</option>
+                  <option value="C">Banco C (Leads/Bells)</option>
+                  <option value="D">Banco D (Glitch/NTS-1)</option>
+                </select>
+              </div>
+              <button id="btnSwapBanks" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded transition font-semibold active:scale-95" title="Scambia reciprocamente tutti i 16 pad del banco sorgente con quello target">
+                🔁 Inverti Intero Banco
+              </button>
+              <button id="btnReplaceBank" class="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded transition font-semibold active:scale-95" title="Sposta tutte le note del banco sorgente nel banco target">
+                ➔ Sposta a Banco
+              </button>
+            </div>
+          </div>
+
+          <div class="h-px bg-neutral-800/80"></div>
+
+          <!-- Sezione 2: Rimappa Singolo Pad -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-neutral-300">Rimappa Singolo Pad</span>
+              <span class="text-[11px] text-neutral-500">Nota singola</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <div class="flex items-center gap-1">
+                <span class="text-neutral-400 text-[11px]">Da:</span>
+                <select id="remapSourceNote" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-amber-300 font-mono focus-ring"></select>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="text-neutral-400 text-[11px]">A:</span>
+                <select id="remapTargetNote" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-amber-300 font-mono focus-ring"></select>
+              </div>
+              <button id="btnExecuteSwap" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded transition font-semibold active:scale-95">
+                Inverti Pad
+              </button>
+              <button id="btnExecuteReplace" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded transition font-semibold active:scale-95">
+                Sposta Pad
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Editor ABC e Barra BPM -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
+          
+          <div class="flex flex-wrap items-center justify-between gap-2 p-2 bg-neutral-950 border border-neutral-800 rounded-lg text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-neutral-400">BPM (Q:):</span>
+              <input type="range" id="bpmSlider" min="40" max="240" value="120" class="w-24 accent-amber-400 cursor-pointer">
+              <span id="bpmValueDisplay" class="font-mono text-amber-300 w-8 font-bold">120</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-neutral-500 text-[11px] mr-1">Velocità:</span>
+              <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95" data-speed="0.75">0.75×</button>
+              <button class="speed-btn px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold active:scale-95" data-speed="1.0">1.0×</button>
+              <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95" data-speed="1.25">1.25×</button>
+              <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95" data-speed="1.5">1.5×</button>
+              <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95" data-speed="2.0">2.0×</button>
+            </div>
+          </div>
+
+          <textarea id="abcEditor" rows="11" class="w-full bg-neutral-950 font-mono text-sm p-3 rounded-lg border border-neutral-800 focus-ring leading-relaxed text-amber-200" spellcheck="false"></textarea>
+          
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-neutral-800/80">
+            <div class="flex items-center gap-2">
+              <button id="btnPreview" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-semibold text-xs rounded-lg transition flex items-center gap-1 shadow active:scale-95">
+                ▶️ Play
+              </button>
+              <button id="btnStop" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs rounded-lg text-neutral-200 transition active:scale-95">
+                ⏹️ Stop
+              </button>
+            </div>
+            <div id="playheadDisplay" class="font-mono text-xs px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded text-neutral-400">
+              Pronto.
+            </div>
+          </div>
+        </div>
+
+        <!-- Riepilogo Pad Attivi -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-400">Pad Rilevati nel Brano</h2>
+            <span id="detectedCount" class="text-xs text-amber-400 font-mono">0 pad attivi</span>
+          </div>
+          <div id="activePadsSummary" class="text-xs font-mono space-y-1 text-neutral-300 max-h-32 overflow-y-auto pr-2">
+            Nessuna nota analizzata.
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonna Destra: Controller Banchi e Griglia 4x4 Pad -->
+      <div class="lg:col-span-6 space-y-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4">
+          
+          <!-- Selettore Banco Koala (A, B, C, D) -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1 bg-neutral-950 p-1 rounded-lg border border-neutral-800">
+              <button data-bank="A" class="bank-btn px-3.5 py-1.5 rounded text-xs font-bold bg-amber-500 text-neutral-950 transition active:scale-95 shadow">Banco A</button>
+              <button data-bank="B" class="bank-btn px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco B</button>
+              <button data-bank="C" class="bank-btn px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco C</button>
+              <button data-bank="D" class="bank-btn px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco D</button>
+            </div>
+            <span id="bankRangeInfo" class="text-[11px] font-mono text-neutral-400">C1 (36) ➔ D#2 (51)</span>
+          </div>
+
+          <!-- Matrice 4x4 Pad -->
+          <div id="padGrid" class="grid grid-cols-4 gap-2.5"></div>
+
+          <!-- Info Timbro Patch & Render Progress -->
+          <div id="patchInfoBox" class="p-3 bg-neutral-950 border border-neutral-800/80 rounded-lg text-xs space-y-1 text-neutral-400">
+            <div class="flex items-center justify-between text-neutral-300 font-semibold">
+              <span>🎛️ Configurazione Patch Rilevata:</span>
+              <span id="oscLabel" class="text-amber-400 font-mono">Standard</span>
+            </div>
+            <div id="renderStatusText" class="text-[11px]">Scarica il WAV completo del brano: conversione ultra-rapida tramite OfflineAudioContext.</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notifica Flottante -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-200 pointer-events-none">
+    <div class="bg-neutral-900 border border-amber-500/60 shadow-xl rounded-lg px-4 py-2.5 flex items-center gap-2 text-xs text-amber-200">
+      <span id="toastIcon">✨</span>
+      <span id="toastMessage">Operazione completata</span>
+    </div>
+  </div>
+
+  <script>
+    const PAD_BANKS = {
+      'A': [
+        { pad: 1,  midi: 36, abc: "C,,",  name: "Kick Sub",       synth: "kick" },
+        { pad: 2,  midi: 37, abc: "^C,,", name: "Rimshot",        synth: "rim" },
+        { pad: 3,  midi: 38, abc: "D,,",  name: "Snare Drum",     synth: "snare" },
+        { pad: 4,  midi: 39, abc: "^D,,", name: "Clap Hand",     synth: "clap" },
+        { pad: 5,  midi: 40, abc: "E,,",  name: "Snare Crisp",    synth: "snare_crisp" },
+        { pad: 6,  midi: 41, abc: "F,,",  name: "Low Tom",        synth: "tom_low" },
+        { pad: 7,  midi: 42, abc: "^F,,", name: "Closed Hat",     synth: "hat_closed" },
+        { pad: 8,  midi: 43, abc: "G,,",  name: "Mid Tom",        synth: "tom_mid" },
+        { pad: 9,  midi: 44, abc: "^G,,", name: "Pedal Hat",      synth: "hat_pedal" },
+        { pad: 10, midi: 45, abc: "A,,",  name: "High Tom",       synth: "tom_high" },
+        { pad: 11, midi: 46, abc: "^A,,", name: "Open Hat",       synth: "hat_open" },
+        { pad: 12, midi: 47, abc: "B,,",  name: "Crash Cymbal",   synth: "crash" },
+        { pad: 13, midi: 48, abc: "C,",   name: "Chop 1 (C3)",    synth: "chop" },
+        { pad: 14, midi: 49, abc: "^C,",  name: "Chop 2 (C#3)",   synth: "chop" },
+        { pad: 15, midi: 50, abc: "D,",   name: "Chop 3 (D3)",    synth: "chop" },
+        { pad: 16, midi: 51, abc: "^D,",  name: "NTS-1 FX Loop",  synth: "lead" }
+      ],
+      'B': [
+        { pad: 1,  midi: 52, abc: "E,",   name: "Bass E",         synth: "bass" },
+        { pad: 2,  midi: 53, abc: "F,",   name: "Bass F",         synth: "bass" },
+        { pad: 3,  midi: 54, abc: "^F,",  name: "Bass F#",        synth: "bass" },
+        { pad: 4,  midi: 55, abc: "G,",   name: "Bass G",         synth: "bass" },
+        { pad: 5,  midi: 56, abc: "^G,",  name: "Bass G#",        synth: "bass" },
+        { pad: 6,  midi: 57, abc: "A,",   name: "Bass Hit A",     synth: "bass" },
+        { pad: 7,  midi: 58, abc: "^A,",  name: "Synth Bass A#",  synth: "bass" },
+        { pad: 8,  midi: 59, abc: "B,",   name: "Synth Bass B",   synth: "bass" },
+        { pad: 9,  midi: 60, abc: "C",    name: "Chord C",        synth: "chord" },
+        { pad: 10, midi: 61, abc: "^C",   name: "Chord C#",       synth: "chord" },
+        { pad: 11, midi: 62, abc: "D",    name: "Chord D",        synth: "chord" },
+        { pad: 12, midi: 63, abc: "^D",   name: "Chord D#",       synth: "chord" },
+        { pad: 13, midi: 64, abc: "E",    name: "Note E4",        synth: "lead" },
+        { pad: 14, midi: 65, abc: "F",    name: "Note F4",        synth: "lead" },
+        { pad: 15, midi: 66, abc: "^F",   name: "Note F#4",       synth: "lead" },
+        { pad: 16, midi: 67, abc: "G",    name: "Note G4",        synth: "lead" }
+      ],
+      'C': [
+        { pad: 1,  midi: 68, abc: "^G",   name: "Note G#4",       synth: "lead" },
+        { pad: 2,  midi: 69, abc: "A",    name: "Note A4",        synth: "lead" },
+        { pad: 3,  midi: 70, abc: "^A",   name: "Note A#4",       synth: "lead" },
+        { pad: 4,  midi: 71, abc: "B",    name: "Note B4",        synth: "lead" },
+        { pad: 5,  midi: 72, abc: "c",    name: "Lead C5",        synth: "lead" },
+        { pad: 6,  midi: 73, abc: "^c",   name: "Lead C#5",       synth: "lead" },
+        { pad: 7,  midi: 74, abc: "d",    name: "Lead D5",        synth: "lead" },
+        { pad: 8,  midi: 75, abc: "^d",   name: "Lead D#5",       synth: "lead" },
+        { pad: 9,  midi: 76, abc: "e",    name: "Bell E5",        synth: "bell" },
+        { pad: 10, midi: 77, abc: "f",    name: "Bell F5",        synth: "bell" },
+        { pad: 11, midi: 78, abc: "^f",   name: "Bell F#5",       synth: "bell" },
+        { pad: 12, midi: 79, abc: "g",    name: "Bell G5",        synth: "bell" },
+        { pad: 13, midi: 80, abc: "^g",   name: "Bell G#5",       synth: "bell" },
+        { pad: 14, midi: 81, abc: "a",    name: "Bell A5",        synth: "bell" },
+        { pad: 15, midi: 82, abc: "^a",   name: "Bell A#5",       synth: "bell" },
+        { pad: 16, midi: 83, abc: "b",    name: "Bell B5",        synth: "bell" }
+      ],
+      'D': [
+        { pad: 1,  midi: 84, abc: "c'",   name: "Lead C6",        synth: "bell" },
+        { pad: 2,  midi: 85, abc: "^c'",  name: "Lead C#6",       synth: "bell" },
+        { pad: 3,  midi: 86, abc: "d'",   name: "Lead D6",        synth: "bell" },
+        { pad: 4,  midi: 87, abc: "^d'",  name: "Lead D#6",       synth: "bell" },
+        { pad: 5,  midi: 88, abc: "e'",   name: "VPM Spark 1",    synth: "lead" },
+        { pad: 6,  midi: 89, abc: "f'",   name: "VPM Spark 2",    synth: "lead" },
+        { pad: 7,  midi: 90, abc: "^f'",  name: "VPM Spark 3",    synth: "lead" },
+        { pad: 8,  midi: 91, abc: "g'",   name: "High G6",        synth: "bell" },
+        { pad: 9,  midi: 92, abc: "^g'",  name: "High G#6",       synth: "bell" },
+        { pad: 10, midi: 93, abc: "a'",   name: "Sweep Rise",     synth: "bell" },
+        { pad: 11, midi: 94, abc: "^a'",  name: "Laser Drop",     synth: "kick" },
+        { pad: 12, midi: 95, abc: "b'",   name: "Reverse FX",     synth: "hat_open" },
+        { pad: 13, midi: 96, abc: "c''",  name: "Top Ping 1",     synth: "bell" },
+        { pad: 14, midi: 97, abc: "^c''", name: "Top Ping 2",     synth: "bell" },
+        { pad: 15, midi: 98, abc: "d''",  name: "Top Ping 3",     synth: "bell" },
+        { pad: 16, midi: 99, abc: "^d''", name: "Glitch Peak",    synth: "snare" }
+      ]
+    };
+
+    let activeBank = 'A';
+    let baseBpm = 120;
+    let currentSpeed = 1.0;
+    let isAutoUpdatingBpm = false;
+
+    const abcEditor = document.getElementById('abcEditor');
+    const padGrid = document.getElementById('padGrid');
+    const activePadsSummary = document.getElementById('activePadsSummary');
+    const detectedCount = document.getElementById('detectedCount');
+    const playheadDisplay = document.getElementById('playheadDisplay');
+    const bankRangeInfo = document.getElementById('bankRangeInfo');
+    const durationBadge = document.getElementById('durationBadge');
+    const oscLabel = document.getElementById('oscLabel');
+    const bpmSlider = document.getElementById('bpmSlider');
+    const bpmValueDisplay = document.getElementById('bpmValueDisplay');
+
+    const metaTitle = document.getElementById('metaTitle');
+    const metaComposer = document.getElementById('metaComposer');
+    const metaMeter = document.getElementById('metaMeter');
+    const durationMode = document.getElementById('durationMode');
+    const targetSeconds = document.getElementById('targetSeconds');
+    const remapSourceNote = document.getElementById('remapSourceNote');
+    const remapTargetNote = document.getElementById('remapTargetNote');
+    const remapSourceBank = document.getElementById('remapSourceBank');
+    const remapTargetBank = document.getElementById('remapTargetBank');
+
+    // Toast UI
+    function showToast(message, icon = "✨") {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastIcon').innerText = icon;
+      document.getElementById('toastMessage').innerText = message;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 2500);
+    }
+
+    const DEFAULT_ABC = `X: 1
+T: Koala Beat
+C: 
+M: 4/4
+L: 1/16
+Q: 120
+K: C
+% BANCO A (Drums) + BANCO B (Bass)
+[C,, ^F,, E,]2 ^F,,2 [D,, ^F,,]2 ^F,,2 [C,, ^F,, G,]2 [C,, ^F,,]2 [D,, ^F,,]2 ^F,,2 |
+[C,, ^F,, E,]2 ^F,,2 [D,, ^F,, C]2 [C, ^F,,]2 [C,, ^F,,]2 ^F,,2 [D,, ^F,, e]2 [^D, ^F,,]2 |]`;
+
+    function populateRemapSelectors() {
+      remapSourceNote.innerHTML = '';
+      remapTargetNote.innerHTML = '';
+      ['A', 'B', 'C', 'D'].forEach(bank => {
+        PAD_BANKS[bank].forEach(item => {
+          const opt1 = document.createElement('option');
+          opt1.value = item.abc;
+          opt1.innerText = `${bank}${item.pad}: ${item.abc} (${item.name})`;
+          remapSourceNote.appendChild(opt1);
+
+          const opt2 = document.createElement('option');
+          opt2.value = item.abc;
+          opt2.innerText = `${bank}${item.pad}: ${item.abc} (${item.name})`;
+          remapTargetNote.appendChild(opt2);
+        });
+      });
+      remapTargetNote.selectedIndex = 2; // Default snare
+    }
+
+    function renderPads() {
+      padGrid.innerHTML = '';
+      const pads = PAD_BANKS[activeBank];
+      const ranges = {
+        'A': 'C1 (36) ➔ D#2 (51)',
+        'B': 'E2 (52) ➔ G3 (67)',
+        'C': 'G#3 (68) ➔ B4 (83)',
+        'D': 'C5 (84) ➔ D#6 (99)'
+      };
+      bankRangeInfo.innerText = ranges[activeBank];
+
+      pads.forEach(item => {
+        const wrap = document.createElement('div');
+        wrap.id = `pad-card-${item.midi}`;
+        wrap.className = `p-2.5 rounded-xl border flex flex-col justify-between h-24 transition duration-150 cursor-pointer select-none
+          bg-neutral-900 border-neutral-800 hover:border-amber-400 hover:bg-neutral-850 active:scale-95`;
+
+        wrap.innerHTML = `
+          <div class="flex items-center justify-between w-full">
+            <span class="text-[10px] font-bold text-neutral-400">#${item.pad}</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-mono text-neutral-500">${item.abc}</span>
+              <button class="wav-btn text-[9px] bg-neutral-800 hover:bg-neutral-700 px-1 py-0.5 rounded text-neutral-300 font-sans border border-neutral-700 hover:border-amber-400/50" title="Scarica WAV Pad">WAV</button>
+            </div>
+          </div>
+          <div class="my-auto pointer-events-none">
+            <div class="text-xs font-semibold text-neutral-200 truncate">${item.name}</div>
+            <div class="text-[10px] text-neutral-500 font-mono">MIDI ${item.midi}</div>
+          </div>
+        `;
+
+        wrap.addEventListener('click', (e) => {
+          if (e.target.classList.contains('wav-btn')) return;
+          insertNoteAtCursor(item.abc + " ");
+          playSyntheticSound(item.synth, item.midi, 0.2);
+          flashPad(item.midi);
+          parseAndAnalyze();
+        });
+
+        wrap.querySelector('.wav-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          exportPadSampleWav(item);
+        });
+
+        padGrid.appendChild(wrap);
+      });
+    }
+
+    function flashPad(midi) {
+      const el = document.getElementById(`pad-card-${midi}`);
+      if (!el) return;
+      el.classList.add('ring-2', 'ring-amber-400', 'bg-amber-500/40', 'border-amber-400');
+      setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-500/40', 'border-amber-400');
+      }, 160);
+    }
+
+    function insertNoteAtCursor(text) {
+      const start = abcEditor.selectionStart;
+      const end = abcEditor.selectionEnd;
+      abcEditor.value = abcEditor.value.substring(0, start) + text + abcEditor.value.substring(end);
+      abcEditor.selectionStart = abcEditor.selectionEnd = start + text.length;
+      abcEditor.focus();
+    }
+
+    document.querySelectorAll('.bank-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.bank-btn').forEach(b => {
+          b.className = 'bank-btn px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95';
+        });
+        btn.className = 'bank-btn px-3.5 py-1.5 rounded text-xs font-bold bg-amber-500 text-neutral-950 transition active:scale-95 shadow ring-1 ring-amber-400';
+        activeBank = btn.dataset.bank;
+        renderPads();
+        parseAndAnalyze();
+        showToast(`Attivato Banco ${activeBank}`, "🎛️");
+      });
+    });
+
+    function abcNoteToMidi(token) {
+      const baseMap = { 'C': 60, 'D': 62, 'E': 64, 'F': 65, 'G': 67, 'A': 69, 'B': 71,
+                        'c': 72, 'd': 74, 'e': 76, 'f': 77, 'g': 79, 'a': 81, 'b': 83 };
+      let accidental = 0;
+      let clean = token.replace(/[\d\/=]/g, '').replace(/-/g, '');
+
+      if (clean.includes('^^')) { accidental = 2; clean = clean.replace('^^', ''); }
+      else if (clean.includes('^')) { accidental = 1; clean = clean.replace('^', ''); }
+      else if (clean.includes('__')) { accidental = -2; clean = clean.replace('__', ''); }
+      else if (clean.includes('_')) { accidental = -1; clean = clean.replace('_', ''); }
+
+      let letter = clean.charAt(0);
+      if (!baseMap[letter]) return null;
+
+      let midi = baseMap[letter] + accidental;
+      const commas = (clean.match(/,/g) || []).length;
+      const apostrophes = (clean.match(/'/g) || []).length;
+      midi -= commas * 12;
+      midi += apostrophes * 12;
+      return midi;
+    }
+
+    function findPadByMidi(midi) {
+      for (let b of ['A', 'B', 'C', 'D']) {
+        const found = PAD_BANKS[b].find(p => p.midi === midi);
+        if (found) return { ...found, bank: b };
+      }
+      return null;
+    }
+
+    // ==========================================
+    // LOGICA DI RIMAPPATURA E SCAMBIO PAD & BANCHI
+    // ==========================================
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function replaceAbcNote(text, fromNote, toNote) {
+      const regex = new RegExp(`(?<![A-Ga-g\\^=_',])${escapeRegExp(fromNote)}(?=[\\d\\/-]*)(?![A-Ga-g,'])`, 'g');
+      return text.replace(regex, toNote);
+    }
+
+    function swapAbcNotes(text, noteA, noteB) {
+      const placeholder = "___TEMP_SWAP_TOKEN___";
+      let res = replaceAbcNote(text, noteA, placeholder);
+      res = replaceAbcNote(res, noteB, noteA);
+      res = replaceAbcNote(res, placeholder, noteB);
+      return res;
+    }
+
+    // Inversione Singolo Pad
+    document.getElementById('btnExecuteSwap').addEventListener('click', () => {
+      const src = remapSourceNote.value;
+      const tgt = remapTargetNote.value;
+      if (src === tgt) return;
+      abcEditor.value = swapAbcNotes(abcEditor.value, src, tgt);
+      parseAndAnalyze();
+      showToast(`Invertiti pad ${src} 🔁 ${tgt}`);
+    });
+
+    // Spostamento Singolo Pad
+    document.getElementById('btnExecuteReplace').addEventListener('click', () => {
+      const src = remapSourceNote.value;
+      const tgt = remapTargetNote.value;
+      if (src === tgt) return;
+      abcEditor.value = replaceAbcNote(abcEditor.value, src, tgt);
+      parseAndAnalyze();
+      showToast(`Spostate note da ${src} ➔ ${tgt}`);
+    });
+
+    // Inversione di un Intero Banco (16 Pad simultanei)
+    document.getElementById('btnSwapBanks').addEventListener('click', () => {
+      const bSrc = remapSourceBank.value;
+      const bTgt = remapTargetBank.value;
+      if (bSrc === bTgt) {
+        showToast("Seleziona due banchi diversi!", "⚠️");
+        return;
+      }
+
+      let code = abcEditor.value;
+      const padsSrc = PAD_BANKS[bSrc];
+      const padsTgt = PAD_BANKS[bTgt];
+
+      // Fase 1: Sostituisci il banco sorgente con placeholder temporanei
+      padsSrc.forEach((p, idx) => {
+        code = replaceAbcNote(code, p.abc, `___TEMP_BANK_SWAP_${idx}___`);
+      });
+
+      // Fase 2: Sostituisci il banco target con il sorgente
+      padsTgt.forEach((p, idx) => {
+        code = replaceAbcNote(code, p.abc, padsSrc[idx].abc);
+      });
+
+      // Fase 3: Sostituisci i placeholder con il banco target
+      padsSrc.forEach((p, idx) => {
+        code = replaceAbcNote(code, `___TEMP_BANK_SWAP_${idx}___`, padsTgt[idx].abc);
+      });
+
+      abcEditor.value = code;
+      parseAndAnalyze();
+      showToast(`Invertito Intero Banco ${bSrc} 🔁 Banco ${bTgt}`, "🔄");
+    });
+
+    // Spostamento di un Intero Banco
+    document.getElementById('btnReplaceBank').addEventListener('click', () => {
+      const bSrc = remapSourceBank.value;
+      const bTgt = remapTargetBank.value;
+      if (bSrc === bTgt) {
+        showToast("Seleziona due banchi diversi!", "⚠️");
+        return;
+      }
+
+      let code = abcEditor.value;
+      const padsSrc = PAD_BANKS[bSrc];
+      const padsTgt = PAD_BANKS[bTgt];
+
+      padsSrc.forEach((p, idx) => {
+        code = replaceAbcNote(code, p.abc, padsTgt[idx].abc);
+      });
+
+      abcEditor.value = code;
+      parseAndAnalyze();
+      showToast(`Spostate note Banco ${bSrc} ➔ Banco ${bTgt}`, "➡️");
+    });
+
+    function updateAbcBpmHeader(newBpm) {
+      let abc = abcEditor.value;
+      if (/Q:\s*(?:[^=\d\n]*=)?\s*\d+/i.test(abc)) {
+        abcEditor.value = abc.replace(/Q:\s*([^=\d\n]*=)?\s*\d+/i, (match, prefix) => {
+          return prefix ? `Q:${prefix}${newBpm}` : `Q: ${newBpm}`;
+        });
+      } else {
+        abcEditor.value = `Q: ${newBpm}\n` + abc;
+      }
+    }
+
+    function updateAbcHeader(tag, value) {
+      let abc = abcEditor.value;
+      const regex = new RegExp(`^${tag}:.*$`, 'm');
+      if (regex.test(abc)) {
+        abcEditor.value = abc.replace(regex, `${tag}: ${value}`);
+      } else {
+        abcEditor.value = `${tag}: ${value}\n` + abc;
+      }
+      parseAndAnalyze();
+    }
+
+    // Parser Deterministico ABC & Calcolo Durate
+    function parseAbcFull(abc) {
+      let bpm = 120;
+      let unitLength = 0.125;
+
+      const tMatch = abc.match(/^T:\s*(.*)$/m);
+      const cMatch = abc.match(/^C:\s*(.*)$/m);
+      const mMatch = abc.match(/^M:\s*(.*)$/m);
+
+      const title = tMatch ? tMatch[1].trim() : "Senza Titolo";
+      const composer = cMatch ? cMatch[1].trim() : "";
+      const meter = mMatch ? mMatch[1].trim() : "4/4";
+
+      const qMatch = abc.match(/Q:\s*(?:[^=\d\n]*=)?\s*(\d+)/i);
+      if (qMatch) bpm = parseInt(qMatch[1], 10);
+      baseBpm = bpm;
+
+      const lMatch = abc.match(/L:\s*(\d+)\/(\d+)/i);
+      if (lMatch) unitLength = parseInt(lMatch[1], 10) / parseInt(lMatch[2], 10);
+
+      let beatsPerBar = 4;
+      if (mMatch) {
+        const parts = meter.split('/');
+        if (parts.length === 2) beatsPerBar = parseInt(parts[0], 10);
+      }
+
+      const ccMatch = abc.match(/%%MIDI\s+control\s+53\s+(\d+)/i);
+      let oscCC = ccMatch ? parseInt(ccMatch[1], 10) : null;
+
+      const events = [];
+      const lines = abc.split('\n');
+      let scoreText = '';
+
+      for (let l of lines) {
+        l = l.trim();
+        if (l.startsWith('%') || l.startsWith('X:') || l.startsWith('T:') || l.startsWith('C:') ||
+            l.startsWith('M:') || l.startsWith('L:') || l.startsWith('Q:') || l.startsWith('K:')) continue;
+        scoreText += ' ' + l;
+      }
+
+      const tokenRegex = /(\[[^\]]+\](?:[\d\/]+)?-?|(?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*(?:[\d\/]+)?-?|z(?:[\d\/]+)?)/g;
+      const tokens = scoreText.match(tokenRegex) || [];
+
+      let totalQuarterBeats = 0;
+
+      tokens.forEach(tok => {
+        let mult = 1;
+        const numMatch = tok.match(/(\d+)(?:\/(\d+))?$/);
+        const fracMatch = tok.match(/\/(\d+)?$/);
+
+        if (numMatch) {
+          const num = parseInt(numMatch[1], 10);
+          const den = numMatch[2] ? parseInt(numMatch[2], 10) : 1;
+          mult = num / den;
+        } else if (fracMatch) {
+          mult = fracMatch[1] ? 1 / parseInt(fracMatch[1], 10) : 0.5;
+        }
+
+        const durationInQuarters = mult * (unitLength / 0.25);
+        totalQuarterBeats += durationInQuarters;
+
+        if (tok.startsWith('z')) {
+          events.push({ type: 'rest', quarters: durationInQuarters, raw: tok });
+        } else if (tok.startsWith('[')) {
+          const notesInside = tok.replace(/[\[\]\d\/-]/g, '').match(/(\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*/g) || [];
+          const midis = notesInside.map(abcNoteToMidi).filter(m => m !== null);
+          if (midis.length > 0) {
+            events.push({ type: 'chord', midis: midis, quarters: durationInQuarters, raw: tok });
+          }
+        } else {
+          const cleanNote = tok.replace(/[\d\/-]/g, '');
+          const m = abcNoteToMidi(cleanNote);
+          if (m !== null) {
+            events.push({ type: 'note', midi: m, quarters: durationInQuarters, raw: tok });
+          }
+        }
+      });
+
+      // Target Durata & Calcolo BPM
+      const mode = durationMode.value;
+      const targetSec = parseFloat(targetSeconds.value) || 60;
+
+      if (mode !== 'free' && totalQuarterBeats > 0 && !isAutoUpdatingBpm) {
+        let idealBpm = Math.round((totalQuarterBeats / targetSec) * 60);
+
+        if (mode === 'min') {
+          if (bpm > idealBpm) bpm = idealBpm;
+        } else if (mode === 'max') {
+          if (bpm < idealBpm) bpm = idealBpm;
+        } else if (mode === 'exact') {
+          bpm = idealBpm;
+        }
+
+        bpm = Math.max(30, Math.min(300, bpm));
+
+        if (bpm !== baseBpm) {
+          isAutoUpdatingBpm = true;
+          baseBpm = bpm;
+          updateAbcBpmHeader(bpm);
+          isAutoUpdatingBpm = false;
+        }
+      }
+
+      const effectiveBpm = Math.round(bpm * currentSpeed);
+      const totalSeconds = (totalQuarterBeats / effectiveBpm) * 60;
+      const totalBars = (totalQuarterBeats / beatsPerBar).toFixed(1);
+
+      return {
+        title, composer, meter,
+        bpm: effectiveBpm, originalBpm: baseBpm, unitLength,
+        events, totalSeconds, totalBars, oscCC, totalQuarterBeats
+      };
+    }
+
+    function parseAndAnalyze() {
+      const parsed = parseAbcFull(abcEditor.value);
+      
+      if (document.activeElement !== metaTitle) metaTitle.value = parsed.title;
+      if (document.activeElement !== metaComposer) metaComposer.value = parsed.composer;
+      if (document.activeElement !== metaMeter) metaMeter.value = parsed.meter;
+
+      bpmSlider.value = parsed.originalBpm;
+      bpmValueDisplay.innerText = parsed.originalBpm;
+
+      const mins = Math.floor(parsed.totalSeconds / 60);
+      const secs = Math.floor(parsed.totalSeconds % 60);
+      const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      
+      durationBadge.innerText = `⏱️ ${timeStr} (${parsed.totalBars} misure @ ${parsed.bpm} BPM${currentSpeed !== 1.0 ? ' [' + currentSpeed + '×]' : ''})`;
+
+      if (parsed.oscCC !== null) {
+        oscLabel.innerText = `NTS-1 CC 53 = ${parsed.oscCC}`;
+      } else {
+        oscLabel.innerText = `Standard / Multi-Pad`;
+      }
+
+      const foundMidi = new Set();
+      parsed.events.forEach(ev => {
+        if (ev.type === 'note') foundMidi.add(ev.midi);
+        if (ev.type === 'chord') ev.midis.forEach(m => foundMidi.add(m));
+      });
+
+      PAD_BANKS[activeBank].forEach(item => {
+        const el = document.getElementById(`pad-card-${item.midi}`);
+        if (!el) return;
+        if (foundMidi.has(item.midi)) {
+          el.classList.add('border-amber-500/80', 'bg-amber-950/20');
+        } else {
+          el.classList.remove('border-amber-500/80', 'bg-amber-950/20');
+        }
+      });
+
+      detectedCount.innerText = `${foundMidi.size} pad totali`;
+
+      if (foundMidi.size === 0) {
+        activePadsSummary.innerHTML = `<span class="text-neutral-500">Nessuna nota compatibile trovata.</span>`;
+        return;
+      }
+
+      let html = '';
+      Array.from(foundMidi).sort((a,b) => a - b).forEach(midi => {
+        const padInfo = findPadByMidi(midi);
+        if (padInfo) {
+          html += `<div class="flex items-center justify-between border-b border-neutral-800/80 py-0.5">
+            <span class="text-amber-400 font-bold">Banco ${padInfo.bank} - Pad ${padInfo.pad} (${padInfo.abc}):</span>
+            <span class="text-neutral-200">${padInfo.name}</span>
+            <span class="text-[10px] text-neutral-500">MIDI ${padInfo.midi}</span>
+          </div>`;
+        }
+      });
+      activePadsSummary.innerHTML = html;
+    }
+
+    // ==========================================
+    // MOTORE SINTESI SONORA DSP
+    // ==========================================
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function createWhiteNoiseBuffer(ctx, duration) {
+      const bufferSize = ctx.sampleRate * duration;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      return buffer;
+    }
+
+    function playSyntheticSound(type, midi, duration, targetCtx = null, destNode = null, startTime = null) {
+      const ctx = targetCtx || getAudioContext();
+      const now = (startTime !== null) ? startTime : ctx.currentTime;
+      const out = destNode || ctx.destination;
+      const freq = 440 * Math.pow(2, (midi - 69) / 12);
+
+      if (type === 'kick') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(38, now + 0.12);
+        gain.gain.setValueAtTime(1.0, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + 0.32);
+
+      } else if (type === 'snare' || type === 'snare_crisp') {
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, now);
+        oscGain.gain.setValueAtTime(0.6, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.connect(oscGain);
+        oscGain.connect(out);
+        osc.start(now);
+        osc.stop(now + 0.12);
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = createWhiteNoiseBuffer(ctx, 0.25);
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(1000, now);
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.8, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(out);
+        noise.start(now);
+
+      } else if (type === 'hat_closed' || type === 'hat_pedal') {
+        const noise = ctx.createBufferSource();
+        noise.buffer = createWhiteNoiseBuffer(ctx, 0.1);
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(6500, now);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.7, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(out);
+        noise.start(now);
+
+      } else if (type === 'hat_open' || type === 'crash') {
+        const dur = (type === 'crash') ? 0.7 : 0.35;
+        const noise = ctx.createBufferSource();
+        noise.buffer = createWhiteNoiseBuffer(ctx, dur);
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(5500, now);
+        filter.Q.value = 2.0;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.8, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(out);
+        noise.start(now);
+
+      } else if (type === 'bass') {
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(450, now);
+        gain.gain.setValueAtTime(0.7, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.2));
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + Math.max(duration, 0.22));
+
+      } else if (type === 'chord') {
+        [0, 4, 7].forEach(semi => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq * Math.pow(2, semi/12), now);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.3));
+          osc.connect(gain);
+          gain.connect(out);
+          osc.start(now);
+          osc.stop(now + Math.max(duration, 0.32));
+        });
+
+      } else if (type === 'bell') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + 0.42);
+
+      } else {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = (midi >= 60) ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.2));
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + Math.max(duration, 0.22));
+      }
+    }
+
+    // ==========================================
+    // EXPORT OFFLINE DI SINGOLI PAD E CANZONE INTERA
+    // ==========================================
+    function exportPadSampleWav(padItem) {
+      const sampleRate = 44100;
+      const duration = 0.5;
+      const offlineCtx = new OfflineAudioContext(1, sampleRate * duration, sampleRate);
+
+      playSyntheticSound(padItem.synth, padItem.midi, 0.35, offlineCtx, offlineCtx.destination, 0);
+
+      offlineCtx.startRendering().then(renderedBuffer => {
+        const wavBytes = bufferToWave(renderedBuffer, renderedBuffer.length);
+        const blob = new Blob([wavBytes], { type: 'audio/wav' });
+        downloadBlob(blob, `Koala_B${activeBank}_P${padItem.pad}_${padItem.name.replace(/\s+/g, '_')}.wav`);
+        showToast(`Campione WAV Pad ${padItem.pad} scaricato!`, "💾");
+      });
+    }
+
+    function exportMasterSongWav() {
+      const parsed = parseAbcFull(abcEditor.value);
+      if (parsed.events.length === 0) return;
+
+      const renderStatusText = document.getElementById('renderStatusText');
+      renderStatusText.innerText = "⏳ Render WAV in corso alla massima velocità...";
+
+      const sampleRate = 44100;
+      const totalSec = Math.max(1, parsed.totalSeconds + 1.0);
+      const offlineCtx = new OfflineAudioContext(2, Math.ceil(sampleRate * totalSec), sampleRate);
+
+      const secondsPerQuarter = 60 / parsed.bpm;
+      let timelineSec = 0;
+
+      parsed.events.forEach(ev => {
+        const stepSec = ev.quarters * secondsPerQuarter;
+        if (ev.type === 'note') {
+          const padInfo = findPadByMidi(ev.midi);
+          playSyntheticSound(padInfo ? padInfo.synth : 'lead', ev.midi, stepSec, offlineCtx, offlineCtx.destination, timelineSec);
+        } else if (ev.type === 'chord') {
+          ev.midis.forEach(m => {
+            const padInfo = findPadByMidi(m);
+            playSyntheticSound(padInfo ? padInfo.synth : 'lead', m, stepSec, offlineCtx, offlineCtx.destination, timelineSec);
+          });
+        }
+        timelineSec += stepSec;
+      });
+
+      offlineCtx.startRendering().then(renderedBuffer => {
+        renderStatusText.innerText = "✅ Render completato con successo!";
+        const wavBytes = bufferToWave(renderedBuffer, renderedBuffer.length);
+        const blob = new Blob([wavBytes], { type: 'audio/wav' });
+        downloadBlob(blob, `${slugify(parsed.title)}_master.wav`);
+        showToast("Brano Master WAV scaricato!", "🎧");
+        setTimeout(() => {
+          renderStatusText.innerText = "Scarica il WAV completo del brano: conversione ultra-rapida tramite OfflineAudioContext.";
+        }, 3000);
+      }).catch(err => {
+        alert("Errore rendering WAV: " + err.message);
+        renderStatusText.innerText = "Errore durante il rendering.";
+      });
+    }
+
+    function bufferToWave(abuffer, len) {
+      const numOfChan = abuffer.numberOfChannels;
+      const length = len * numOfChan * 2 + 44;
+      const out = new DataView(new ArrayBuffer(length));
+      let pos = 0;
+
+      function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
+      function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+
+      setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
+      setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+      setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
+      setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164);
+      setUint32(length - pos - 4);
+
+      for (let i = 0; i < len; i++) {
+        for (let ch = 0; ch < numOfChan; ch++) {
+          let sample = Math.max(-1, Math.min(1, abuffer.getChannelData(ch)[i]));
+          sample = (sample < 0 ? sample * 0x8000 : sample * 0x7FFF) | 0;
+          out.setInt16(pos, sample, true);
+          pos += 2;
+        }
+      }
+      return out.buffer;
+    }
+
+    // ==========================================
+    // RIPRODUZIONE ANTEPRIMA
+    // ==========================================
+    let playbackTimer = null;
+    function playAbcPreview() {
+      stopAbcPreview();
+      const parsed = parseAbcFull(abcEditor.value);
+      if (parsed.events.length === 0) return;
+
+      const secondsPerQuarter = 60 / parsed.bpm;
+      let currentIdx = 0;
+
+      function step() {
+        if (currentIdx >= parsed.events.length) {
+          stopAbcPreview();
+          playheadDisplay.innerText = "Fine riproduzione.";
+          return;
+        }
+
+        const ev = parsed.events[currentIdx];
+        const stepSec = ev.quarters * secondsPerQuarter;
+
+        if (ev.type === 'note') {
+          const padInfo = findPadByMidi(ev.midi);
+          playheadDisplay.innerHTML = `<span class="text-amber-400 font-bold">Nota:</span> ${ev.raw} | <span class="text-neutral-200">${padInfo ? 'Banco ' + padInfo.bank + ' #' + padInfo.pad : 'MIDI ' + ev.midi}</span>`;
+          playSyntheticSound(padInfo ? padInfo.synth : 'lead', ev.midi, stepSec);
+          flashPad(ev.midi);
+        } else if (ev.type === 'chord') {
+          playheadDisplay.innerHTML = `<span class="text-emerald-400 font-bold">Accordo:</span> ${ev.raw}`;
+          ev.midis.forEach(m => {
+            const padInfo = findPadByMidi(m);
+            playSyntheticSound(padInfo ? padInfo.synth : 'lead', m, stepSec);
+            flashPad(m);
+          });
+        } else if (ev.type === 'rest') {
+          playheadDisplay.innerHTML = `<span class="text-neutral-500">Pausa z</span>`;
+        }
+
+        currentIdx++;
+        playbackTimer = setTimeout(step, stepSec * 1000);
+      }
+
+      step();
+    }
+
+    function stopAbcPreview() {
+      if (playbackTimer) {
+        clearTimeout(playbackTimer);
+        playbackTimer = null;
+      }
+      playheadDisplay.innerText = "Fermo.";
+    }
+
+    // ==========================================
+    // PARSER & DECOMPILER MIDI MULTITRACCIA
+    // ==========================================
+    function parseMidiToAbc(arrayBuffer) {
+      const data = new DataView(arrayBuffer);
+      let offset = 0;
+
+      const mthd = String.fromCharCode(data.getUint8(0), data.getUint8(1), data.getUint8(2), data.getUint8(3));
+      if (mthd !== 'MThd') throw new Error("Header MIDI 'MThd' mancante");
+
+      const format = data.getUint16(8);
+      const trackCount = data.getUint16(10);
+      const division = data.getUint16(12);
+
+      offset = 14;
+      const allEvents = [];
+      let detectedBpm = 120;
+      let trackTitle = "MIDI Imported";
+
+      for (let t = 0; t < trackCount; t++) {
+        if (offset >= data.byteLength) break;
+        const chunkId = String.fromCharCode(data.getUint8(offset), data.getUint8(offset+1), data.getUint8(offset+2), data.getUint8(offset+3));
+        const chunkLen = data.getUint32(offset + 4);
+        offset += 8;
+
+        if (chunkId !== 'MTrk') {
+          offset += chunkLen;
+          continue;
+        }
+
+        const trackEnd = offset + chunkLen;
+        let currentTime = 0;
+        let runningStatus = 0;
+
+        while (offset < trackEnd) {
+          let dt = 0, b = 0;
+          do {
+            b = data.getUint8(offset++);
+            dt = (dt << 7) | (b & 0x7F);
+          } while (b & 0x80);
+          currentTime += dt;
+
+          let status = data.getUint8(offset);
+          if (status >= 0x80) {
+            offset++;
+            runningStatus = status;
+          } else {
+            status = runningStatus;
+          }
+
+          const type = status & 0xF0;
+
+          if (type === 0x90) {
+            const note = data.getUint8(offset++);
+            const vel = data.getUint8(offset++);
+            if (vel > 0) {
+              allEvents.push({ time: currentTime, type: 'noteOn', note: note });
+            } else {
+              allEvents.push({ time: currentTime, type: 'noteOff', note: note });
+            }
+          } else if (type === 0x80) {
+            const note = data.getUint8(offset++);
+            offset++;
+            allEvents.push({ time: currentTime, type: 'noteOff', note: note });
+          } else if (status === 0xFF) {
+            const metaType = data.getUint8(offset++);
+            let metaLen = 0;
+            do {
+              b = data.getUint8(offset++);
+              metaLen = (metaLen << 7) | (b & 0x7F);
+            } while (b & 0x80);
+
+            if (metaType === 0x51 && metaLen === 3) {
+              const mpqn = (data.getUint8(offset) << 16) | (data.getUint8(offset+1) << 8) | data.getUint8(offset+2);
+              detectedBpm = Math.round(60000000 / mpqn);
+            } else if (metaType === 0x03 && metaLen > 0) {
+              let str = '';
+              for (let i = 0; i < metaLen; i++) str += String.fromCharCode(data.getUint8(offset + i));
+              trackTitle = str.trim();
+            }
+            offset += metaLen;
+          } else if (type === 0xA0 || type === 0xB0 || type === 0xE0) {
+            offset += 2;
+          } else if (type === 0xC0 || type === 0xD0) {
+            offset += 1;
+          } else if (status === 0xF0 || status === 0xF7) {
+            let sysexLen = 0;
+            do {
+              b = data.getUint8(offset++);
+              sysexLen = (sysexLen << 7) | (b & 0x7F);
+            } while (b & 0x80);
+            offset += sysexLen;
+          }
+        }
+      }
+
+      allEvents.sort((a, b) => a.time - b.time);
+
+      if (allEvents.length === 0) throw new Error("Nessuna nota trovata nel file MIDI.");
+
+      const ticksPer16th = division / 4;
+      let generatedAbc = `X: 1\nT: ${trackTitle}\nC: \nM: 4/4\nL: 1/16\nQ: ${detectedBpm}\nK: C\n`;
+      let lastTime = 0;
+      let barSteps = 0;
+
+      allEvents.forEach(ev => {
+        if (ev.type === 'noteOn') {
+          const deltaTicks = ev.time - lastTime;
+          const restSteps = Math.round(deltaTicks / ticksPer16th);
+          if (restSteps > 0) {
+            generatedAbc += `z${restSteps > 1 ? restSteps : ''} `;
+            barSteps += restSteps;
+            if (barSteps >= 16) {
+              generatedAbc += "| ";
+              barSteps = barSteps % 16;
+            }
+          }
+          const abcStr = midiNumberToAbc(ev.note);
+          generatedAbc += `${abcStr}2 `;
+          barSteps += 2;
+          if (barSteps >= 16) {
+            generatedAbc += "| ";
+            barSteps = barSteps % 16;
+          }
+          lastTime = ev.time;
+        }
+      });
+
+      generatedAbc += "|]";
+      return generatedAbc;
+    }
+
+    function midiNumberToAbc(midi) {
+      const pad = findPadByMidi(midi);
+      if (pad) return pad.abc;
+      const noteNames = ["C", "^C", "D", "^D", "E", "F", "^F", "G", "^G", "A", "^A", "B"];
+      const octave = Math.floor(midi / 12) - 1;
+      const noteIdx = midi % 12;
+      let name = noteNames[noteIdx];
+      if (octave >= 5) name = name.toLowerCase() + "'".repeat(octave - 5);
+      else if (octave === 4) name = name.toLowerCase();
+      else name = name + ",".repeat(Math.max(0, 3 - octave));
+      return name;
+    }
+
+    // ==========================================
+    // COMPILATORE MIDI BINARIO FORMATO 0
+    // ==========================================
+    function writeVLQ(value) {
+      let buffer = [];
+      let val = value;
+      buffer.push(val & 0x7F);
+      while ((val >>= 7) > 0) {
+        buffer.push((val & 0x7F) | 0x80);
+      }
+      return buffer.reverse();
+    }
+
+    function buildMidiBinary(bpm, events, title) {
+      const division = 480;
+      let trackBytes = [];
+
+      const microseconds = Math.round(60000000 / bpm);
+      trackBytes.push(0x00, 0xFF, 0x51, 0x03, (microseconds >> 16) & 0xFF, (microseconds >> 8) & 0xFF, microseconds & 0xFF);
+
+      const trackName = title || "Koala Track";
+      trackBytes.push(0x00, 0xFF, 0x03, trackName.length, ...trackName.split('').map(c => c.charCodeAt(0)));
+
+      let pendingDelta = 0;
+      events.forEach(ev => {
+        const stepTicks = Math.round(ev.quarters * division);
+        if (ev.type === 'rest') {
+          pendingDelta += stepTicks;
+        } else if (ev.type === 'note') {
+          trackBytes.push(...writeVLQ(pendingDelta), 0x90, ev.midi, 0x64);
+          trackBytes.push(...writeVLQ(stepTicks), 0x80, ev.midi, 0x00);
+          pendingDelta = 0;
+        } else if (ev.type === 'chord') {
+          ev.midis.forEach((m, idx) => {
+            const dt = (idx === 0) ? pendingDelta : 0;
+            trackBytes.push(...writeVLQ(dt), 0x90, m, 0x64);
+          });
+          ev.midis.forEach((m, idx) => {
+            const dt = (idx === 0) ? stepTicks : 0;
+            trackBytes.push(...writeVLQ(dt), 0x80, m, 0x00);
+          });
+          pendingDelta = 0;
+        }
+      });
+
+      trackBytes.push(...writeVLQ(pendingDelta), 0xFF, 0x2F, 0x00);
+
+      const header = [0x4D, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x01, (division >> 8) & 0xFF, division & 0xFF];
+      const trackLen = trackBytes.length;
+      const trackHeader = [0x4D, 0x54, 0x72, 0x6B, (trackLen >> 24) & 0xFF, (trackLen >> 16) & 0xFF, (trackLen >> 8) & 0xFF, trackLen & 0xFF];
+
+      return new Uint8Array([...header, ...trackHeader, ...trackBytes]);
+    }
+
+    // ==========================================
+    // EVENT LISTENERS & BINDING
+    // ==========================================
+    metaTitle.addEventListener('input', (e) => updateAbcHeader('T', e.target.value));
+    metaComposer.addEventListener('input', (e) => updateAbcHeader('C', e.target.value));
+    metaMeter.addEventListener('input', (e) => updateAbcHeader('M', e.target.value));
+
+    durationMode.addEventListener('change', () => {
+      parseAndAnalyze();
+      showToast(`Modalità durata: ${durationMode.options[durationMode.selectedIndex].text}`);
+    });
+    targetSeconds.addEventListener('input', parseAndAnalyze);
+
+    document.querySelectorAll('.dur-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        durationMode.value = 'exact';
+        targetSeconds.value = btn.dataset.sec;
+        parseAndAnalyze();
+        showToast(`Target impostato a ${btn.dataset.sec}s`, "⏱️");
+      });
+    });
+
+    document.getElementById('fileMidiInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const abc = parseMidiToAbc(evt.target.result);
+          abcEditor.value = abc;
+          parseAndAnalyze();
+          showToast(`MIDI "${file.name}" importato con successo!`, "🎹");
+        } catch (err) {
+          alert("Errore caricamento MIDI: " + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById('fileUniversalInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const content = evt.target.result;
+        if (file.name.endsWith('.json')) {
+          try {
+            const json = JSON.parse(content);
+            if (json.abcCode) {
+              abcEditor.value = json.abcCode;
+            } else if (json.tracks && json.tracks[0] && json.tracks[0].abcCode) {
+              abcEditor.value = json.tracks[0].abcCode;
+            } else {
+              alert("Il JSON non contiene codice 'abcCode' valido.");
+              return;
+            }
+            parseAndAnalyze();
+            showToast(`JSON "${file.name}" caricato!`, "📦");
+          } catch (err) {
+            alert("Errore lettura JSON: " + err.message);
+          }
+        } else {
+          abcEditor.value = content;
+          parseAndAnalyze();
+          showToast(`File ABC caricato!`, "📄");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    bpmSlider.addEventListener('input', (e) => {
+      durationMode.value = 'free';
+      const val = parseInt(e.target.value, 10);
+      bpmValueDisplay.innerText = val;
+      updateAbcBpmHeader(val);
+      parseAndAnalyze();
+    });
+
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.speed-btn').forEach(b => {
+          b.className = 'speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95';
+        });
+        btn.className = 'speed-btn px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold active:scale-95 shadow ring-1 ring-amber-400/50';
+        currentSpeed = parseFloat(btn.dataset.speed);
+        parseAndAnalyze();
+        showToast(`Velocità: ${currentSpeed}×`, "⚡");
+      });
+    });
+
+    // Download .MID
+    document.getElementById('btnExportMidi').addEventListener('click', () => {
+      const parsed = parseAbcFull(abcEditor.value);
+      const bytes = buildMidiBinary(parsed.bpm, parsed.events, parsed.title);
+      const blob = new Blob([bytes], { type: 'audio/midi' });
+      downloadBlob(blob, `${slugify(parsed.title)}.mid`);
+      showToast("File MIDI scaricato!", "💾");
+    });
+
+    // Download .ABC
+    document.getElementById('btnExportAbc').addEventListener('click', () => {
+      const parsed = parseAbcFull(abcEditor.value);
+      const blob = new Blob([abcEditor.value], { type: 'text/plain;charset=utf-8' });
+      downloadBlob(blob, `${slugify(parsed.title)}.abc`);
+      showToast("Partitura .ABC scaricata!", "📄");
+    });
+
+    // Download .JSON
+    document.getElementById('btnExportJson').addEventListener('click', () => {
+      const parsed = parseAbcFull(abcEditor.value);
+      const bundle = {
+        generator: "Korg NTS-1 Suite - Koala Bridge Studio",
+        version: "1.5.0",
+        timestamp: new Date().toISOString(),
+        metadata: {
+          title: parsed.title,
+          composer: parsed.composer,
+          meter: parsed.meter,
+          totalBars: parsed.totalBars,
+          durationSeconds: Math.round(parsed.totalSeconds)
+        },
+        bpm: parsed.bpm,
+        mainOsc: parsed.oscCC ? String(parsed.oscCC) : "0",
+        abcCode: abcEditor.value
+      };
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `${slugify(parsed.title)}.json`);
+      showToast("Bundle .JSON scaricato!", "📦");
+    });
+
+    // Download Master WAV Offline
+    document.getElementById('btnExportMasterWav').addEventListener('click', exportMasterSongWav);
+
+    function slugify(text) {
+      return (text || 'brano')
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '_')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    abcEditor.addEventListener('input', parseAndAnalyze);
+    document.getElementById('btnPreview').addEventListener('click', () => {
+      playAbcPreview();
+      showToast("Riproduzione avviata", "▶️");
+    });
+    document.getElementById('btnStop').addEventListener('click', () => {
+      stopAbcPreview();
+      showToast("Riproduzione fermata", "⏹️");
+    });
+
+    // Inizializzazione
+    populateRemapSelectors();
+    abcEditor.value = DEFAULT_ABC;
+    renderPads();
+    parseAndAnalyze();
+  </script>
+</body>
+</html>
