@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koala Sampler Playlist Studio Pro v1.2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    button, input, select {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    button:active {
+      transform: scale(0.96);
+    }
+    .focus-ring:focus {
+      outline: none;
+      border-color: #fbbf24 !important;
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.35);
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #09090b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3f3f46;
+    }
+    .collapsible-content {
+      transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+      overflow: hidden;
+    }
+    .collapsible-content.collapsed {
+      max-height: 0 !important;
+      opacity: 0;
+      padding: 0 !important;
+      margin: 0 !important;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen font-sans p-3 sm:p-5 select-none relative">
+  <div class="max-w-7xl mx-auto space-y-4">
+
+    <!-- SEZIONE 1: HEADER & GESTIONE FILE (COLLASSABILE) -->
+    <header class="bg-neutral-900 border border-neutral-800 rounded-xl p-3 sm:p-4 transition">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🐨</span>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-amber-400">
+                Koala Playlist Studio Pro
+              </h1>
+              <span class="text-[10px] font-mono font-bold bg-neutral-800 text-amber-400 border border-neutral-700 px-2 py-0.5 rounded">
+                v1.2.0
+              </span>
+            </div>
+            <p class="text-xs text-neutral-400">Kit tematici per brano, ZIP generator, import WAV custom, 64-Pad Visualizer e Master Render</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnToggleHeaderSection" class="p-1.5 text-neutral-400 hover:text-amber-400 bg-neutral-800 hover:bg-neutral-700 rounded text-xs border border-neutral-700 font-semibold" title="Comprimi/Espandi Sezione File">
+            ▲ File & Kit
+          </button>
+        </div>
+      </div>
+
+      <div id="headerSectionContent" class="collapsible-content mt-4 pt-3 border-t border-neutral-800 space-y-3">
+        
+        <!-- RIGA 1: FILE SCALETTA & EXPORT MASTER -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 text-xs rounded border border-neutral-700 cursor-pointer font-semibold transition active:scale-95 flex items-center gap-1.5 shadow-sm">
+              <span>📂 Carica Scaletta (.mid, .abc, .json)</span>
+              <input type="file" id="batchFileInput" accept=".mid,.midi,.abc,.json,.txt" multiple class="hidden">
+            </label>
+            <button id="btnClearPlaylist" class="px-3 py-2 bg-neutral-900 hover:bg-red-950/40 text-neutral-400 hover:text-red-300 border border-neutral-800 hover:border-red-900/60 text-xs rounded transition">
+              Svuota Scaletta
+            </button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btnExportJson" class="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Esporta bundle scaletta JSON interoperabile">
+              📦 JSON
+            </button>
+            <button id="btnExportMidi" class="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition text-amber-300" title="Esporta file MIDI F0 con pause e cambi tempo concatenati">
+              💾 MID (F0)
+            </button>
+            <button id="btnExportMasterWav" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold rounded shadow transition flex items-center gap-1.5 active:scale-95" title="Render offline ultra-rapido WAV stereo 16-bit 44.1kHz">
+              <span>🎧 Esporta Master WAV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGA 2: GESTIONE CAMPIONI KOALA (DOWNLOAD ZIP & UPLOAD BATCH WAV) -->
+        <div class="p-3 bg-neutral-950 border border-neutral-800 rounded-lg flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-neutral-400 font-semibold text-[11px]">📦 Esporta Campioni per Koala:</span>
+            <button id="btnDownloadActiveBankZip" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded text-neutral-200 font-semibold active:scale-95" title="Scarica i 16 campioni WAV del banco attivo zippati">
+              🗜️ Scarica ZIP Banco <span id="labelZipActiveBank">A</span> (.zip)
+            </button>
+            <button id="btnDownloadAll64Zip" class="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded text-amber-300 font-bold active:scale-95" title="Scarica tutti i 64 campioni WAV dei banchi A, B, C, D pronti per Koala">
+              🗜️ Scarica Tutti i 64 Pad (.zip)
+            </button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-neutral-400 font-semibold text-[11px]">📥 Carica WAV Custom:</span>
+            <label class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded text-neutral-200 cursor-pointer font-semibold active:scale-95">
+              <span>Carica Cartella / Batch WAV</span>
+              <input type="file" id="batchCustomWavInput" accept="audio/*" multiple class="hidden">
+            </label>
+            <button id="btnResetCustomAudio" class="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 rounded border border-neutral-800" title="Ripristina la sintesi sonora per tutti i pad">
+              Ripristina Suoni
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- BARRA DI TRASPORTO GLOBALE (SEMPRE IN PRIMO PIANO - STICKY) -->
+    <div class="sticky top-2 z-40 bg-neutral-900/95 backdrop-blur border border-amber-500/30 rounded-xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xl">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <button id="btnGlobalPlay" class="px-4 sm:px-5 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-lg transition flex items-center gap-2 shadow active:scale-95">
+          <span>▶️</span> Play Playlist
+        </button>
+        <button id="btnGlobalStop" class="px-3 sm:px-4 py-2 sm:py-2.5 bg-neutral-800 hover:bg-neutral-700 text-xs rounded-lg text-neutral-200 transition active:scale-95 border border-neutral-700">
+          ⏹️ Stop
+        </button>
+        <button id="btnToggleShuffle" class="px-3 py-2 sm:py-2.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-300 font-semibold text-xs rounded-lg transition active:scale-95 flex items-center gap-1.5" title="Riproduzione Casuale">
+          <span>🔀 Shuffle:</span> <span id="shuffleStatusText" class="text-neutral-400">OFF</span>
+        </button>
+
+        <div class="h-6 w-px bg-neutral-800 hidden sm:block"></div>
+
+        <!-- Ascolto Casse -->
+        <div class="flex items-center gap-1.5 text-xs">
+          <span class="text-neutral-400 text-[11px] font-semibold hidden sm:inline">Ascolto:</span>
+          <select id="audioFilterSelect" class="bg-neutral-950 border border-neutral-700 rounded-lg px-2 py-1.5 text-amber-300 text-xs font-medium focus-ring">
+            <option value="ALL">🔊 Tutti i Banchi (A+B+C+D)</option>
+            <option value="A">Solo Banco A (Drums)</option>
+            <option value="B">Solo Banco B (Bass/Chords)</option>
+            <option value="C">Solo Banco C (Leads/Bells)</option>
+            <option value="D">Solo Banco D (Glitch/NTS-1)</option>
+          </select>
+        </div>
+
+        <button id="btnOpenFullscreenPads" class="px-3 py-2 sm:py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs rounded-lg transition active:scale-95 flex items-center gap-1.5" title="Apri tutti i 64 Pad contemporanei a schermo intero (Tasto F)">
+          <span>🖥️ 64 Pad Fullscreen</span>
+        </button>
+      </div>
+
+      <!-- Scrubber Timeline & Tempi -->
+      <div class="flex-1 max-w-md w-full space-y-1">
+        <div class="flex justify-between text-[11px] font-mono">
+          <span id="transportCurrentTrack" class="text-amber-400 font-semibold truncate max-w-[210px]">Pronto.</span>
+          <span id="transportTimeDisplay" class="text-neutral-400">00:00 / 00:00</span>
+        </div>
+        <div class="w-full bg-neutral-950 h-2.5 rounded-full overflow-hidden border border-neutral-800 relative" id="scrubberTrack">
+          <div id="scrubberBar" class="bg-gradient-to-r from-amber-500 to-amber-300 h-full w-0 transition-all duration-100"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CORPO PRINCIPALE A DUE COLONNE -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      
+      <!-- COLONNA SINISTRA: SCALETTA BRANI & KIT ASSEGNATO -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
+          
+          <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+            <div class="flex items-center gap-2">
+              <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">Scaletta Playlist</h2>
+              <span id="trackCountBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">0 tracce</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <div id="totalDurationBadge" class="text-xs font-mono px-2.5 py-1 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300 font-bold">
+                ⏱️ Totale: 00:00
+              </div>
+              <button id="btnTogglePlaylistTable" class="p-1 text-neutral-400 hover:text-amber-400 bg-neutral-800 rounded text-xs border border-neutral-700 font-semibold" title="Comprimi/Espandi Tabella">
+                ▲
+              </button>
+            </div>
+          </div>
+
+          <div id="playlistTableContainer" class="collapsible-content space-y-3">
+            
+            <!-- Barra Impostazione Globale Pause & Kit Massivo -->
+            <div class="p-2.5 bg-neutral-950 border border-neutral-800 rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span class="text-neutral-400 text-[11px] font-semibold">⚡ Impostazioni per TUTTE le tracce:</span>
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center gap-1">
+                  <span class="text-neutral-500 text-[10px]">Stacco:</span>
+                  <input type="number" id="globalPauseValue" min="0" max="120" value="2" class="w-12 bg-neutral-900 border border-neutral-700 rounded px-1 py-0.5 text-center font-mono text-amber-300 text-xs focus-ring">
+                  <select id="globalPauseMode" class="bg-neutral-900 border border-neutral-700 rounded px-1.5 py-0.5 text-neutral-300 text-xs focus-ring">
+                    <option value="bars">bat</option>
+                    <option value="seconds">sec</option>
+                  </select>
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <span class="text-neutral-500 text-[10px]">Kit:</span>
+                  <select id="globalKitSelect" class="bg-neutral-900 border border-neutral-700 rounded px-1.5 py-0.5 text-amber-300 text-xs focus-ring">
+                    <option value="standard">Standard Koala</option>
+                    <option value="lofi">Lo-Fi Warm & Chill</option>
+                    <option value="synthwave">Synthwave 80s</option>
+                    <option value="zen">Zen Pittura & Studio</option>
+                    <option value="glitch">Glitch & Cyber</option>
+                  </select>
+                </div>
+
+                <button id="btnApplyGlobalSettings" class="px-2.5 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded text-xs font-semibold active:scale-95">
+                  Applica
+                </button>
+              </div>
+            </div>
+
+            <!-- Drop Zone File -->
+            <div id="dropZone" class="border-2 border-dashed border-neutral-800 rounded-xl p-3 text-center transition hover:border-amber-500/50 bg-neutral-950/40 cursor-pointer">
+              <p class="text-xs text-neutral-400 pointer-events-none">
+                Trascina qui file <span class="text-amber-400 font-mono">.mid, .abc, .json</span> o clicca per caricare
+              </p>
+            </div>
+
+            <!-- Tabella Scaletta con Kit Sonoro per Singola Riga -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-neutral-300 border-collapse">
+                <thead>
+                  <tr class="border-b border-neutral-800 text-[10px] text-neutral-500 uppercase tracking-wider">
+                    <th class="py-2 px-1 w-8 text-center">#</th>
+                    <th class="py-2 px-1 w-10 text-center">Play</th>
+                    <th class="py-2 px-2">Brano & Autore</th>
+                    <th class="py-2 px-1 w-24">Kit Sonoro</th>
+                    <th class="py-2 px-1 w-14 text-center">BPM</th>
+                    <th class="py-2 px-1 w-24 text-center">Stacco</th>
+                    <th class="py-2 px-1 w-16 text-center">Durata</th>
+                    <th class="py-2 px-1 w-16 text-center">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody id="trackTableBody" class="divide-y divide-neutral-800/60">
+                  <!-- Righe generate via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="emptyPlaylistMsg" class="py-10 text-center text-neutral-500 text-xs">
+              Nessuna traccia presente nella scaletta. Aggiungi file per iniziare.
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COLONNA DESTRA: MONITOR DEI PAD, KIT GLOBALE & UPLOAD PER-PAD -->
+      <div class="lg:col-span-5 space-y-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4">
+          
+          <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+            <div class="flex items-center gap-1 bg-neutral-950 p-1 rounded-lg border border-neutral-800">
+              <button data-bank="A" class="pad-bank-btn px-3 py-1.5 rounded text-xs font-bold bg-amber-500 text-neutral-950 transition active:scale-95 shadow">Banco A</button>
+              <button data-bank="B" class="pad-bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco B</button>
+              <button data-bank="C" class="pad-bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco C</button>
+              <button data-bank="D" class="pad-bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco D</button>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <span id="bankPadRange" class="text-[11px] font-mono text-neutral-400 hidden sm:inline">MIDI 36–51</span>
+              <button id="btnTogglePadSection" class="p-1 text-neutral-400 hover:text-amber-400 bg-neutral-800 rounded text-xs border border-neutral-700 font-semibold" title="Comprimi/Espandi Pad">
+                ▲
+              </button>
+            </div>
+          </div>
+
+          <div id="padSectionContent" class="collapsible-content space-y-3">
+            
+            <!-- Selettore Kit Sonoro Attivo sul Monitor -->
+            <div class="flex items-center justify-between p-2 bg-neutral-950 border border-neutral-800 rounded-lg text-xs">
+              <span class="text-neutral-400 text-[11px]">Kit Sonoro Monitor:</span>
+              <select id="activeKitSelect" class="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-amber-300 text-xs font-semibold focus-ring">
+                <option value="standard">Standard Koala</option>
+                <option value="lofi">Lo-Fi Warm & Chill</option>
+                <option value="synthwave">Synthwave 80s</option>
+                <option value="zen">Zen Pittura & Studio</option>
+                <option value="glitch">Glitch & Cyber</option>
+              </select>
+            </div>
+
+            <!-- Griglia 4x4 dei 16 Pad del Banco attivo -->
+            <div id="padGridContainer" class="grid grid-cols-4 gap-2"></div>
+
+            <div class="p-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs space-y-1">
+              <div class="flex items-center justify-between text-neutral-300 font-medium">
+                <span>🔊 Voce Monitor:</span>
+                <span id="lastTriggeredPadInfo" class="text-amber-400 font-mono">In attesa...</span>
+              </div>
+              <p id="renderStatusText" class="text-[11px] text-neutral-500">
+                Tocca un pad per suonarlo. Usa <b>📁</b> per caricare un audio tuo o <b>WAV</b> per esportarlo.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODALE FULLSCREEN: TUTTI I 64 PAD CONTEMPORANEI -->
+  <div id="fullscreenPadsModal" class="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-md p-4 sm:p-6 hidden flex-col justify-between overflow-y-auto">
+    
+    <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🐨</span>
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-amber-400">Koala 64-Pad Visualizer Fullscreen</h2>
+          <p id="fsNowPlayingText" class="text-xs text-neutral-400">Traccia in riproduzione...</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="btnFsPlayPause" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold rounded-lg transition active:scale-95">
+          ▶️ Play
+        </button>
+        <button id="btnCloseFullscreenPads" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs rounded-lg transition font-semibold">
+          Chiudi ✕ (ESC)
+        </button>
+      </div>
+    </div>
+
+    <!-- Griglia dei 4 Banchi (64 Pad simultanei) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 flex-1">
+      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-amber-400">BANCO A (Drums)</span>
+          <span class="text-[10px] font-mono text-neutral-500">MIDI 36–51</span>
+        </div>
+        <div id="fsBankA" class="grid grid-cols-4 gap-1.5 flex-1"></div>
+      </div>
+
+      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-amber-400">BANCO B (Bass & Chords)</span>
+          <span class="text-[10px] font-mono text-neutral-500">MIDI 52–67</span>
+        </div>
+        <div id="fsBankB" class="grid grid-cols-4 gap-1.5 flex-1"></div>
+      </div>
+
+      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-amber-400">BANCO C (Leads & Bells)</span>
+          <span class="text-[10px] font-mono text-neutral-500">MIDI 68–83</span>
+        </div>
+        <div id="fsBankC" class="grid grid-cols-4 gap-1.5 flex-1"></div>
+      </div>
+
+      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-amber-400">BANCO D (Glitch & High)</span>
+          <span class="text-[10px] font-mono text-neutral-500">MIDI 84–99</span>
+        </div>
+        <div id="fsBankD" class="grid grid-cols-4 gap-1.5 flex-1"></div>
+      </div>
+    </div>
+
+    <div class="pt-3 border-t border-neutral-800 mt-4 flex items-center justify-between text-xs text-neutral-400 font-mono">
+      <span id="fsTimeDisplay">00:00 / 00:00</span>
+      <span class="text-[11px] text-neutral-500">Feedback sincronizzato. Premi 'F' o 'ESC' per commutare schermo intero.</span>
+    </div>
+  </div>
+
+  <!-- Toast Notifiche Flottanti -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-200 pointer-events-none">
+    <div class="bg-neutral-900 border border-amber-500/60 shadow-2xl rounded-lg px-4 py-2.5 flex items-center gap-2 text-xs text-amber-200">
+      <span id="toastIcon">✨</span>
+      <span id="toastMessage">Operazione completata</span>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. DEFINIZIONE DEI 64 PAD & KIT SONORI TEMATICI
+       ========================================================================= */
+    const PAD_BANKS = {
+      'A': [
+        { pad: 1,  midi: 36, abc: "C,,",  name: "Kick Sub",       synth: "kick" },
+        { pad: 2,  midi: 37, abc: "^C,,", name: "Rimshot",        synth: "rim" },
+        { pad: 3,  midi: 38, abc: "D,,",  name: "Snare Drum",     synth: "snare" },
+        { pad: 4,  midi: 39, abc: "^D,,", name: "Clap Hand",      synth: "clap" },
+        { pad: 5,  midi: 40, abc: "E,,",  name: "Snare Crisp",    synth: "snare_crisp" },
+        { pad: 6,  midi: 41, abc: "F,,",  name: "Low Tom",        synth: "tom_low" },
+        { pad: 7,  midi: 42, abc: "^F,,", name: "Closed Hat",     synth: "hat_closed" },
+        { pad: 8,  midi: 43, abc: "G,,",  name: "Mid Tom",        synth: "tom_mid" },
+        { pad: 9,  midi: 44, abc: "^G,,", name: "Pedal Hat",      synth: "hat_pedal" },
+        { pad: 10, midi: 45, abc: "A,,",  name: "High Tom",       synth: "tom_high" },
+        { pad: 11, midi: 46, abc: "^A,,", name: "Open Hat",       synth: "hat_open" },
+        { pad: 12, midi: 47, abc: "B,,",  name: "Crash Cymbal",   synth: "crash" },
+        { pad: 13, midi: 48, abc: "C,",   name: "Chop 1 (C3)",    synth: "chop" },
+        { pad: 14, midi: 49, abc: "^C,",  name: "Chop 2 (C#3)",   synth: "chop" },
+        { pad: 15, midi: 50, abc: "D,",   name: "Chop 3 (D3)",    synth: "chop" },
+        { pad: 16, midi: 51, abc: "^D,",  name: "NTS-1 FX Loop",  synth: "lead" }
+      ],
+      'B': [
+        { pad: 1,  midi: 52, abc: "E,",   name: "Bass E",         synth: "bass" },
+        { pad: 2,  midi: 53, abc: "F,",   name: "Bass F",         synth: "bass" },
+        { pad: 3,  midi: 54, abc: "^F,",  name: "Bass F#",        synth: "bass" },
+        { pad: 4,  midi: 55, abc: "G,",   name: "Bass G",         synth: "bass" },
+        { pad: 5,  midi: 56, abc: "^G,",  name: "Bass G#",        synth: "bass" },
+        { pad: 6,  midi: 57, abc: "A,",   name: "Bass Hit A",     synth: "bass" },
+        { pad: 7,  midi: 58, abc: "^A,",  name: "Synth Bass A#",  synth: "bass" },
+        { pad: 8,  midi: 59, abc: "B,",   name: "Synth Bass B",   synth: "bass" },
+        { pad: 9,  midi: 60, abc: "C",    name: "Chord C",        synth: "chord" },
+        { pad: 10, midi: 61, abc: "^C",   name: "Chord C#",       synth: "chord" },
+        { pad: 11, midi: 62, abc: "D",    name: "Chord D",        synth: "chord" },
+        { pad: 12, midi: 63, abc: "^D",   name: "Chord D#",       synth: "chord" },
+        { pad: 13, midi: 64, abc: "E",    name: "Note E4",        synth: "lead" },
+        { pad: 14, midi: 65, abc: "F",    name: "Note F4",        synth: "lead" },
+        { pad: 15, midi: 66, abc: "^F",   name: "Note F#4",       synth: "lead" },
+        { pad: 16, midi: 67, abc: "G",    name: "Note G4",        synth: "lead" }
+      ],
+      'C': [
+        { pad: 1,  midi: 68, abc: "^G",   name: "Note G#4",       synth: "lead" },
+        { pad: 2,  midi: 69, abc: "A",    name: "Note A4",        synth: "lead" },
+        { pad: 3,  midi: 70, abc: "^A",   name: "Note A#4",       synth: "lead" },
+        { pad: 4,  midi: 71, abc: "B",    name: "Note B4",        synth: "lead" },
+        { pad: 5,  midi: 72, abc: "c",    name: "Lead C5",        synth: "lead" },
+        { pad: 6,  midi: 73, abc: "^c",   name: "Lead C#5",       synth: "lead" },
+        { pad: 7,  midi: 74, abc: "d",    name: "Lead D5",        synth: "lead" },
+        { pad: 8,  midi: 75, abc: "^d",   name: "Lead D#5",       synth: "lead" },
+        { pad: 9,  midi: 76, abc: "e",    name: "Bell E5",        synth: "bell" },
+        { pad: 10, midi: 77, abc: "f",    name: "Bell F5",        synth: "bell" },
+        { pad: 11, midi: 78, abc: "^f",   name: "Bell F#5",       synth: "bell" },
+        { pad: 12, midi: 79, abc: "g",    name: "Bell G5",        synth: "bell" },
+        { pad: 13, midi: 80, abc: "^g",   name: "Bell G#5",       synth: "bell" },
+        { pad: 14, midi: 81, abc: "a",    name: "Bell A5",        synth: "bell" },
+        { pad: 15, midi: 82, abc: "^a",   name: "Bell A#5",       synth: "bell" },
+        { pad: 16, midi: 83, abc: "b",    name: "Bell B5",        synth: "bell" }
+      ],
+      'D': [
+        { pad: 1,  midi: 84, abc: "c'",   name: "Lead C6",        synth: "bell" },
+        { pad: 2,  midi: 85, abc: "^c'",  name: "Lead C#6",       synth: "bell" },
+        { pad: 3,  midi: 86, abc: "d'",   name: "Lead D6",        synth: "bell" },
+        { pad: 4,  midi: 87, abc: "^d'",  name: "Lead D#6",       synth: "bell" },
+        { pad: 5,  midi: 88, abc: "e'",   name: "VPM Spark 1",    synth: "lead" },
+        { pad: 6,  midi: 89, abc: "f'",   name: "VPM Spark 2",    synth: "lead" },
+        { pad: 7,  midi: 90, abc: "^f'",  name: "VPM Spark 3",    synth: "lead" },
+        { pad: 8,  midi: 91, abc: "g'",   name: "High G6",        synth: "bell" },
+        { pad: 9,  midi: 92, abc: "^g'",  name: "High G#6",       synth: "bell" },
+        { pad: 10, midi: 93, abc: "a'",   name: "Sweep Rise",     synth: "bell" },
+        { pad: 11, midi: 94, abc: "^a'",  name: "Laser Drop",     synth: "kick" },
+        { pad: 12, midi: 95, abc: "b'",   name: "Reverse FX",     synth: "hat_open" },
+        { pad: 13, midi: 96, abc: "c''",  name: "Top Ping 1",     synth: "bell" },
+        { pad: 14, midi: 97, abc: "^c''", name: "Top Ping 2",     synth: "bell" },
+        { pad: 15, midi: 98, abc: "d''",  name: "Top Ping 3",     synth: "bell" },
+        { pad: 16, midi: 99, abc: "^d''", name: "Glitch Peak",    synth: "snare" }
+      ]
+    };
+
+    function findPadByMidi(midi) {
+      for (const b of ['A', 'B', 'C', 'D']) {
+        const found = PAD_BANKS[b].find(p => p.midi === midi);
+        if (found) return { ...found, bank: b };
+      }
+      return null;
+    }
+
+    /* =========================================================================
+       2. STATO APPLICAZIONE & BUFFER CUSTOM AUDIO
+       ========================================================================= */
+    let playlist = [];
+    let currentActiveBank = 'A';
+    let audioFilterBank = 'ALL';
+    let isShuffleActive = false;
+    let selectedMonitorKit = 'standard';
+
+    // Mappa dei campioni audio caricati dall'utente (MIDI Note -> AudioBuffer)
+    const customUserAudioBuffers = new Map();
+
+    // Stato Trasporto / Riproduzione
+    let isPlaying = false;
+    let playingMode = null; // 'single' o 'global'
+    let currentPlayingTrackIndex = -1;
+    let playbackQueue = [];
+    let playbackQueuePointer = 0;
+    let playbackTimeouts = [];
+    let playbackStartTime = 0;
+    let playbackTotalDurationSec = 0;
+    let scrubberAnimFrame = null;
+
+    /* =========================================================================
+       3. DSP AUDIO ENGINE CON KIT TEMATICI & PLAYBACK CUSTOM BUFFER
+       ========================================================================= */
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function createWhiteNoiseBuffer(ctx, duration) {
+      const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      return buffer;
+    }
+
+    function shouldPlayNoteByFilter(midi, filter) {
+      if (filter === 'ALL') return true;
+      const pad = findPadByMidi(midi);
+      if (!pad) return true;
+      return pad.bank === filter;
+    }
+
+    // Sintesi differenziata con supporto kit sonori tematici
+    function playSyntheticSound(type, midi, duration, targetCtx = null, destNode = null, startTime = null, kit = 'standard') {
+      const ctx = targetCtx || getAudioContext();
+      const now = (startTime !== null) ? startTime : ctx.currentTime;
+      const out = destNode || ctx.destination;
+
+      // 1. Se l'utente ha caricato un campione custom per questo pad, riproduci il buffer
+      if (customUserAudioBuffers.has(midi)) {
+        const source = ctx.createBufferSource();
+        source.buffer = customUserAudioBuffers.get(midi);
+        source.connect(out);
+        source.start(now);
+        return;
+      }
+
+      // 2. Altrimenti usa il generatore di sintesi del kit richiesto
+      const freq = 440 * Math.pow(2, (midi - 69) / 12);
+
+      if (type === 'kick') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        let startFreq = 140;
+        let endFreq = 38;
+        let decay = 0.3;
+
+        if (kit === 'lofi') { startFreq = 100; endFreq = 42; decay = 0.38; }
+        else if (kit === 'synthwave') { startFreq = 160; endFreq = 32; decay = 0.28; }
+        else if (kit === 'zen') { startFreq = 85; endFreq = 48; decay = 0.45; }
+        else if (kit === 'glitch') { startFreq = 240; endFreq = 20; decay = 0.12; }
+
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.1);
+        gain.gain.setValueAtTime(1.0, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + decay);
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + decay + 0.02);
+
+      } else if (type === 'snare' || type === 'snare_crisp' || type === 'rim' || type === 'clap') {
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.type = (kit === 'synthwave') ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime((kit === 'lofi') ? 140 : 190, now);
+        oscGain.gain.setValueAtTime(0.5, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.connect(oscGain);
+        oscGain.connect(out);
+        osc.start(now);
+        osc.stop(now + 0.12);
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = createWhiteNoiseBuffer(ctx, (kit === 'synthwave') ? 0.35 : 0.2);
+        const filter = ctx.createBiquadFilter();
+        filter.type = (kit === 'lofi') ? 'bandpass' : 'highpass';
+        filter.frequency.setValueAtTime((kit === 'lofi') ? 850 : 1200, now);
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.7, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(out);
+        noise.start(now);
+
+      } else if (type === 'hat_closed' || type === 'hat_pedal' || type === 'hat_open' || type === 'crash') {
+        const isLong = (type === 'hat_open' || type === 'crash');
+        const dur = isLong ? ((type === 'crash') ? 0.7 : 0.35) : 0.08;
+        const noise = ctx.createBufferSource();
+        noise.buffer = createWhiteNoiseBuffer(ctx, dur);
+        const filter = ctx.createBiquadFilter();
+        filter.type = (kit === 'lofi') ? 'lowpass' : 'highpass';
+        filter.frequency.setValueAtTime((kit === 'lofi') ? 4500 : 7000, now);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.65, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(out);
+        noise.start(now);
+
+      } else if (type === 'bass') {
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+
+        if (kit === 'zen') {
+          osc.type = 'sine';
+          filter.frequency.setValueAtTime(300, now);
+        } else if (kit === 'synthwave') {
+          osc.type = 'sawtooth';
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(650, now);
+          filter.Q.value = 4.0;
+        } else if (kit === 'lofi') {
+          osc.type = 'triangle';
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(380, now);
+        } else {
+          osc.type = 'sawtooth';
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(450, now);
+        }
+
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.7, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.22));
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + Math.max(duration, 0.24));
+
+      } else if (type === 'chord') {
+        // Modalità accordi (lofi preferisce triadi minori)
+        const chordIntervals = (kit === 'lofi') ? [0, 3, 7] : [0, 4, 7];
+        chordIntervals.forEach(semi => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = (kit === 'zen') ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(freq * Math.pow(2, semi / 12), now);
+          gain.gain.setValueAtTime(0.28, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.35));
+          osc.connect(gain);
+          gain.connect(out);
+          osc.start(now);
+          osc.stop(now + Math.max(duration, 0.38));
+        });
+
+      } else if (type === 'bell') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = (kit === 'glitch') ? 'square' : 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        const decay = (kit === 'zen') ? 0.8 : 0.42;
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + decay);
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + decay + 0.05);
+
+      } else {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = (midi >= 60) ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.2));
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + Math.max(duration, 0.22));
+      }
+    }
+
+    /* =========================================================================
+       4. CONVERTITORI NOTAZIONALI & PARSER
+       ========================================================================= */
+    function abcNoteToMidi(token) {
+      const baseMap = {
+        'C': 60, 'D': 62, 'E': 64, 'F': 65, 'G': 67, 'A': 69, 'B': 71,
+        'c': 72, 'd': 74, 'e': 76, 'f': 77, 'g': 79, 'a': 81, 'b': 83
+      };
+      let accidental = 0;
+      let clean = token.replace(/[\d\/=]/g, '').replace(/-/g, '');
+
+      if (clean.includes('^^')) { accidental = 2; clean = clean.replace('^^', ''); }
+      else if (clean.includes('^')) { accidental = 1; clean = clean.replace('^', ''); }
+      else if (clean.includes('__')) { accidental = -2; clean = clean.replace('__', ''); }
+      else if (clean.includes('_')) { accidental = -1; clean = clean.replace('_', ''); }
+
+      const letter = clean.charAt(0);
+      if (!baseMap[letter]) return null;
+
+      let midi = baseMap[letter] + accidental;
+      const commas = (clean.match(/,/g) || []).length;
+      const apostrophes = (clean.match(/'/g) || []).length;
+      midi -= commas * 12;
+      midi += apostrophes * 12;
+      return midi;
+    }
+
+    function midiNumberToAbc(midi) {
+      const pad = findPadByMidi(midi);
+      if (pad) return pad.abc;
+      const noteNames = ["C", "^C", "D", "^D", "E", "F", "^F", "G", "^G", "A", "^A", "B"];
+      const octave = Math.floor(midi / 12) - 1;
+      const noteIdx = midi % 12;
+      let name = noteNames[noteIdx];
+      if (octave >= 5) name = name.toLowerCase() + "'".repeat(octave - 5);
+      else if (octave === 4) name = name.toLowerCase();
+      else name = name + ",".repeat(Math.max(0, 3 - octave));
+      return name;
+    }
+
+    function parseAbcScore(abc) {
+      let bpm = 120;
+      let unitLength = 0.125;
+
+      const tMatch = abc.match(/^T:\s*(.*)$/m);
+      const cMatch = abc.match(/^C:\s*(.*)$/m);
+      const mMatch = abc.match(/^M:\s*(.*)$/m);
+      const qMatch = abc.match(/Q:\s*(?:[^=\d\n]*=)?\s*(\d+)/i);
+      const lMatch = abc.match(/L:\s*(\d+)\/(\d+)/i);
+
+      const title = tMatch ? tMatch[1].trim() : "Traccia Senza Titolo";
+      const composer = cMatch ? cMatch[1].trim() : "Koala";
+      const meter = mMatch ? mMatch[1].trim() : "4/4";
+
+      if (qMatch) bpm = parseInt(qMatch[1], 10);
+      if (lMatch) unitLength = parseInt(lMatch[1], 10) / parseInt(lMatch[2], 10);
+
+      const events = [];
+      const lines = abc.split('\n');
+      let scoreText = '';
+
+      for (let l of lines) {
+        l = l.trim();
+        if (l.startsWith('%') || l.startsWith('X:') || l.startsWith('T:') || l.startsWith('C:') ||
+            l.startsWith('M:') || l.startsWith('L:') || l.startsWith('Q:') || l.startsWith('K:')) continue;
+        scoreText += ' ' + l;
+      }
+
+      const tokenRegex = /(\[[^\]]+\](?:[\d\/]+)?-?|(?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*(?:[\d\/]+)?-?|z(?:[\d\/]+)?)/g;
+      const tokens = scoreText.match(tokenRegex) || [];
+      let totalQuarterBeats = 0;
+
+      tokens.forEach(tok => {
+        let mult = 1;
+        const numMatch = tok.match(/(\d+)(?:\/(\d+))?$/);
+        const fracMatch = tok.match(/\/(\d+)?$/);
+
+        if (numMatch) {
+          const num = parseInt(numMatch[1], 10);
+          const den = numMatch[2] ? parseInt(numMatch[2], 10) : 1;
+          mult = num / den;
+        } else if (fracMatch) {
+          mult = fracMatch[1] ? 1 / parseInt(fracMatch[1], 10) : 0.5;
+        }
+
+        const durationInQuarters = mult * (unitLength / 0.25);
+        totalQuarterBeats += durationInQuarters;
+
+        if (tok.startsWith('z')) {
+          events.push({ type: 'rest', quarters: durationInQuarters, raw: tok });
+        } else if (tok.startsWith('[')) {
+          const notesInside = tok.replace(/[\[\]\d\/-]/g, '').match(/(\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*/g) || [];
+          const midis = notesInside.map(abcNoteToMidi).filter(m => m !== null);
+          if (midis.length > 0) {
+            events.push({ type: 'chord', midis: midis, quarters: durationInQuarters, raw: tok });
+          }
+        } else {
+          const cleanNote = tok.replace(/[\d\/-]/g, '');
+          const m = abcNoteToMidi(cleanNote);
+          if (m !== null) {
+            events.push({ type: 'note', midi: m, quarters: durationInQuarters, raw: tok });
+          }
+        }
+      });
+
+      const totalSeconds = (totalQuarterBeats / bpm) * 60;
+      return { title, composer, meter, bpm, events, totalQuarterBeats, totalSeconds };
+    }
+
+    function parseMidiArrayBuffer(arrayBuffer, filename = "Traccia MIDI") {
+      const data = new DataView(arrayBuffer);
+      let offset = 0;
+
+      const mthd = String.fromCharCode(data.getUint8(0), data.getUint8(1), data.getUint8(2), data.getUint8(3));
+      if (mthd !== 'MThd') throw new Error("Header MIDI 'MThd' mancante");
+
+      const format = data.getUint16(8);
+      const trackCount = data.getUint16(10);
+      const division = data.getUint16(12);
+
+      offset = 14;
+      const rawEvents = [];
+      let detectedBpm = 120;
+      let detectedTitle = filename.replace(/\.(mid|midi)$/i, '');
+
+      for (let t = 0; t < trackCount; t++) {
+        if (offset >= data.byteLength) break;
+        const chunkId = String.fromCharCode(data.getUint8(offset), data.getUint8(offset+1), data.getUint8(offset+2), data.getUint8(offset+3));
+        const chunkLen = data.getUint32(offset + 4);
+        offset += 8;
+
+        if (chunkId !== 'MTrk') {
+          offset += chunkLen;
+          continue;
+        }
+
+        const trackEnd = offset + chunkLen;
+        let currentTime = 0;
+        let runningStatus = 0;
+
+        while (offset < trackEnd) {
+          let dt = 0, b = 0;
+          do {
+            b = data.getUint8(offset++);
+            dt = (dt << 7) | (b & 0x7F);
+          } while (b & 0x80);
+          currentTime += dt;
+
+          let status = data.getUint8(offset);
+          if (status >= 0x80) {
+            offset++;
+            runningStatus = status;
+          } else {
+            status = runningStatus;
+          }
+
+          const type = status & 0xF0;
+
+          if (type === 0x90) {
+            const note = data.getUint8(offset++);
+            const vel = data.getUint8(offset++);
+            if (vel > 0) {
+              rawEvents.push({ time: currentTime, type: 'noteOn', note: note, vel: vel });
+            } else {
+              rawEvents.push({ time: currentTime, type: 'noteOff', note: note });
+            }
+          } else if (type === 0x80) {
+            const note = data.getUint8(offset++);
+            offset++;
+            rawEvents.push({ time: currentTime, type: 'noteOff', note: note });
+          } else if (status === 0xFF) {
+            const metaType = data.getUint8(offset++);
+            let metaLen = 0;
+            do {
+              b = data.getUint8(offset++);
+              metaLen = (metaLen << 7) | (b & 0x7F);
+            } while (b & 0x80);
+
+            if (metaType === 0x51 && metaLen === 3) {
+              const mpqn = (data.getUint8(offset) << 16) | (data.getUint8(offset+1) << 8) | data.getUint8(offset+2);
+              detectedBpm = Math.round(60000000 / mpqn);
+            } else if (metaType === 0x03 && metaLen > 0) {
+              let str = '';
+              for (let i = 0; i < metaLen; i++) str += String.fromCharCode(data.getUint8(offset + i));
+              if (str.trim().length > 0) detectedTitle = str.trim();
+            }
+            offset += metaLen;
+          } else if (type === 0xA0 || type === 0xB0 || type === 0xE0) {
+            offset += 2;
+          } else if (type === 0xC0 || type === 0xD0) {
+            offset += 1;
+          } else if (status === 0xF0 || status === 0xF7) {
+            let sysexLen = 0;
+            do {
+              b = data.getUint8(offset++);
+              sysexLen = (sysexLen << 7) | (b & 0x7F);
+            } while (b & 0x80);
+            offset += sysexLen;
+          }
+        }
+      }
+
+      rawEvents.sort((a, b) => a.time - b.time);
+      if (rawEvents.length === 0) throw new Error("Nessuna nota trovata nel file MIDI.");
+
+      const noteOnEvents = rawEvents.filter(e => e.type === 'noteOn');
+      const events = [];
+      let lastTime = 0;
+      let totalQuarter = 0;
+
+      for (let i = 0; i < noteOnEvents.length; i++) {
+        const cur = noteOnEvents[i];
+        const deltaTicks = cur.time - lastTime;
+        if (deltaTicks > 0) {
+          const restQuarters = deltaTicks / division;
+          events.push({ type: 'rest', quarters: restQuarters });
+          totalQuarter += restQuarters;
+        }
+
+        const off = rawEvents.find(e => e.time > cur.time && (e.type === 'noteOff' || (e.type === 'noteOn' && e.vel === 0)) && e.note === cur.note);
+        const noteTicks = off ? (off.time - cur.time) : (division / 4);
+        const noteQuarters = Math.max(0.125, noteTicks / division);
+
+        events.push({ type: 'note', midi: cur.note, quarters: noteQuarters });
+        totalQuarter += noteQuarters;
+        lastTime = cur.time + noteTicks;
+      }
+
+      const totalSeconds = (totalQuarter / detectedBpm) * 60;
+      return {
+        title: detectedTitle,
+        composer: "Koala MIDI",
+        bpm: detectedBpm,
+        meter: "4/4",
+        events: events,
+        totalQuarterBeats: totalQuarter,
+        totalSeconds: totalSeconds,
+        abcCode: ""
+      };
+    }
+
+    /* =========================================================================
+       5. GESTIONE SCALETTA & CALCOLO PAUSE
+       ========================================================================= */
+    function recalculatePlaylistTimes() {
+      let cumulativeSec = 0;
+      playlist.forEach(t => {
+        const secondsPerQuarter = 60 / t.bpm;
+        t.durationSeconds = t.totalQuarterBeats * secondsPerQuarter;
+
+        if (t.pauseMode === 'seconds') {
+          t.pauseSeconds = parseFloat(t.pauseVal) || 0;
+          t.pauseQuarterBeats = (t.pauseSeconds / secondsPerQuarter);
+        } else {
+          const bars = parseFloat(t.pauseVal) || 0;
+          t.pauseQuarterBeats = bars * 4;
+          t.pauseSeconds = t.pauseQuarterBeats * secondsPerQuarter;
+        }
+
+        t.totalItemSeconds = t.durationSeconds + t.pauseSeconds;
+        cumulativeSec += t.totalItemSeconds;
+      });
+
+      document.getElementById('trackCountBadge').innerText = `${playlist.length} tracce`;
+      document.getElementById('totalDurationBadge').innerText = `⏱️ Totale: ${formatTime(cumulativeSec)}`;
+      return cumulativeSec;
+    }
+
+    function renderPlaylistTable() {
+      recalculatePlaylistTimes();
+      const tbody = document.getElementById('trackTableBody');
+      const emptyMsg = document.getElementById('emptyPlaylistMsg');
+      tbody.innerHTML = '';
+
+      if (playlist.length === 0) {
+        emptyMsg.classList.remove('hidden');
+        return;
+      }
+      emptyMsg.classList.add('hidden');
+
+      playlist.forEach((track, index) => {
+        const tr = document.createElement('tr');
+        const isCurrentPlaying = (isPlaying && currentPlayingTrackIndex === index);
+        tr.className = `border-b border-neutral-800/60 hover:bg-neutral-900/60 transition ${isCurrentPlaying ? 'bg-amber-950/30 border-l-2 border-amber-400' : ''}`;
+
+        tr.innerHTML = `
+          <td class="py-2 px-1 text-center font-mono text-neutral-500 font-bold">
+            ${index + 1}
+          </td>
+          <td class="py-2 px-1 text-center">
+            <button class="row-play-btn w-7 h-7 rounded-lg flex items-center justify-center text-xs transition ${isCurrentPlaying ? 'bg-amber-400 text-neutral-950 font-bold' : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200'}" title="${isCurrentPlaying ? 'Ferma' : 'Ascolta'}">
+              ${isCurrentPlaying ? '⏹️' : '▶️'}
+            </button>
+          </td>
+          <td class="py-2 px-2 space-y-0.5">
+            <input type="text" class="track-title-input w-full bg-transparent border-b border-transparent hover:border-neutral-700 focus:border-amber-400 text-neutral-100 font-semibold text-xs focus-ring rounded-none px-0.5" value="${escapeHtml(track.title)}" placeholder="Titolo">
+            <input type="text" class="track-composer-input w-full bg-transparent border-b border-transparent hover:border-neutral-700 focus:border-amber-400 text-neutral-400 text-[10px] focus-ring rounded-none px-0.5" value="${escapeHtml(track.composer)}" placeholder="Autore">
+          </td>
+          <td class="py-2 px-1">
+            <select class="track-kit-select bg-neutral-950 border border-neutral-800 rounded px-1.5 py-1 text-amber-300 text-[11px] font-semibold focus-ring w-full">
+              <option value="standard" ${track.kit === 'standard' ? 'selected' : ''}>Standard</option>
+              <option value="lofi" ${track.kit === 'lofi' ? 'selected' : ''}>Lo-Fi</option>
+              <option value="synthwave" ${track.kit === 'synthwave' ? 'selected' : ''}>Synthwave</option>
+              <option value="zen" ${track.kit === 'zen' ? 'selected' : ''}>Zen</option>
+              <option value="glitch" ${track.kit === 'glitch' ? 'selected' : ''}>Glitch</option>
+            </select>
+          </td>
+          <td class="py-2 px-1 text-center">
+            <input type="number" min="30" max="300" class="track-bpm-input w-12 bg-neutral-950 border border-neutral-800 rounded p-1 text-center font-mono text-amber-300 text-xs focus-ring" value="${track.bpm}">
+          </td>
+          <td class="py-2 px-1 text-center">
+            <div class="flex items-center justify-center gap-1">
+              <input type="number" min="0" step="0.5" class="track-pause-val-input w-10 bg-neutral-950 border border-neutral-800 rounded p-1 text-center font-mono text-neutral-300 text-xs focus-ring" value="${track.pauseVal}">
+              <select class="track-pause-mode-select bg-neutral-950 border border-neutral-800 rounded px-1 py-1 text-[10px] text-neutral-400 focus-ring">
+                <option value="bars" ${track.pauseMode === 'bars' ? 'selected' : ''}>bat</option>
+                <option value="seconds" ${track.pauseMode === 'seconds' ? 'selected' : ''}>sec</option>
+              </select>
+            </div>
+          </td>
+          <td class="py-2 px-1 text-center font-mono text-neutral-300 text-xs">
+            ${formatTime(track.durationSeconds)}
+            <div class="text-[9px] text-neutral-500">+${track.pauseSeconds.toFixed(1)}s</div>
+          </td>
+          <td class="py-2 px-1 text-center">
+            <div class="flex items-center justify-center gap-1">
+              <button class="move-up-btn p-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded disabled:opacity-30 disabled:pointer-events-none" ${index === 0 ? 'disabled' : ''} title="Sposta su">▲</button>
+              <button class="move-down-btn p-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded disabled:opacity-30 disabled:pointer-events-none" ${index === playlist.length - 1 ? 'disabled' : ''} title="Sposta giù">▼</button>
+              <button class="delete-btn p-1 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded ml-0.5" title="Elimina">✕</button>
+            </div>
+          </td>
+        `;
+
+        tr.querySelector('.row-play-btn').addEventListener('click', () => {
+          if (isPlaying && currentPlayingTrackIndex === index) {
+            stopPlayback();
+          } else {
+            playSingleTrack(index);
+          }
+        });
+
+        tr.querySelector('.track-title-input').addEventListener('change', (e) => track.title = e.target.value.trim() || "Traccia");
+        tr.querySelector('.track-composer-input').addEventListener('change', (e) => track.composer = e.target.value.trim() || "");
+        tr.querySelector('.track-kit-select').addEventListener('change', (e) => track.kit = e.target.value);
+        tr.querySelector('.track-bpm-input').addEventListener('change', (e) => {
+          let b = parseInt(e.target.value, 10);
+          if (isNaN(b) || b < 30) b = 30;
+          if (b > 300) b = 300;
+          track.bpm = b;
+          renderPlaylistTable();
+        });
+        tr.querySelector('.track-pause-val-input').addEventListener('change', (e) => {
+          let v = parseFloat(e.target.value);
+          if (isNaN(v) || v < 0) v = 0;
+          track.pauseVal = v;
+          renderPlaylistTable();
+        });
+        tr.querySelector('.track-pause-mode-select').addEventListener('change', (e) => {
+          track.pauseMode = e.target.value;
+          renderPlaylistTable();
+        });
+
+        tr.querySelector('.move-up-btn').addEventListener('click', () => {
+          if (index > 0) {
+            const temp = playlist[index];
+            playlist[index] = playlist[index - 1];
+            playlist[index - 1] = temp;
+            renderPlaylistTable();
+          }
+        });
+        tr.querySelector('.move-down-btn').addEventListener('click', () => {
+          if (index < playlist.length - 1) {
+            const temp = playlist[index];
+            playlist[index] = playlist[index + 1];
+            playlist[index + 1] = temp;
+            renderPlaylistTable();
+          }
+        });
+        tr.querySelector('.delete-btn').addEventListener('click', () => {
+          if (isPlaying && currentPlayingTrackIndex === index) stopPlayback();
+          playlist.splice(index, 1);
+          renderPlaylistTable();
+          showToast("Traccia rimossa", "🗑️");
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('btnApplyGlobalSettings').addEventListener('click', () => {
+      const mode = document.getElementById('globalPauseMode').value;
+      const val = parseFloat(document.getElementById('globalPauseValue').value) || 0;
+      const kit = document.getElementById('globalKitSelect').value;
+
+      playlist.forEach(t => {
+        t.pauseMode = mode;
+        t.pauseVal = val;
+        t.kit = kit;
+      });
+      renderPlaylistTable();
+      showToast(`Impostazioni applicate: ${kit} / ${val} ${mode}`, "⚡");
+    });
+
+    /* =========================================================================
+       6. MONITOR PAD & CARICAMENTO AUDIO CUSTOM (PER-PAD E BATCH)
+       ========================================================================= */
+    function renderLocalPadGrid() {
+      const container = document.getElementById('padGridContainer');
+      container.innerHTML = '';
+      const pads = PAD_BANKS[currentActiveBank];
+
+      const rangeLabel = document.getElementById('bankPadRange');
+      const ranges = {
+        'A': 'C1 (36) ➔ D#2 (51)',
+        'B': 'E2 (52) ➔ G3 (67)',
+        'C': 'G#3 (68) ➔ B4 (83)',
+        'D': 'C5 (84) ➔ D#6 (99)'
+      };
+      rangeLabel.innerText = ranges[currentActiveBank];
+      document.getElementById('labelZipActiveBank').innerText = currentActiveBank;
+
+      pads.forEach(item => {
+        const hasCustom = customUserAudioBuffers.has(item.midi);
+        const padCard = document.createElement('div');
+        padCard.id = `koala-pad-${item.midi}`;
+        padCard.className = `p-2 rounded-xl border flex flex-col justify-between h-20 transition duration-150 cursor-pointer select-none ${hasCustom ? 'bg-amber-950/20 border-amber-500/40' : 'bg-neutral-900 border-neutral-800'} hover:border-amber-400 hover:bg-neutral-850 active:scale-95`;
+
+        padCard.innerHTML = `
+          <div class="flex items-center justify-between w-full">
+            <span class="text-[10px] font-bold ${hasCustom ? 'text-amber-400' : 'text-neutral-400'}">#${item.pad}${hasCustom ? ' ★' : ''}</span>
+            <div class="flex items-center gap-1">
+              <label class="pad-file-label text-[9px] bg-neutral-800 hover:bg-neutral-700 px-1 py-0.5 rounded text-neutral-300 border border-neutral-700 cursor-pointer" title="Carica file audio personalizzato">
+                📁
+                <input type="file" accept="audio/*" class="pad-file-input hidden">
+              </label>
+              <button class="pad-wav-btn text-[9px] bg-neutral-800 hover:bg-neutral-700 px-1 py-0.5 rounded text-neutral-300 border border-neutral-700" title="Scarica WAV 16-bit">WAV</button>
+            </div>
+          </div>
+          <div class="my-auto pointer-events-none">
+            <div class="text-[11px] font-semibold text-neutral-200 truncate">${item.name}</div>
+            <div class="text-[9px] text-neutral-500 font-mono">${item.abc} · MIDI ${item.midi}</div>
+          </div>
+        `;
+
+        padCard.addEventListener('pointerdown', (e) => {
+          if (e.target.closest('.pad-wav-btn') || e.target.closest('.pad-file-label')) return;
+          triggerPad(item.midi, true, selectedMonitorKit);
+        });
+
+        padCard.querySelector('.pad-wav-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          downloadSinglePadWav(item, currentActiveBank, selectedMonitorKit);
+        });
+
+        // Caricamento singolo file custom per questo pad
+        const fileInput = padCard.querySelector('.pad-file-input');
+        fileInput.addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const ctx = getAudioContext();
+            const audioBuf = await ctx.decodeAudioData(arrayBuffer);
+            customUserAudioBuffers.set(item.midi, audioBuf);
+            item.name = file.name.replace(/\.[^/.]+$/, "");
+            renderLocalPadGrid();
+            renderFullscreenAll64Pads();
+            showToast(`Campione "${file.name}" caricato sul Pad #${item.pad}!`, "🎵");
+          } catch (err) {
+            alert("Errore decodifica file audio: " + err.message);
+          }
+        });
+
+        container.appendChild(padCard);
+      });
+    }
+
+    function renderFullscreenAll64Pads() {
+      const bankMaps = {
+        'A': document.getElementById('fsBankA'),
+        'B': document.getElementById('fsBankB'),
+        'C': document.getElementById('fsBankC'),
+        'D': document.getElementById('fsBankD')
+      };
+
+      ['A', 'B', 'C', 'D'].forEach(bank => {
+        const cont = bankMaps[bank];
+        cont.innerHTML = '';
+        PAD_BANKS[bank].forEach(item => {
+          const hasCustom = customUserAudioBuffers.has(item.midi);
+          const btn = document.createElement('div');
+          btn.id = `fs-pad-${item.midi}`;
+          btn.className = `p-2 rounded-lg border ${hasCustom ? 'border-amber-500/50 bg-amber-950/20' : 'border-neutral-800 bg-neutral-950'} hover:border-amber-400 hover:bg-neutral-900 active:scale-95 transition flex flex-col justify-between cursor-pointer select-none h-16 sm:h-20`;
+
+          btn.innerHTML = `
+            <div class="flex justify-between items-center text-[10px] font-mono text-neutral-500">
+              <span class="${hasCustom ? 'text-amber-400 font-bold' : ''}">#${item.pad}${hasCustom ? '★' : ''}</span>
+              <span>${item.abc}</span>
+            </div>
+            <div class="text-[11px] font-semibold text-neutral-300 truncate pointer-events-none">${item.name}</div>
+            <div class="text-[9px] font-mono text-neutral-600 pointer-events-none">MIDI ${item.midi}</div>
+          `;
+
+          btn.addEventListener('pointerdown', () => {
+            triggerPad(item.midi, true, selectedMonitorKit);
+          });
+
+          cont.appendChild(btn);
+        });
+      });
+    }
+
+    function triggerPad(midi, userInteracted = false, activeKit = 'standard') {
+      const pad = findPadByMidi(midi);
+      if (!pad) return;
+
+      if (userInteracted || shouldPlayNoteByFilter(midi, audioFilterBank)) {
+        playSyntheticSound(pad.synth, pad.midi, 0.25, null, null, null, activeKit);
+      }
+
+      flashPadVisual(pad.midi);
+      document.getElementById('lastTriggeredPadInfo').innerText = `Banco ${pad.bank} #${pad.pad}: ${pad.name} (${pad.abc})`;
+    }
+
+    function flashPadVisual(midi) {
+      const el = document.getElementById(`koala-pad-${midi}`);
+      if (el) {
+        el.classList.add('ring-2', 'ring-amber-400', 'bg-amber-500/40', 'border-amber-400');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-500/40', 'border-amber-400'), 150);
+      }
+      const fsEl = document.getElementById(`fs-pad-${midi}`);
+      if (fsEl) {
+        fsEl.classList.add('ring-2', 'ring-amber-400', 'bg-amber-500/50', 'border-amber-400');
+        setTimeout(() => fsEl.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-500/50', 'border-amber-400'), 150);
+      }
+    }
+
+    // Caricamento Batch di file audio WAV/MP3 custom su tutti i pad
+    document.getElementById('batchCustomWavInput').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files).sort((a,b) => a.name.localeCompare(b.name));
+      if (files.length === 0) return;
+
+      const ctx = getAudioContext();
+      let assigned = 0;
+      const allPadsFlat = [...PAD_BANKS.A, ...PAD_BANKS.B, ...PAD_BANKS.C, ...PAD_BANKS.D];
+
+      for (let i = 0; i < Math.min(files.length, allPadsFlat.length); i++) {
+        const file = files[i];
+        const targetPad = allPadsFlat[i];
+        try {
+          const buf = await file.arrayBuffer();
+          const decoded = await ctx.decodeAudioData(buf);
+          customUserAudioBuffers.set(targetPad.midi, decoded);
+          targetPad.name = file.name.replace(/\.[^/.]+$/, "");
+          assigned++;
+        } catch (err) {
+          console.warn("Impossibile decodificare:", file.name);
+        }
+      }
+
+      renderLocalPadGrid();
+      renderFullscreenAll64Pads();
+      showToast(`${assigned} campioni personalizzati associati ai Pad!`, "📥");
+    });
+
+    document.getElementById('btnResetCustomAudio').addEventListener('click', () => {
+      if (customUserAudioBuffers.size === 0) return;
+      if (confirm("Vuoi ripristinare i suoni di default per tutti i Pad?")) {
+        customUserAudioBuffers.clear();
+        renderLocalPadGrid();
+        renderFullscreenAll64Pads();
+        showToast("Suoni di default ripristinati", "🔄");
+      }
+    });
+
+    /* =========================================================================
+       7. COMPATTATORE BINARIO ZIP PURO (ZERO DEPENDENCIES)
+       ========================================================================= */
+    function createZipArchive(filesArray) {
+      const fileHeaders = [];
+      let centralDirSize = 0;
+      let offset = 0;
+
+      const utf8Encoder = new TextEncoder();
+
+      filesArray.forEach(file => {
+        const nameBytes = utf8Encoder.encode(file.name);
+        const dataBytes = file.data;
+        const crc = crc32(dataBytes);
+        const size = dataBytes.length;
+
+        // Local File Header
+        const header = new Uint8Array(30 + nameBytes.length);
+        const hv = new DataView(header.buffer);
+        hv.setUint32(0, 0x04034b50, false); // Local Header Signature
+        hv.setUint16(4, 20, true);          // Version needed
+        hv.setUint16(6, 0, true);           // Flags
+        hv.setUint16(8, 0, true);           // Compression: 0 (Stored)
+        hv.setUint16(10, 0, true);          // Mod time
+        hv.setUint16(12, 0, true);          // Mod date
+        hv.setUint32(14, crc, true);        // CRC-32
+        hv.setUint32(18, size, true);       // Compressed size
+        hv.setUint32(22, size, true);       // Uncompressed size
+        hv.setUint16(26, nameBytes.length, true);
+        hv.setUint16(28, 0, true);          // Extra length
+        header.set(nameBytes, 30);
+
+        fileHeaders.push({
+          header,
+          data: dataBytes,
+          nameBytes,
+          crc,
+          size,
+          offset
+        });
+
+        offset += header.length + dataBytes.length;
+      });
+
+      // Central Directory
+      const centralEntries = [];
+      fileHeaders.forEach(f => {
+        const cEntry = new Uint8Array(46 + f.nameBytes.length);
+        const cv = new DataView(cEntry.buffer);
+        cv.setUint32(0, 0x02014b50, false); // Central dir signature
+        cv.setUint16(4, 20, true);          // Made by
+        cv.setUint16(6, 20, true);          // Version needed
+        cv.setUint16(8, 0, true);
+        cv.setUint16(10, 0, true);         // Stored
+        cv.setUint16(12, 0, true);
+        cv.setUint16(14, 0, true);
+        cv.setUint32(16, f.crc, true);
+        cv.setUint32(20, f.size, true);
+        cv.setUint32(24, f.size, true);
+        cv.setUint16(28, f.nameBytes.length, true);
+        cv.setUint16(30, 0, true);
+        cv.setUint16(32, 0, true);
+        cv.setUint16(34, 0, true);
+        cv.setUint16(36, 0, true);
+        cv.setUint32(38, 0, true);
+        cv.setUint32(42, f.offset, true);
+        cEntry.set(f.nameBytes, 46);
+
+        centralEntries.push(cEntry);
+        centralDirSize += cEntry.length;
+      });
+
+      // End of Central Directory Record
+      const eocd = new Uint8Array(22);
+      const ev = new DataView(eocd.buffer);
+      ev.setUint32(0, 0x06054b50, false);
+      ev.setUint16(4, 0, true);
+      ev.setUint16(6, 0, true);
+      ev.setUint16(8, fileHeaders.length, true);
+      ev.setUint16(10, fileHeaders.length, true);
+      ev.setUint32(12, centralDirSize, true);
+      ev.setUint32(16, offset, true);
+      ev.setUint16(20, 0, true);
+
+      // Concatenazione in un unico buffer binario finale
+      const totalParts = [];
+      fileHeaders.forEach(f => {
+        totalParts.push(f.header);
+        totalParts.push(f.data);
+      });
+      centralEntries.forEach(c => totalParts.push(c));
+      totalParts.push(eocd);
+
+      return new Blob(totalParts, { type: 'application/zip' });
+    }
+
+    // Tabella CRC32 per lo standard Zip
+    const crcTable = (function() {
+      let c;
+      const table = [];
+      for (let n = 0; n < 256; n++) {
+        c = n;
+        for (let k = 0; k < 8; k++) {
+          c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+        }
+        table[n] = c;
+      }
+      return table;
+    })();
+
+    function crc32(uint8Array) {
+      let crc = 0 ^ (-1);
+      for (let i = 0; i < uint8Array.length; i++) {
+        crc = (crc >>> 8) ^ crcTable[(crc ^ uint8Array[i]) & 0xFF];
+      }
+      return (crc ^ (-1)) >>> 0;
+    }
+
+    async function generatePadWavUint8Array(padItem, activeKit = 'standard') {
+      const sampleRate = 44100;
+      const duration = 0.5;
+      const offlineCtx = new OfflineAudioContext(1, Math.ceil(sampleRate * duration), sampleRate);
+      playSyntheticSound(padItem.synth, padItem.midi, 0.35, offlineCtx, offlineCtx.destination, 0, activeKit);
+      const renderedBuffer = await offlineCtx.startRendering();
+      const blob = fastBufferToWavBlob(renderedBuffer);
+      return new Uint8Array(await blob.arrayBuffer());
+    }
+
+    // Scarica i 16 WAV del banco attivo in ZIP
+    async function downloadActiveBankZip() {
+      showToast(`Generazione archivio ZIP Banco ${currentActiveBank}...`, "⏳");
+      const pads = PAD_BANKS[currentActiveBank];
+      const files = [];
+
+      for (let item of pads) {
+        const wavData = await generatePadWavUint8Array(item, selectedMonitorKit);
+        const fileName = `${currentActiveBank}${String(item.pad).padStart(2,'0')}_${item.name.replace(/\s+/g,'_')}.wav`;
+        files.push({ name: fileName, data: wavData });
+      }
+
+      const zipBlob = createZipArchive(files);
+      downloadBlob(zipBlob, `Koala_Bank_${currentActiveBank}_WAV_Kit.zip`);
+      showToast(`ZIP Banco ${currentActiveBank} scaricato con successo!`, "🗜️");
+    }
+
+    // Scarica tutti i 64 WAV in un unico ZIP completo
+    async function downloadAll64PadsZip() {
+      showToast("Generazione archivio ZIP con tutti i 64 Pad in corso...", "⏳");
+      const files = [];
+
+      for (let bank of ['A', 'B', 'C', 'D']) {
+        for (let item of PAD_BANKS[bank]) {
+          const wavData = await generatePadWavUint8Array(item, selectedMonitorKit);
+          const fileName = `${bank}${String(item.pad).padStart(2,'0')}_${item.name.replace(/\s+/g,'_')}.wav`;
+          files.push({ name: fileName, data: wavData });
+        }
+      }
+
+      const zipBlob = createZipArchive(files);
+      downloadBlob(zipBlob, `Koala_All_64_Pads_WAV_Kit.zip`);
+      showToast("ZIP Master 64 Pad scaricato!", "🎉");
+    }
+
+    document.getElementById('btnDownloadActiveBankZip').addEventListener('click', downloadActiveBankZip);
+    document.getElementById('btnDownloadAll64Zip').addEventListener('click', downloadAll64PadsZip);
+
+    function downloadSinglePadWav(padItem, bankKey, activeKit = 'standard') {
+      const sampleRate = 44100;
+      const duration = 0.5;
+      const offlineCtx = new OfflineAudioContext(1, Math.ceil(sampleRate * duration), sampleRate);
+      playSyntheticSound(padItem.synth, padItem.midi, 0.35, offlineCtx, offlineCtx.destination, 0, activeKit);
+
+      offlineCtx.startRendering().then(renderedBuffer => {
+        const blob = fastBufferToWavBlob(renderedBuffer);
+        downloadBlob(blob, `Koala_B${bankKey}_P${padItem.pad}_${padItem.name.replace(/\s+/g, '_')}.wav`);
+        showToast(`WAV Pad ${padItem.pad} scaricato!`, "💾");
+      });
+    }
+
+    /* =========================================================================
+       8. TRASPORTO, RIPRODUZIONE & MODALITÀ SHUFFLE (RANDOM)
+       ========================================================================= */
+    function stopPlayback() {
+      playbackTimeouts.forEach(t => clearTimeout(t));
+      playbackTimeouts = [];
+      if (scrubberAnimFrame) cancelAnimationFrame(scrubberAnimFrame);
+
+      isPlaying = false;
+      playingMode = null;
+      currentPlayingTrackIndex = -1;
+
+      const playBtn = document.getElementById('btnGlobalPlay');
+      playBtn.innerHTML = `<span>▶️</span> Play Playlist`;
+      playBtn.className = `px-4 sm:px-5 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-lg transition flex items-center gap-2 shadow active:scale-95`;
+      document.getElementById('btnFsPlayPause').innerText = "▶️ Play";
+
+      document.getElementById('transportCurrentTrack').innerText = "Fermo.";
+      document.getElementById('fsNowPlayingText').innerText = "Fermo.";
+      document.getElementById('scrubberBar').style.width = '0%';
+      document.getElementById('transportTimeDisplay').innerText = `00:00 / 00:00`;
+      document.getElementById('fsTimeDisplay').innerText = `00:00 / 00:00`;
+
+      renderPlaylistTable();
+    }
+
+    function playSingleTrack(index) {
+      stopPlayback();
+      const track = playlist[index];
+      if (!track) return;
+
+      isPlaying = true;
+      playingMode = 'single';
+      currentPlayingTrackIndex = index;
+      renderPlaylistTable();
+
+      const label = `Anteprima: ${track.title} [Kit: ${track.kit}]`;
+      document.getElementById('transportCurrentTrack').innerText = label;
+      document.getElementById('fsNowPlayingText').innerText = label;
+      playbackTotalDurationSec = track.durationSeconds;
+      playbackStartTime = performance.now();
+
+      scheduleTrackEvents(track, 0, () => {
+        showToast(`Terminato "${track.title}"`, "⏹️");
+        stopPlayback();
+      });
+
+      startScrubberAnimation();
+    }
+
+    function playGlobalPlaylist() {
+      if (playlist.length === 0) {
+        showToast("Aggiungi brani alla playlist prima di avviare!", "⚠️");
+        return;
+      }
+      stopPlayback();
+
+      isPlaying = true;
+      playingMode = 'global';
+
+      const playBtn = document.getElementById('btnGlobalPlay');
+      playBtn.innerHTML = `<span>⏹️</span> Ferma Playlist`;
+      playBtn.className = `px-4 sm:px-5 py-2 sm:py-2.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs rounded-lg transition flex items-center gap-2 shadow active:scale-95`;
+      document.getElementById('btnFsPlayPause').innerText = "⏹️ Stop";
+
+      playbackQueue = playlist.map((_, idx) => idx);
+      if (isShuffleActive) {
+        for (let i = playbackQueue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [playbackQueue[i], playbackQueue[j]] = [playbackQueue[j], playbackQueue[i]];
+        }
+      }
+
+      playbackQueuePointer = 0;
+      recalculatePlaylistTimes();
+
+      let totalPlaylistSec = 0;
+      playlist.forEach(t => totalPlaylistSec += t.totalItemSeconds);
+      playbackTotalDurationSec = totalPlaylistSec;
+      playbackStartTime = performance.now();
+
+      startScrubberAnimation();
+      executeNextInQueue();
+    }
+
+    function executeNextInQueue() {
+      if (!isPlaying || playbackQueuePointer >= playbackQueue.length) {
+        stopPlayback();
+        showToast("Playlist conclusa!", "🎉");
+        return;
+      }
+
+      const trackIdx = playbackQueue[playbackQueuePointer];
+      currentPlayingTrackIndex = trackIdx;
+      renderPlaylistTable();
+
+      const track = playlist[trackIdx];
+      const statusMsg = `[${playbackQueuePointer + 1}/${playbackQueue.length}] ${track.title} [Kit: ${track.kit}] ${isShuffleActive ? '(🔀 Shuffle)' : ''}`;
+      document.getElementById('transportCurrentTrack').innerText = statusMsg;
+      document.getElementById('fsNowPlayingText').innerText = statusMsg;
+
+      scheduleTrackEvents(track, 0, () => {
+        const pauseMs = track.pauseSeconds * 1000;
+        if (pauseMs > 0) {
+          const pauseDesc = `Stacco: ${track.pauseVal} ${track.pauseMode === 'bars' ? 'battute' : 'sec'}...`;
+          document.getElementById('transportCurrentTrack').innerText = pauseDesc;
+          document.getElementById('fsNowPlayingText').innerText = pauseDesc;
+        }
+
+        const timer = setTimeout(() => {
+          playbackQueuePointer++;
+          executeNextInQueue();
+        }, pauseMs);
+        playbackTimeouts.push(timer);
+      });
+    }
+
+    function scheduleTrackEvents(track, startOffsetSec, onFinished) {
+      const secondsPerQuarter = 60 / track.bpm;
+      let accumTimeSec = startOffsetSec;
+
+      track.events.forEach(ev => {
+        const stepSec = ev.quarters * secondsPerQuarter;
+
+        if (ev.type === 'note') {
+          const timeout = setTimeout(() => {
+            triggerPad(ev.midi, false, track.kit);
+          }, accumTimeSec * 1000);
+          playbackTimeouts.push(timeout);
+
+        } else if (ev.type === 'chord') {
+          const timeout = setTimeout(() => {
+            ev.midis.forEach(m => triggerPad(m, false, track.kit));
+          }, accumTimeSec * 1000);
+          playbackTimeouts.push(timeout);
+        }
+
+        accumTimeSec += stepSec;
+      });
+
+      const finishTimeout = setTimeout(() => {
+        if (onFinished) onFinished();
+      }, accumTimeSec * 1000);
+      playbackTimeouts.push(finishTimeout);
+    }
+
+    function startScrubberAnimation() {
+      function tick() {
+        if (!isPlaying) return;
+        const elapsedSec = (performance.now() - playbackStartTime) / 1000;
+        const progress = Math.min(1, elapsedSec / (playbackTotalDurationSec || 1));
+
+        document.getElementById('scrubberBar').style.width = `${progress * 100}%`;
+        const timeText = `${formatTime(elapsedSec)} / ${formatTime(playbackTotalDurationSec)}`;
+        document.getElementById('transportTimeDisplay').innerText = timeText;
+        document.getElementById('fsTimeDisplay').innerText = timeText;
+
+        if (progress < 1) scrubberAnimFrame = requestAnimationFrame(tick);
+      }
+      scrubberAnimFrame = requestAnimationFrame(tick);
+    }
+
+    /* =========================================================================
+       9. EXPORT: JSON, MIDI F0, MASTER WAV OFFLINE
+       ========================================================================= */
+    function exportPlaylistJson() {
+      if (playlist.length === 0) {
+        showToast("Nessun brano in scaletta!", "⚠️");
+        return;
+      }
+      recalculatePlaylistTimes();
+
+      const bundle = {
+        type: "korg_nts1_playlist",
+        generator: "Korg NTS-1 Suite - Koala Playlist Studio",
+        version: "1.2.0",
+        timestamp: new Date().toISOString(),
+        title: "Koala Sampler Session Playlist",
+        isShuffle: isShuffleActive,
+        totalTracks: playlist.length,
+        tracks: playlist.map(t => ({
+          title: t.title,
+          composer: t.composer,
+          bpm: t.bpm,
+          meter: t.meter || "4/4",
+          kit: t.kit,
+          pauseVal: t.pauseVal,
+          pauseMode: t.pauseMode,
+          pauseSeconds: t.pauseSeconds,
+          durationSeconds: Math.round(t.durationSeconds),
+          abcCode: t.abcCode || ""
+        }))
+      };
+
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `Koala_Playlist_${formatDateShort(new Date())}.json`);
+      showToast("Playlist JSON scaricata!", "📦");
+    }
+
+    function exportPlaylistMidi() {
+      if (playlist.length === 0) {
+        showToast("Scaletta vuota!", "⚠️");
+        return;
+      }
+
+      recalculatePlaylistTimes();
+      const division = 480;
+      let trackBytes = [];
+
+      const seqName = "Koala Master Playlist";
+      trackBytes.push(0x00, 0xFF, 0x03, seqName.length, ...seqName.split('').map(c => c.charCodeAt(0)));
+
+      let pendingDelta = 0;
+
+      playlist.forEach((track, tIdx) => {
+        const microseconds = Math.round(60000000 / track.bpm);
+        trackBytes.push(...writeVLQ(pendingDelta), 0xFF, 0x51, 0x03, (microseconds >> 16) & 0xFF, (microseconds >> 8) & 0xFF, microseconds & 0xFF);
+        pendingDelta = 0;
+
+        const marker = `T${tIdx + 1}: ${track.title} [${track.kit}]`;
+        trackBytes.push(0x00, 0xFF, 0x06, marker.length, ...marker.split('').map(c => c.charCodeAt(0)));
+
+        track.events.forEach(ev => {
+          const stepTicks = Math.round(ev.quarters * division);
+          if (ev.type === 'rest') {
+            pendingDelta += stepTicks;
+          } else if (ev.type === 'note') {
+            trackBytes.push(...writeVLQ(pendingDelta), 0x90, ev.midi, 0x64);
+            trackBytes.push(...writeVLQ(stepTicks), 0x80, ev.midi, 0x00);
+            pendingDelta = 0;
+          } else if (ev.type === 'chord') {
+            ev.midis.forEach((m, idx) => {
+              const dt = (idx === 0) ? pendingDelta : 0;
+              trackBytes.push(...writeVLQ(dt), 0x90, m, 0x64);
+            });
+            ev.midis.forEach((m, idx) => {
+              const dt = (idx === 0) ? stepTicks : 0;
+              trackBytes.push(...writeVLQ(dt), 0x80, m, 0x00);
+            });
+            pendingDelta = 0;
+          }
+        });
+
+        const pauseTicks = Math.round(track.pauseQuarterBeats * division);
+        pendingDelta += pauseTicks;
+      });
+
+      trackBytes.push(...writeVLQ(pendingDelta), 0xFF, 0x2F, 0x00);
+
+      const header = [0x4D, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x01, (division >> 8) & 0xFF, division & 0xFF];
+      const trackLen = trackBytes.length;
+      const trackHeader = [0x4D, 0x54, 0x72, 0x6B, (trackLen >> 24) & 0xFF, (trackLen >> 16) & 0xFF, (trackLen >> 8) & 0xFF, trackLen & 0xFF];
+
+      const fullMidi = new Uint8Array([...header, ...trackHeader, ...trackBytes]);
+      const blob = new Blob([fullMidi], { type: 'audio/midi' });
+      downloadBlob(blob, `Koala_Playlist_F0_Master.mid`);
+      showToast("MIDI Formato 0 scaricato!", "💾");
+    }
+
+    function exportMasterSongWav() {
+      if (playlist.length === 0) {
+        showToast("Nessuna traccia da renderizzare!", "⚠️");
+        return;
+      }
+      recalculatePlaylistTimes();
+
+      let totalSec = 0;
+      playlist.forEach(t => totalSec += t.totalItemSeconds);
+      totalSec += 1.0;
+
+      const sampleRate = 44100;
+      const totalFrames = Math.ceil(sampleRate * totalSec);
+      const offlineCtx = new OfflineAudioContext(2, totalFrames, sampleRate);
+
+      const statusEl = document.getElementById('renderStatusText');
+      statusEl.innerText = "⏳ Rendering WAV Master offline...";
+      showToast("Rendering Master WAV avviato...", "⏳");
+
+      let currentTimelineSec = 0;
+
+      playlist.forEach(track => {
+        const secondsPerQuarter = 60 / track.bpm;
+
+        track.events.forEach(ev => {
+          const stepSec = ev.quarters * secondsPerQuarter;
+
+          if (ev.type === 'note') {
+            const pad = findPadByMidi(ev.midi);
+            playSyntheticSound(pad ? pad.synth : 'lead', ev.midi, stepSec, offlineCtx, offlineCtx.destination, currentTimelineSec, track.kit);
+          } else if (ev.type === 'chord') {
+            ev.midis.forEach(m => {
+              const pad = findPadByMidi(m);
+              playSyntheticSound(pad ? pad.synth : 'lead', m, stepSec, offlineCtx, offlineCtx.destination, currentTimelineSec, track.kit);
+            });
+          }
+
+          currentTimelineSec += stepSec;
+        });
+
+        currentTimelineSec += track.pauseSeconds;
+      });
+
+      offlineCtx.startRendering().then(renderedBuffer => {
+        const blob = fastBufferToWavBlob(renderedBuffer);
+        downloadBlob(blob, `Koala_Playlist_Master_44k16b.wav`);
+        statusEl.innerText = "✅ Rendering Master WAV completato!";
+        showToast("Master WAV scaricato con successo!", "🎧");
+        setTimeout(() => {
+          statusEl.innerText = "Tocca un pad per testarlo. Usa 📁 per caricare o WAV per scaricare.";
+        }, 4000);
+      }).catch(err => {
+        alert("Errore rendering WAV: " + err.message);
+        statusEl.innerText = "Errore durante il rendering.";
+      });
+    }
+
+    function fastBufferToWavBlob(buffer) {
+      const numChannels = buffer.numberOfChannels;
+      const sampleRate = buffer.sampleRate;
+      const format = 1;
+      const bitDepth = 16;
+      
+      const numFrames = buffer.length;
+      const bytesPerSample = bitDepth / 8;
+      const blockAlign = numChannels * bytesPerSample;
+      const dataSize = numFrames * blockAlign;
+      const headerSize = 44;
+      const totalSize = headerSize + dataSize;
+      
+      const arrayBuffer = new ArrayBuffer(totalSize);
+      const view = new DataView(arrayBuffer);
+      
+      view.setUint32(0, 0x52494646, false); // "RIFF"
+      view.setUint32(4, totalSize - 8, true);
+      view.setUint32(8, 0x57415645, false); // "WAVE"
+      view.setUint32(12, 0x666d7420, false); // "fmt "
+      view.setUint32(16, 16, true);
+      view.setUint16(20, format, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * blockAlign, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitDepth, true);
+      view.setUint32(36, 0x64617461, false); // "data"
+      view.setUint32(40, dataSize, true);
+
+      const channelData = [];
+      for (let ch = 0; ch < numChannels; ch++) {
+        channelData.push(buffer.getChannelData(ch));
+      }
+
+      let offset = 44;
+      for (let i = 0; i < numFrames; i++) {
+        for (let ch = 0; ch < numChannels; ch++) {
+          let s = channelData[ch][i];
+          s = s < -1 ? -1 : (s > 1 ? 1 : s);
+          const sample16 = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          view.setInt16(offset, sample16 | 0, true);
+          offset += 2;
+        }
+      }
+
+      return new Blob([arrayBuffer], { type: 'audio/wav' });
+    }
+
+    function writeVLQ(value) {
+      let buffer = [];
+      let val = value;
+      buffer.push(val & 0x7F);
+      while ((val >>= 7) > 0) {
+        buffer.push((val & 0x7F) | 0x80);
+      }
+      return buffer.reverse();
+    }
+
+    /* =========================================================================
+       10. IMPORT BATCH SCALETTA & DRAG-AND-DROP
+       ========================================================================= */
+    async function handleFileList(files) {
+      if (!files || files.length === 0) return;
+      let loadedCount = 0;
+
+      for (let file of Array.from(files)) {
+        const lowerName = file.name.toLowerCase();
+
+        if (lowerName.endsWith('.mid') || lowerName.endsWith('.midi')) {
+          try {
+            const buf = await file.arrayBuffer();
+            const parsed = parseMidiArrayBuffer(buf, file.name);
+            playlist.push({
+              title: parsed.title,
+              composer: parsed.composer,
+              bpm: parsed.bpm,
+              meter: parsed.meter,
+              kit: 'standard',
+              pauseVal: 2,
+              pauseMode: 'bars',
+              pauseQuarterBeats: 8,
+              totalQuarterBeats: parsed.totalQuarterBeats,
+              durationSeconds: parsed.totalSeconds,
+              pauseSeconds: 0,
+              events: parsed.events,
+              abcCode: ""
+            });
+            loadedCount++;
+          } catch (err) {
+            console.error("Errore lettura MIDI:", err);
+          }
+
+        } else if (lowerName.endsWith('.json')) {
+          try {
+            const text = await file.text();
+            const json = JSON.parse(text);
+
+            if (json.type === "korg_nts1_playlist" && Array.isArray(json.tracks)) {
+              json.tracks.forEach(tr => {
+                if (tr.abcCode) {
+                  const p = parseAbcScore(tr.abcCode);
+                  playlist.push({
+                    title: tr.title || p.title,
+                    composer: tr.composer || p.composer,
+                    bpm: tr.bpm || p.bpm,
+                    meter: tr.meter || p.meter,
+                    kit: tr.kit || 'standard',
+                    pauseVal: tr.pauseVal !== undefined ? tr.pauseVal : 2,
+                    pauseMode: tr.pauseMode || 'bars',
+                    totalQuarterBeats: p.totalQuarterBeats,
+                    durationSeconds: p.totalSeconds,
+                    pauseSeconds: 0,
+                    events: p.events,
+                    abcCode: tr.abcCode
+                  });
+                  loadedCount++;
+                }
+              });
+            } else if (json.abcCode) {
+              const p = parseAbcScore(json.abcCode);
+              playlist.push({
+                title: json.metadata?.title || p.title,
+                composer: json.metadata?.composer || p.composer,
+                bpm: json.bpm || p.bpm,
+                meter: json.metadata?.meter || p.meter,
+                kit: json.kit || 'standard',
+                pauseVal: 2,
+                pauseMode: 'bars',
+                totalQuarterBeats: p.totalQuarterBeats,
+                durationSeconds: p.totalSeconds,
+                pauseSeconds: 0,
+                events: p.events,
+                abcCode: json.abcCode
+              });
+              loadedCount++;
+            }
+          } catch (err) {
+            console.error("Errore lettura JSON:", err);
+          }
+
+        } else if (lowerName.endsWith('.abc') || lowerName.endsWith('.txt')) {
+          try {
+            const text = await file.text();
+            const p = parseAbcScore(text);
+            playlist.push({
+              title: p.title,
+              composer: p.composer,
+              bpm: p.bpm,
+              meter: p.meter,
+              kit: 'standard',
+              pauseVal: 2,
+              pauseMode: 'bars',
+              totalQuarterBeats: p.totalQuarterBeats,
+              durationSeconds: p.totalSeconds,
+              pauseSeconds: 0,
+              events: p.events,
+              abcCode: text
+            });
+            loadedCount++;
+          } catch (err) {
+            console.error("Errore lettura ABC:", err);
+          }
+        }
+      }
+
+      renderPlaylistTable();
+      showToast(`${loadedCount} tracce importate con successo!`, "📂");
+    }
+
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('click', () => document.getElementById('batchFileInput').click());
+    ['dragenter', 'dragover'].forEach(name => {
+      dropZone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-amber-400', 'bg-amber-950/20');
+      });
+    });
+    ['dragleave', 'drop'].forEach(name => {
+      dropZone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-amber-400', 'bg-amber-950/20');
+      });
+    });
+    dropZone.addEventListener('drop', (e) => {
+      if (e.dataTransfer && e.dataTransfer.files) handleFileList(e.dataTransfer.files);
+    });
+
+    document.getElementById('batchFileInput').addEventListener('change', (e) => handleFileList(e.target.files));
+
+    document.getElementById('btnClearPlaylist').addEventListener('click', () => {
+      if (playlist.length === 0) return;
+      if (confirm("Vuoi svuotare la scaletta?")) {
+        stopPlayback();
+        playlist = [];
+        renderPlaylistTable();
+        showToast("Scaletta svuotata", "🗑️");
+      }
+    });
+
+    /* =========================================================================
+       11. SEZIONI COLLASSABILI
+       ========================================================================= */
+    function toggleCollapse(btn, element, labelText) {
+      const isCollapsed = element.classList.contains('collapsed');
+      if (isCollapsed) {
+        element.classList.remove('collapsed');
+        btn.innerText = `▲ ${labelText || 'Comprimi'}`;
+      } else {
+        element.classList.add('collapsed');
+        btn.innerText = `▼ ${labelText || 'Espandi'}`;
+      }
+    }
+
+    document.getElementById('btnToggleHeaderSection').addEventListener('click', function() {
+      toggleCollapse(this, document.getElementById('headerSectionContent'), 'File & Kit');
+    });
+    document.getElementById('btnTogglePlaylistTable').addEventListener('click', function() {
+      toggleCollapse(this, document.getElementById('playlistTableContainer'), '');
+    });
+    document.getElementById('btnTogglePadSection').addEventListener('click', function() {
+      toggleCollapse(this, document.getElementById('padSectionContent'), '');
+    });
+
+    /* =========================================================================
+       12. EVENT LISTENERS GENERALI & FULLSCREEN
+       ========================================================================= */
+    document.getElementById('btnToggleShuffle').addEventListener('click', () => {
+      isShuffleActive = !isShuffleActive;
+      const statusText = document.getElementById('shuffleStatusText');
+      const btn = document.getElementById('btnToggleShuffle');
+
+      if (isShuffleActive) {
+        statusText.innerText = "ON";
+        statusText.className = "text-amber-400 font-bold";
+        btn.classList.add('border-amber-400', 'bg-amber-950/40');
+        showToast("Modalità Casuale (Shuffle) ATTIVA", "🔀");
+      } else {
+        statusText.innerText = "OFF";
+        statusText.className = "text-neutral-400";
+        btn.classList.remove('border-amber-400', 'bg-amber-950/40');
+        showToast("Modalità Casuale disattivata", "➡️");
+      }
+    });
+
+    document.querySelectorAll('.pad-bank-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.pad-bank-btn').forEach(b => {
+          b.className = 'pad-bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95';
+        });
+        btn.className = 'pad-bank-btn px-3 py-1.5 rounded text-xs font-bold bg-amber-500 text-neutral-950 transition active:scale-95 shadow ring-1 ring-amber-400';
+        currentActiveBank = btn.dataset.bank;
+        renderLocalPadGrid();
+        showToast(`Monitor: Banco ${currentActiveBank}`, "🎛️");
+      });
+    });
+
+    document.getElementById('activeKitSelect').addEventListener('change', (e) => {
+      selectedMonitorKit = e.target.value;
+      showToast(`Kit Sonoro Monitor: ${e.target.options[e.target.selectedIndex].text}`, "🎨");
+    });
+
+    document.getElementById('audioFilterSelect').addEventListener('change', (e) => {
+      audioFilterBank = e.target.value;
+      showToast(`Ascolto Casse: ${e.target.options[e.target.selectedIndex].text}`, "🔊");
+    });
+
+    document.getElementById('btnGlobalPlay').addEventListener('click', () => {
+      if (isPlaying && playingMode === 'global') stopPlayback();
+      else playGlobalPlaylist();
+    });
+    document.getElementById('btnGlobalStop').addEventListener('click', stopPlayback);
+
+    const fsModal = document.getElementById('fullscreenPadsModal');
+    function openFullscreenPads() {
+      renderFullscreenAll64Pads();
+      fsModal.classList.remove('hidden');
+      fsModal.classList.add('flex');
+    }
+    function closeFullscreenPads() {
+      fsModal.classList.add('hidden');
+      fsModal.classList.remove('flex');
+    }
+
+    document.getElementById('btnOpenFullscreenPads').addEventListener('click', openFullscreenPads);
+    document.getElementById('btnCloseFullscreenPads').addEventListener('click', closeFullscreenPads);
+    document.getElementById('btnFsPlayPause').addEventListener('click', () => {
+      if (isPlaying) stopPlayback();
+      else playGlobalPlaylist();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        if (fsModal.classList.contains('hidden')) openFullscreenPads();
+        else closeFullscreenPads();
+      } else if (e.key === 'Escape') {
+        if (!fsModal.classList.contains('hidden')) closeFullscreenPads();
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        if (isPlaying) stopPlayback();
+        else playGlobalPlaylist();
+      }
+    });
+
+    document.getElementById('btnExportJson').addEventListener('click', exportPlaylistJson);
+    document.getElementById('btnExportMidi').addEventListener('click', exportPlaylistMidi);
+    document.getElementById('btnExportMasterWav').addEventListener('click', exportMasterSongWav);
+
+    function showToast(message, icon = "✨") {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastIcon').innerText = icon;
+      document.getElementById('toastMessage').innerText = message;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 2300);
+    }
+
+    function formatTime(totalSeconds) {
+      if (isNaN(totalSeconds) || totalSeconds < 0) totalSeconds = 0;
+      const m = Math.floor(totalSeconds / 60);
+      const s = Math.floor(totalSeconds % 60);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function formatDateShort(d) {
+      return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      }[m]));
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /* =========================================================================
+       13. DEMO INIZIALI PRECARICATE CON KIT DIFFERENTI
+       ========================================================================= */
+    const DEMO_ABC_1 = `X: 1
+T: Koala Boom-Bap
+C: Samuele
+M: 4/4
+L: 1/16
+Q: 92
+K: C
+[C,, ^F,,]2 ^F,,2 [D,, ^F,,]2 ^F,,2 [C,, ^F,,]2 [C,, ^F,,]2 [D,, ^F,,]2 ^F,,2 |
+[C,, ^F,, E,]2 ^F,,2 [D,, ^F,, C]2 [C, ^F,,]2 [C,, ^F,, G,]2 ^F,,2 [D,, ^F,, e]2 [^D, ^F,,]2 |]`;
+
+    const DEMO_ABC_2 = `X: 2
+T: Tokyo Lo-Fi Bells
+C: Samuele
+M: 4/4
+L: 1/16
+Q: 80
+K: C
+[C,, ^F,,]2 e2 [D,, ^F,,]2 g2 [C,, ^F,,]2 e2 [D,, ^F,,]2 b2 |
+[C,, ^F,, E,]2 e2 [D,, ^F,, C]2 g2 [C,, ^F,, G,]2 c'2 [D,, ^F,, e]2 ^d'2 |]`;
+
+    const p1 = parseAbcScore(DEMO_ABC_1);
+    const p2 = parseAbcScore(DEMO_ABC_2);
+    playlist.push({
+      title: p1.title, composer: p1.composer, bpm: p1.bpm, meter: p1.meter, kit: 'synthwave',
+      pauseVal: 2, pauseMode: 'bars', pauseQuarterBeats: 8,
+      totalQuarterBeats: p1.totalQuarterBeats, durationSeconds: p1.totalSeconds, pauseSeconds: 0,
+      events: p1.events, abcCode: DEMO_ABC_1
+    });
+    playlist.push({
+      title: p2.title, composer: p2.composer, bpm: p2.bpm, meter: p2.meter, kit: 'lofi',
+      pauseVal: 3.5, pauseMode: 'seconds', pauseQuarterBeats: 0,
+      totalQuarterBeats: p2.totalQuarterBeats, durationSeconds: p2.totalSeconds, pauseSeconds: 0,
+      events: p2.events, abcCode: DEMO_ABC_2
+    });
+
+    renderLocalPadGrid();
+    renderPlaylistTable();
+  </script>
+</body>
+</html>
