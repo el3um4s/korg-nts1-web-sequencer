@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Koala Sampler & ABC MIDI Bridge Studio v1.9.0</title>
+  <title>Koala Sampler & ABC MIDI Bridge Studio v1.8.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     button, input, select, textarea {
@@ -17,32 +17,6 @@
       border-color: #fbbf24 !important;
       box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.35);
     }
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #09090b;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #27272a;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #3f3f46;
-    }
-    .collapsible-content {
-      transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
-      overflow: hidden;
-    }
-    .collapsible-content.collapsed {
-      max-height: 0 !important;
-      opacity: 0;
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-      margin-top: 0 !important;
-      pointer-events: none;
-    }
     @keyframes slideUp {
       from { transform: translateY(100%); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
@@ -52,79 +26,27 @@
     }
   </style>
 </head>
-<body class="bg-neutral-950 text-neutral-100 min-h-screen font-sans p-3 sm:p-5 select-none relative">
-  <div class="max-w-7xl mx-auto space-y-4">
+<body class="bg-neutral-950 text-neutral-100 min-h-screen font-sans p-4 md:p-6 select-none relative">
+  <div class="max-w-7xl mx-auto space-y-6">
 
-    <!-- SEZIONE 1: HEADER & IMPORT/EXPORT (COLLASSABILE) -->
-    <header class="bg-neutral-900 border border-neutral-800 rounded-xl p-3 sm:p-4 transition">
-      <div class="flex items-center justify-between">
+    <!-- Header con Versione ed Export Completo -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-neutral-800 pb-4 gap-4">
+      <div>
         <div class="flex items-center gap-2">
-          <span class="text-2xl">🐨</span>
-          <div>
-            <div class="flex items-center gap-2">
-              <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-amber-400">
-                Koala Sampler & ABC Studio Pro
-              </h1>
-              <span class="text-[10px] font-mono font-bold bg-neutral-800 text-amber-400 border border-neutral-700 px-2 py-0.5 rounded">
-                v1.9.0
-              </span>
-            </div>
-            <p class="text-xs text-neutral-400">Sezioni collassabili, Trasporto Sticky, Vista 64-Pad Fullscreen e Kit Sonori Multipli</p>
-          </div>
+          <h1 class="text-2xl font-bold tracking-tight text-amber-400">
+            🐨 Koala Sampler & ABC Studio Pro
+          </h1>
+          <span class="text-[10px] font-mono font-bold bg-neutral-800 text-amber-400 border border-neutral-700 px-2 py-0.5 rounded">
+            v1.8.0
+          </span>
         </div>
-
-        <div class="flex items-center gap-2">
-          <button id="btnToggleHeaderSection" class="p-1.5 text-neutral-400 hover:text-amber-400 bg-neutral-800 hover:bg-neutral-700 rounded text-xs border border-neutral-700 font-semibold" title="Comprimi/Espandi Sezione File">
-            ▲ File & Export
-          </button>
-        </div>
+        <p class="text-xs text-neutral-400">Per-Pad Pitch Shifter (±Semitoni), Multi-Kit Sonori, Bank Remapper, Master WAV Render</p>
       </div>
-
-      <div id="headerSectionContent" class="collapsible-content mt-3 pt-3 border-t border-neutral-800 flex flex-wrap items-center justify-between gap-2.5">
-        <div class="flex flex-wrap items-center gap-2">
-          <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 text-xs rounded border border-neutral-700 cursor-pointer font-semibold transition active:scale-95 flex items-center gap-1.5 shadow-sm">
-            <span>📂 Importa ABC / JSON</span>
-            <input type="file" id="fileUniversalInput" accept=".abc,.txt,.json" class="hidden">
-          </label>
-          <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 text-xs rounded border border-neutral-700 cursor-pointer font-semibold transition active:scale-95 flex items-center gap-1.5 shadow-sm">
-            <span>🎹 Importa MIDI (.mid)</span>
-            <input type="file" id="fileMidiInput" accept=".mid,.midi" class="hidden">
-          </label>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <button id="btnExportAbc" class="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica partitura ABC">
-            📄 .ABC
-          </button>
-          <button id="btnExportJson" class="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica bundle interoperabile JSON">
-            📦 .JSON
-          </button>
-          <button id="btnExportMidi" class="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition text-amber-300" title="Scarica file MIDI F0">
-            💾 .MID
-          </button>
-          <button id="btnExportMasterWav" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold rounded shadow transition flex items-center gap-1.5 active:scale-95" title="Render offline ultra-rapido WAV">
-            <span>🎧 Scarica .WAV</span>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <!-- BARRA DI TRASPORTO GLOBALE STICKY (SEMPRE VISIBILE DURANTE LO SCROLL) -->
-    <div class="sticky top-2 z-40 bg-neutral-900/95 backdrop-blur border border-amber-500/30 rounded-xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xl">
-      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-        <button id="btnPreview" class="px-4 sm:px-5 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-lg transition flex items-center gap-2 shadow active:scale-95">
-          <span>▶️</span> Play
-        </button>
-        <button id="btnStop" class="px-3 sm:px-4 py-2 sm:py-2.5 bg-neutral-800 hover:bg-neutral-700 text-xs rounded-lg text-neutral-200 transition active:scale-95 border border-neutral-700">
-          ⏹️ Stop
-        </button>
-
-        <div class="h-6 w-px bg-neutral-800 hidden sm:block"></div>
-
-        <!-- Selettore Kit Sonoro -->
-        <div class="flex items-center gap-1.5 bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1 text-xs">
-          <span class="text-neutral-400 text-[10px] font-bold uppercase">Kit Sonoro:</span>
-          <select id="headerKitSelect" class="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-amber-300 font-semibold focus-ring text-xs">
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Selettore Rapido Kit Sonoro -->
+        <div class="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1 text-xs">
+          <span class="text-neutral-400 text-[10px] font-bold uppercase">Kit:</span>
+          <select id="headerKitSelect" class="bg-neutral-950 border border-neutral-700 rounded px-1.5 py-1 text-amber-300 font-semibold focus-ring text-xs">
             <option value="standard">Standard Koala</option>
             <option value="lofi">Lo-Fi Warm & Chill</option>
             <option value="piano">Piano & Rhodes</option>
@@ -138,293 +60,247 @@
           </select>
         </div>
 
-        <button id="btnOpenFullscreenPads" class="px-3 py-2 sm:py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs rounded-lg transition active:scale-95 flex items-center gap-1.5" title="Visualizza contemporaneamente tutti i 64 Pad (Tasto F)">
-          <span>🖥️ 64 Pad Fullscreen</span>
+        <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 text-xs rounded border border-neutral-700 cursor-pointer transition active:scale-95">
+          📂 Importa ABC / JSON
+          <input type="file" id="fileUniversalInput" accept=".abc,.txt,.json" class="hidden">
+        </label>
+        <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 text-xs rounded border border-neutral-700 cursor-pointer transition active:scale-95">
+          🎹 Importa MIDI (.mid)
+          <input type="file" id="fileMidiInput" accept=".mid,.midi" class="hidden">
+        </label>
+        
+        <div class="h-6 w-px bg-neutral-800 mx-1"></div>
+
+        <button id="btnExportAbc" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica partitura ABC">
+          📄 .ABC
+        </button>
+        <button id="btnExportJson" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica bundle interoperabile JSON">
+          📦 .JSON
+        </button>
+        <button id="btnExportMidi" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-amber-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica file MIDI">
+          💾 .MID
+        </button>
+        <button id="btnExportMasterWav" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold rounded shadow transition flex items-center gap-1.5" title="Render offline ultra-rapido">
+          <span>🎧 Scarica .WAV</span>
         </button>
       </div>
+    </header>
 
-      <!-- Playhead & Durata Live -->
-      <div class="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto">
-        <div id="playheadDisplay" class="font-mono text-xs px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-lg text-neutral-400 truncate max-w-[220px]">
-          Pronto.
-        </div>
-        <span id="durationBadge" class="text-xs font-mono px-2.5 py-1.5 rounded-lg bg-amber-950/60 border border-amber-500/40 text-amber-300 font-bold shrink-0">
-          ⏱️ 00:00
-        </span>
-      </div>
-    </div>
+    <!-- Layout Principale -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <!-- LAYOUT PRINCIPALE A DUE COLONNE -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-
-      <!-- COLONNA SINISTRA: METADATI, REMAPPER & EDITOR ABC -->
+      <!-- Colonna Sinistra: Metadati, Durata, Remapper & Editor ABC -->
       <div class="lg:col-span-6 space-y-4">
         
-        <!-- Box Metadati & Durata Target Auto-BPM (Collassabile) -->
-        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
-          <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+        <!-- Box Metadati & Durata Target Auto-BPM -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4">
+          <div class="flex items-center justify-between">
             <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Metadati & Durata Esatta</span>
-            <button id="btnToggleMetaSection" class="p-1 text-neutral-400 hover:text-amber-400 bg-neutral-800 rounded text-xs border border-neutral-700">▲</button>
+            <span id="durationBadge" class="text-xs font-mono px-2 py-0.5 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300">
+              ⏱️ 00:00
+            </span>
           </div>
 
-          <div id="metaSectionContent" class="collapsible-content space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-              <div>
-                <label class="block text-neutral-400 text-[10px] mb-1">TITOLO (T:)</label>
-                <input type="text" id="metaTitle" placeholder="Titolo traccia" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring">
+          <!-- Metadati Brano -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div>
+              <label class="block text-neutral-400 text-[10px] mb-1">TITOLO (T:)</label>
+              <input type="text" id="metaTitle" placeholder="Titolo traccia" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring">
+            </div>
+            <div>
+              <label class="block text-neutral-400 text-[10px] mb-1">AUTORE (C:)</label>
+              <input type="text" id="metaComposer" placeholder="Nome autore" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring">
+            </div>
+            <div>
+              <label class="block text-neutral-400 text-[10px] mb-1">METRO (M:)</label>
+              <input type="text" id="metaMeter" value="4/4" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring font-mono">
+            </div>
+          </div>
+
+          <!-- Target Durata & Ricalcolo Q: -->
+          <div class="pt-2 border-t border-neutral-800/80 space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="text-neutral-400 text-[11px]">Modalità:</span>
+                <select id="durationMode" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-neutral-300 text-xs focus-ring">
+                  <option value="free">Libera (Usa BPM manuale)</option>
+                  <option value="exact">Durata Esatta</option>
+                  <option value="min">Durata Minima (Non meno di)</option>
+                  <option value="max">Durata Massima (Non più di)</option>
+                </select>
               </div>
-              <div>
-                <label class="block text-neutral-400 text-[10px] mb-1">AUTORE (C:)</label>
-                <input type="text" id="metaComposer" placeholder="Nome autore" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring">
-              </div>
-              <div>
-                <label class="block text-neutral-400 text-[10px] mb-1">METRO (M:)</label>
-                <input type="text" id="metaMeter" value="4/4" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring font-mono">
+
+              <div id="targetDurationWrap" class="flex items-center gap-1.5">
+                <span class="text-neutral-400 text-[11px]">Target:</span>
+                <input type="number" id="targetSeconds" min="5" max="900" value="60" class="w-16 bg-neutral-950 border border-neutral-800 rounded px-1.5 py-1 text-amber-300 font-mono text-xs focus-ring">
+                <span class="text-neutral-500 text-[11px]">sec</span>
               </div>
             </div>
 
-            <div class="pt-2 border-t border-neutral-800/80 space-y-2">
-              <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-neutral-400 text-[11px]">Modalità:</span>
-                  <select id="durationMode" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-neutral-300 text-xs focus-ring">
-                    <option value="free">Libera (Usa BPM manuale)</option>
-                    <option value="exact">Durata Esatta</option>
-                    <option value="min">Durata Minima (Non meno di)</option>
-                    <option value="max">Durata Massima (Non più di)</option>
-                  </select>
-                </div>
-
-                <div id="targetDurationWrap" class="flex items-center gap-1.5">
-                  <span class="text-neutral-400 text-[11px]">Target:</span>
-                  <input type="number" id="targetSeconds" min="5" max="900" value="60" class="w-16 bg-neutral-950 border border-neutral-800 rounded px-1.5 py-1 text-amber-300 font-mono text-xs focus-ring">
-                  <span class="text-neutral-500 text-[11px]">sec</span>
-                </div>
-              </div>
-
-              <!-- Preset Rapidi Durata -->
-              <div class="flex items-center gap-1 text-[11px]">
-                <span class="text-neutral-500 mr-1">Preset:</span>
-                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="30">30s</button>
-                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="60">60s (1m)</button>
-                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="90">90s</button>
-                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="120">2 min</button>
-                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="180">3 min</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Strumento Rimappatura Pad & Sezioni Intere (Collassabile) -->
-        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
-          <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-amber-400">🎛️ Rimappa Banchi & Pitch Singolo Pad</span>
-            <button id="btnToggleRemapSection" class="p-1 text-neutral-400 hover:text-amber-400 bg-neutral-800 rounded text-xs border border-neutral-700">▲</button>
-          </div>
-
-          <div id="remapSectionContent" class="collapsible-content space-y-3">
-            <!-- Rimappa Interi Banchi -->
-            <div class="space-y-1.5">
-              <span class="text-[11px] text-neutral-400 font-semibold">Inverti o Sposta Intero Banco (16 note):</span>
-              <div class="flex flex-wrap items-center gap-2 text-xs">
-                <div class="flex items-center gap-1">
-                  <span class="text-neutral-500 text-[10px]">Da:</span>
-                  <select id="remapSourceBank" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-amber-300 font-bold focus-ring">
-                    <option value="A">Banco A (Drums)</option>
-                    <option value="B">Banco B (Bass/Chords)</option>
-                    <option value="C" selected>Banco C (Leads/Bells)</option>
-                    <option value="D">Banco D (Glitch/NTS-1)</option>
-                  </select>
-                </div>
-                <div class="flex items-center gap-1">
-                  <span class="text-neutral-500 text-[10px]">A:</span>
-                  <select id="remapTargetBank" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-amber-300 font-bold focus-ring">
-                    <option value="B" selected>Banco B (Bass/Chords)</option>
-                    <option value="A">Banco A (Drums)</option>
-                    <option value="C">Banco C (Leads/Bells)</option>
-                    <option value="D">Banco D (Glitch/NTS-1)</option>
-                  </select>
-                </div>
-                <button id="btnSwapBanks" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded transition font-semibold active:scale-95">
-                  🔁 Inverti Banco
-                </button>
-                <button id="btnReplaceBank" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded transition font-semibold active:scale-95">
-                  ➔ Sposta a Banco
-                </button>
-              </div>
-            </div>
-
-            <div class="h-px bg-neutral-800/80"></div>
-
-            <!-- Rimappa Singolo Pad & Pitch -->
-            <div class="space-y-1.5">
-              <span class="text-[11px] text-neutral-400 font-semibold">Rimappa o Trasponi Singolo Pad:</span>
-              <div class="flex flex-wrap items-center gap-2 text-xs">
-                <div class="flex items-center gap-1">
-                  <select id="remapSourceNote" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-amber-300 font-mono focus-ring"></select>
-                </div>
-                <div class="flex items-center gap-1">
-                  <select id="remapTargetNote" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-amber-300 font-mono focus-ring"></select>
-                </div>
-                <button id="btnExecuteSwap" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded font-semibold active:scale-95">Inverti</button>
-                <button id="btnExecuteReplace" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded font-semibold active:scale-95">Sposta</button>
-                
-                <div class="flex items-center gap-1 border-l border-neutral-800 pl-2">
-                  <button id="btnPitchDownSemi" class="px-1.5 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-amber-300 border border-neutral-700 rounded text-xs active:scale-95">-1 st</button>
-                  <button id="btnPitchUpSemi" class="px-1.5 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-amber-300 border border-neutral-700 rounded text-xs active:scale-95">+1 st</button>
-                  <button id="btnPitchDownOct" class="px-1.5 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 rounded text-xs active:scale-95">-12</button>
-                  <button id="btnPitchUpOct" class="px-1.5 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 rounded text-xs active:scale-95">+12</button>
-                </div>
-              </div>
+            <!-- Preset Rapidi Durata -->
+            <div class="flex items-center gap-1 text-[11px]">
+              <span class="text-neutral-500 mr-1">Preset:</span>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="30">30s</button>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="60">60s (1m)</button>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="90">90s</button>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="120">2 min</button>
+              <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 hover:border-amber-400/50 border border-transparent text-neutral-300 active:scale-95" data-sec="180">3 min</button>
             </div>
           </div>
         </div>
 
-        <!-- Editor ABC e Barra BPM (Collassabile) -->
-        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
-          <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Editor Partitura ABC</span>
-            <button id="btnToggleAbcSection" class="p-1 text-neutral-400 hover:text-amber-400 bg-neutral-800 rounded text-xs border border-neutral-700">▲</button>
-          </div>
-
-          <div id="abcSectionContent" class="collapsible-content space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2 p-2 bg-neutral-950 border border-neutral-800 rounded-lg text-xs">
-              <div class="flex items-center gap-2">
-                <span class="text-neutral-400 font-semibold">BPM (Q:):</span>
-                <input type="range" id="bpmSlider" min="40" max="240" value="120" class="w-24 accent-amber-400 cursor-pointer">
-                <span id="bpmValueDisplay" class="font-mono text-amber-300 w-8 font-bold">120</span>
+        <!-- Strumento Rimappatura Pad & Sezioni Intere (Atomico) -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4">
+          
+          <!-- Sezione 1: Rimappa Interi Banchi -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-400">🎛️ Rimappa Intera Sezione / Banco</span>
+              <span class="text-[11px] text-neutral-500">16 note in blocco</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <div class="flex items-center gap-1">
+                <span class="text-neutral-400 text-[11px]">Da Banco:</span>
+                <select id="remapSourceBank" class="bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1 text-amber-300 font-bold focus-ring">
+                  <option value="A">Banco A (Drums)</option>
+                  <option value="B">Banco B (Bass/Chords)</option>
+                  <option value="C" selected>Banco C (Leads/Bells)</option>
+                  <option value="D">Banco D (Glitch/NTS-1)</option>
+                </select>
               </div>
               <div class="flex items-center gap-1">
-                <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px]" data-speed="0.75">0.75×</button>
-                <button class="speed-btn px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold" data-speed="1.0">1.0×</button>
-                <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px]" data-speed="1.25">1.25×</button>
-                <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px]" data-speed="1.5">1.5×</button>
+                <span class="text-neutral-400 text-[11px]">A Banco:</span>
+                <select id="remapTargetBank" class="bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1 text-amber-300 font-bold focus-ring">
+                  <option value="B" selected>Banco B (Bass/Chords)</option>
+                  <option value="A">Banco A (Drums)</option>
+                  <option value="C">Banco C (Leads/Bells)</option>
+                  <option value="D">Banco D (Glitch/NTS-1)</option>
+                </select>
+              </div>
+              <button id="btnSwapBanks" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded transition font-semibold active:scale-95" title="Scambia reciprocamente tutti i 16 pad del banco sorgente con quello target">
+                🔁 Inverti Intero Banco
+              </button>
+              <button id="btnReplaceBank" class="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded transition font-semibold active:scale-95" title="Sposta tutte le note del banco sorgente nel banco target">
+                ➔ Sposta a Banco
+              </button>
+            </div>
+          </div>
+
+          <div class="h-px bg-neutral-800/80"></div>
+
+          <!-- Sezione 2: Rimappa & Pitch Singolo Pad -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-neutral-300">Rimappa o Trasponi Singolo Pad</span>
+              <span class="text-[11px] text-neutral-500">Nota singola</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <div class="flex items-center gap-1">
+                <span class="text-neutral-400 text-[11px]">Da:</span>
+                <select id="remapSourceNote" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-amber-300 font-mono focus-ring"></select>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="text-neutral-400 text-[11px]">A:</span>
+                <select id="remapTargetNote" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-amber-300 font-mono focus-ring"></select>
+              </div>
+              <button id="btnExecuteSwap" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded transition font-semibold active:scale-95">
+                Inverti Pad
+              </button>
+              <button id="btnExecuteReplace" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded transition font-semibold active:scale-95">
+                Sposta Pad
+              </button>
+              
+              <!-- Tasti Trasposizione Pitch Rapidi per la nota selezionata -->
+              <div class="flex items-center gap-1 ml-auto border-l border-neutral-800 pl-2">
+                <span class="text-[11px] text-neutral-500">Pitch:</span>
+                <button id="btnPitchDownSemi" class="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-amber-300 border border-neutral-700 rounded text-xs active:scale-95" title="Abbassa di 1 semitono">-1 st</button>
+                <button id="btnPitchUpSemi" class="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-amber-300 border border-neutral-700 rounded text-xs active:scale-95" title="Alza di 1 semitono">+1 st</button>
+                <button id="btnPitchDownOct" class="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 rounded text-xs active:scale-95" title="Abbassa di 1 ottava">-12</button>
+                <button id="btnPitchUpOct" class="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 rounded text-xs active:scale-95" title="Alza di 1 ottava">+12</button>
               </div>
             </div>
+          </div>
 
-            <textarea id="abcEditor" rows="10" class="w-full bg-neutral-950 font-mono text-sm p-3 rounded-lg border border-neutral-800 focus-ring leading-relaxed text-amber-200" spellcheck="false"></textarea>
+        </div>
+
+        <!-- Editor ABC e Barra BPM -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
+          
+          <div class="flex flex-wrap items-center justify-between gap-2 p-2 bg-neutral-950 border border-neutral-800 rounded-lg text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-neutral-400">BPM (Q:):</span>
+              <input type="range" id="bpmSlider" min="40" max="240" value="120" class="w-24 accent-amber-400 cursor-pointer">
+              <span id="bpmValueDisplay" class="font-mono text-amber-300 w-8 font-bold">120</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-neutral-500 text-[11px] mr-1">Velocità:</span>
+              <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95" data-speed="0.75">0.75×</button>
+              <button class="speed-btn px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold active:scale-95" data-speed="1.0">1.0×</button>
+              <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95" data-speed="1.25">1.25×</button>
+              <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95" data-speed="1.5">1.5×</button>
+              <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95" data-speed="2.0">2.0×</button>
+            </div>
+          </div>
+
+          <textarea id="abcEditor" rows="11" class="w-full bg-neutral-950 font-mono text-sm p-3 rounded-lg border border-neutral-800 focus-ring leading-relaxed text-amber-200" spellcheck="false"></textarea>
+          
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-neutral-800/80">
+            <div class="flex items-center gap-2">
+              <button id="btnPreview" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-semibold text-xs rounded-lg transition flex items-center gap-1 shadow active:scale-95">
+                ▶️ Play
+              </button>
+              <button id="btnStop" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs rounded-lg text-neutral-200 transition active:scale-95">
+                ⏹️ Stop
+              </button>
+            </div>
+            <div id="playheadDisplay" class="font-mono text-xs px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded text-neutral-400">
+              Pronto.
+            </div>
           </div>
         </div>
 
-        <!-- Riepilogo Pad Attivi (Collassabile) -->
-        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-2">
-          <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+        <!-- Riepilogo Pad Attivi -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-2">
             <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-400">Pad Rilevati nel Brano</h2>
-            <div class="flex items-center gap-2">
-              <span id="detectedCount" class="text-xs text-amber-400 font-mono">0 pad attivi</span>
-              <button id="btnToggleSummarySection" class="p-1 text-neutral-400 hover:text-amber-400 bg-neutral-800 rounded text-xs border border-neutral-700">▲</button>
-            </div>
+            <span id="detectedCount" class="text-xs text-amber-400 font-mono">0 pad attivi</span>
           </div>
-          <div id="summarySectionContent" class="collapsible-content">
-            <div id="activePadsSummary" class="text-xs font-mono space-y-1 text-neutral-300 max-h-28 overflow-y-auto pr-2 pt-1">
-              Nessuna nota analizzata.
-            </div>
+          <div id="activePadsSummary" class="text-xs font-mono space-y-1 text-neutral-300 max-h-32 overflow-y-auto pr-2">
+            Nessuna nota analizzata.
           </div>
         </div>
       </div>
 
-      <!-- COLONNA DESTRA: GRIGLIA 4x4 PAD MONITOR (COLLASSABILE) -->
+      <!-- Colonna Destra: Controller Banchi e Griglia 4x4 Pad -->
       <div class="lg:col-span-6 space-y-4">
         <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4">
           
-          <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
-            <!-- Selettore Banco A, B, C, D -->
+          <!-- Selettore Banco Koala (A, B, C, D) -->
+          <div class="flex items-center justify-between">
             <div class="flex items-center gap-1 bg-neutral-950 p-1 rounded-lg border border-neutral-800">
-              <button data-bank="A" class="bank-btn px-3 py-1.5 rounded text-xs font-bold bg-amber-500 text-neutral-950 transition active:scale-95 shadow">Banco A</button>
-              <button data-bank="B" class="bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco B</button>
-              <button data-bank="C" class="bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco C</button>
-              <button data-bank="D" class="bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco D</button>
+              <button data-bank="A" class="bank-btn px-3.5 py-1.5 rounded text-xs font-bold bg-amber-500 text-neutral-950 transition active:scale-95 shadow">Banco A</button>
+              <button data-bank="B" class="bank-btn px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco B</button>
+              <button data-bank="C" class="bank-btn px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco C</button>
+              <button data-bank="D" class="bank-btn px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco D</button>
             </div>
-
-            <div class="flex items-center gap-2">
-              <span id="bankRangeInfo" class="text-[11px] font-mono text-neutral-400 hidden sm:inline">C1 (36) ➔ D#2 (51)</span>
-              <button id="btnTogglePadsSection" class="p-1 text-neutral-400 hover:text-amber-400 bg-neutral-800 rounded text-xs border border-neutral-700 font-semibold" title="Comprimi/Espandi Griglia">▲</button>
-            </div>
+            <span id="bankRangeInfo" class="text-[11px] font-mono text-neutral-400">C1 (36) ➔ D#2 (51)</span>
           </div>
 
-          <div id="padsSectionContent" class="collapsible-content space-y-4">
-            <!-- Matrice 4x4 Pad -->
-            <div id="padGrid" class="grid grid-cols-4 gap-2.5"></div>
+          <!-- Matrice 4x4 Pad con tasti Pitch integrati -->
+          <div id="padGrid" class="grid grid-cols-4 gap-2.5"></div>
 
-            <!-- Info Timbro Patch & Render Progress -->
-            <div id="patchInfoBox" class="p-3 bg-neutral-950 border border-neutral-800/80 rounded-lg text-xs space-y-1 text-neutral-400">
-              <div class="flex items-center justify-between text-neutral-300 font-semibold">
-                <span>🎛️ Kit Attivo & Configurazione:</span>
-                <span id="oscLabel" class="text-amber-400 font-mono">Standard Koala</span>
-              </div>
-              <div id="renderStatusText" class="text-[11px]">Tocca un pad per suonarlo live. Usa i tasti ▼ e ▲ per alzare o abbassare il pitch di quel campione.</div>
+          <!-- Info Timbro Patch & Render Progress -->
+          <div id="patchInfoBox" class="p-3 bg-neutral-950 border border-neutral-800/80 rounded-lg text-xs space-y-1 text-neutral-400">
+            <div class="flex items-center justify-between text-neutral-300 font-semibold">
+              <span>🎛️ Kit Attivo & Configurazione:</span>
+              <span id="oscLabel" class="text-amber-400 font-mono">Standard Koala</span>
             </div>
+            <div id="renderStatusText" class="text-[11px]">Usa i tasti ▼ e ▲ su ciascun pad per alzare o abbassare il tono di quel campione.</div>
           </div>
 
         </div>
       </div>
 
-    </div>
-  </div>
-
-  <!-- MODALE FULLSCREEN: TUTTI I 64 PAD CONTEMPORANEI (BANCHI A, B, C, D) -->
-  <div id="fullscreenPadsModal" class="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-md p-4 sm:p-6 hidden flex-col justify-between overflow-y-auto">
-    
-    <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
-      <div class="flex items-center gap-3">
-        <span class="text-2xl">🐨</span>
-        <div>
-          <div class="flex items-center gap-2">
-            <h2 class="text-lg sm:text-xl font-bold text-amber-400">Koala 64-Pad Visualizer Fullscreen</h2>
-            <span id="fsKitBadge" class="text-xs bg-amber-500/20 border border-amber-500/40 text-amber-300 px-2 py-0.5 rounded font-mono font-bold">Standard</span>
-          </div>
-          <p id="fsNowPlayingText" class="text-xs text-neutral-400">Monitor multi-banco sincronizzato</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <button id="btnFsPlayPause" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold rounded-lg transition active:scale-95">
-          ▶️ Play
-        </button>
-        <button id="btnCloseFullscreenPads" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs rounded-lg transition font-semibold">
-          Chiudi ✕ (ESC)
-        </button>
-      </div>
-    </div>
-
-    <!-- Griglia dei 4 Banchi (64 Pad simultanei) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 flex-1">
-      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold text-amber-400">BANCO A (Drums)</span>
-          <span class="text-[10px] font-mono text-neutral-500">MIDI 36–51</span>
-        </div>
-        <div id="fsBankA" class="grid grid-cols-4 gap-1.5 flex-1"></div>
-      </div>
-
-      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold text-amber-400">BANCO B (Bass & Chords)</span>
-          <span class="text-[10px] font-mono text-neutral-500">MIDI 52–67</span>
-        </div>
-        <div id="fsBankB" class="grid grid-cols-4 gap-1.5 flex-1"></div>
-      </div>
-
-      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold text-amber-400">BANCO C (Leads & Bells)</span>
-          <span class="text-[10px] font-mono text-neutral-500">MIDI 68–83</span>
-        </div>
-        <div id="fsBankC" class="grid grid-cols-4 gap-1.5 flex-1"></div>
-      </div>
-
-      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold text-amber-400">BANCO D (Glitch & High)</span>
-          <span class="text-[10px] font-mono text-neutral-500">MIDI 84–99</span>
-        </div>
-        <div id="fsBankD" class="grid grid-cols-4 gap-1.5 flex-1"></div>
-      </div>
-    </div>
-
-    <div class="pt-3 border-t border-neutral-800 mt-4 flex items-center justify-between text-xs text-neutral-400 font-mono">
-      <span id="fsTimeDisplay">Visuale 64 Pad attiva</span>
-      <span class="text-[11px] text-neutral-500">Premi 'F' o 'ESC' per commutare la vista a tutto schermo. Clicca per suonare live.</span>
     </div>
   </div>
 
@@ -663,52 +539,13 @@ K: C
       });
     }
 
-    function renderFullscreenAll64Pads() {
-      const bankMaps = {
-        'A': document.getElementById('fsBankA'),
-        'B': document.getElementById('fsBankB'),
-        'C': document.getElementById('fsBankC'),
-        'D': document.getElementById('fsBankD')
-      };
-
-      ['A', 'B', 'C', 'D'].forEach(bank => {
-        const cont = bankMaps[bank];
-        cont.innerHTML = '';
-        PAD_BANKS[bank].forEach(item => {
-          const btn = document.createElement('div');
-          btn.id = `fs-pad-${item.midi}`;
-          btn.className = `p-2 rounded-lg border border-neutral-800 bg-neutral-950 hover:border-amber-400 hover:bg-neutral-900 active:scale-95 transition flex flex-col justify-between cursor-pointer select-none h-16 sm:h-20`;
-
-          btn.innerHTML = `
-            <div class="flex justify-between items-center text-[10px] font-mono text-neutral-500">
-              <span>#${item.pad}</span>
-              <span>${item.abc}</span>
-            </div>
-            <div class="text-[11px] font-semibold text-neutral-300 truncate pointer-events-none">${item.name}</div>
-            <div class="text-[9px] font-mono text-neutral-600 pointer-events-none">MIDI ${item.midi}</div>
-          `;
-
-          btn.addEventListener('pointerdown', () => {
-            playSyntheticSound(item.synth, item.midi, 0.25, null, null, null, activeKit);
-            flashPad(item.midi);
-          });
-
-          cont.appendChild(btn);
-        });
-      });
-    }
-
     function flashPad(midi) {
       const el = document.getElementById(`pad-card-${midi}`);
-      if (el) {
-        el.classList.add('ring-2', 'ring-amber-400', 'bg-amber-500/40', 'border-amber-400');
-        setTimeout(() => el.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-500/40', 'border-amber-400'), 150);
-      }
-      const fsEl = document.getElementById(`fs-pad-${midi}`);
-      if (fsEl) {
-        fsEl.classList.add('ring-2', 'ring-amber-400', 'bg-amber-500/50', 'border-amber-400');
-        setTimeout(() => fsEl.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-500/50', 'border-amber-400'), 150);
-      }
+      if (!el) return;
+      el.classList.add('ring-2', 'ring-amber-400', 'bg-amber-500/40', 'border-amber-400');
+      setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-500/40', 'border-amber-400');
+      }, 160);
     }
 
     function insertNoteAtCursor(text) {
@@ -722,9 +559,9 @@ K: C
     document.querySelectorAll('.bank-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.bank-btn').forEach(b => {
-          b.className = 'bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95';
+          b.className = 'bank-btn px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95';
         });
-        btn.className = 'bank-btn px-3 py-1.5 rounded text-xs font-bold bg-amber-500 text-neutral-950 transition active:scale-95 shadow ring-1 ring-amber-400';
+        btn.className = 'bank-btn px-3.5 py-1.5 rounded text-xs font-bold bg-amber-500 text-neutral-950 transition active:scale-95 shadow ring-1 ring-amber-400';
         activeBank = btn.dataset.bank;
         renderPads();
         parseAndAnalyze();
@@ -736,7 +573,6 @@ K: C
       activeKit = e.target.value;
       updateAbcKitComment(activeKit);
       parseAndAnalyze();
-      document.getElementById('fsKitBadge').innerText = KIT_LABELS[activeKit] || activeKit;
       showToast(`Kit Sonoro impostato: ${KIT_LABELS[activeKit]}`, "🎨");
     });
 
@@ -1074,7 +910,8 @@ K: C
       const secs = Math.floor(parsed.totalSeconds % 60);
       const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
       
-      durationBadge.innerText = `⏱️ ${timeStr} (${parsed.totalBars} misure @ ${parsed.bpm} BPM)`;
+      durationBadge.innerText = `⏱️ ${timeStr} (${parsed.totalBars} misure @ ${parsed.bpm} BPM${currentSpeed !== 1.0 ? ' [' + currentSpeed + '×]' : ''})`;
+
       oscLabel.innerText = `${KIT_LABELS[activeKit] || activeKit}${parsed.oscCC !== null ? ' | CC53=' + parsed.oscCC : ''}`;
 
       const foundMidi = new Set();
@@ -1430,6 +1267,9 @@ K: C
       }
     }
 
+    // ==========================================
+    // FAST VECTORIZED WAV ENCODER
+    // ==========================================
     function exportPadSampleWav(padItem) {
       const sampleRate = 44100;
       const duration = 0.5;
@@ -1537,29 +1377,21 @@ K: C
     }
 
     // ==========================================
-    // RIPRODUZIONE ANTEPRIMA CON VISUAL FEEDBACK
+    // RIPRODUZIONE ANTEPRIMA
     // ==========================================
     let playbackTimer = null;
-    let isPlaying = false;
-
     function playAbcPreview() {
       stopAbcPreview();
       const parsed = parseAbcFull(abcEditor.value);
       if (parsed.events.length === 0) return;
 
-      isPlaying = true;
-      document.getElementById('btnPreview').innerHTML = `<span>⏹️</span> Ferma`;
-      document.getElementById('btnPreview').className = `px-4 sm:px-5 py-2 sm:py-2.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs rounded-lg transition flex items-center gap-2 shadow active:scale-95`;
-      document.getElementById('btnFsPlayPause').innerText = "⏹️ Stop";
-
       const secondsPerQuarter = 60 / parsed.bpm;
       let currentIdx = 0;
 
       function step() {
-        if (!isPlaying || currentIdx >= parsed.events.length) {
+        if (currentIdx >= parsed.events.length) {
           stopAbcPreview();
           playheadDisplay.innerText = "Fine riproduzione.";
-          document.getElementById('fsNowPlayingText').innerText = "Fine riproduzione.";
           return;
         }
 
@@ -1568,23 +1400,18 @@ K: C
 
         if (ev.type === 'note') {
           const padInfo = findPadByMidi(ev.midi);
-          const txt = `Nota: ${ev.raw} [${padInfo ? 'B' + padInfo.bank + ' #' + padInfo.pad : 'MIDI ' + ev.midi}]`;
-          playheadDisplay.innerText = txt;
-          document.getElementById('fsNowPlayingText').innerText = txt;
+          playheadDisplay.innerHTML = `<span class="text-amber-400 font-bold">Nota:</span> ${ev.raw} | <span class="text-neutral-200">${padInfo ? 'Banco ' + padInfo.bank + ' #' + padInfo.pad : 'MIDI ' + ev.midi}</span>`;
           playSyntheticSound(padInfo ? padInfo.synth : 'lead', ev.midi, stepSec, null, null, null, activeKit);
           flashPad(ev.midi);
         } else if (ev.type === 'chord') {
-          const txt = `Accordo: ${ev.raw}`;
-          playheadDisplay.innerText = txt;
-          document.getElementById('fsNowPlayingText').innerText = txt;
+          playheadDisplay.innerHTML = `<span class="text-emerald-400 font-bold">Accordo:</span> ${ev.raw}`;
           ev.midis.forEach(m => {
             const padInfo = findPadByMidi(m);
             playSyntheticSound(padInfo ? padInfo.synth : 'lead', m, stepSec, null, null, null, activeKit);
             flashPad(m);
           });
         } else if (ev.type === 'rest') {
-          playheadDisplay.innerText = "Pausa z";
-          document.getElementById('fsNowPlayingText').innerText = "Pausa z";
+          playheadDisplay.innerHTML = `<span class="text-neutral-500">Pausa z</span>`;
         }
 
         currentIdx++;
@@ -1595,16 +1422,11 @@ K: C
     }
 
     function stopAbcPreview() {
-      isPlaying = false;
       if (playbackTimer) {
         clearTimeout(playbackTimer);
         playbackTimer = null;
       }
-      document.getElementById('btnPreview').innerHTML = `<span>▶️</span> Play`;
-      document.getElementById('btnPreview').className = `px-4 sm:px-5 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-lg transition flex items-center gap-2 shadow active:scale-95`;
-      document.getElementById('btnFsPlayPause').innerText = "▶️ Play";
       playheadDisplay.innerText = "Fermo.";
-      document.getElementById('fsNowPlayingText').innerText = "Fermo.";
     }
 
     // ==========================================
@@ -1789,89 +1611,6 @@ K: C
       return new Uint8Array([...header, ...trackHeader, ...trackBytes]);
     }
 
-    // ==========================================
-    // SEZIONI COLLASSABILI
-    // ==========================================
-    function toggleCollapse(btn, element) {
-      const isCollapsed = element.classList.contains('collapsed');
-      if (isCollapsed) {
-        element.classList.remove('collapsed');
-        btn.innerText = '▲';
-      } else {
-        element.classList.add('collapsed');
-        btn.innerText = '▼';
-      }
-    }
-
-    document.getElementById('btnToggleHeaderSection').addEventListener('click', function() {
-      const el = document.getElementById('headerSectionContent');
-      const isCollapsed = el.classList.contains('collapsed');
-      if (isCollapsed) {
-        el.classList.remove('collapsed');
-        this.innerText = '▲ File & Export';
-      } else {
-        el.classList.add('collapsed');
-        this.innerText = '▼ File & Export';
-      }
-    });
-
-    document.getElementById('btnToggleMetaSection').addEventListener('click', function() {
-      toggleCollapse(this, document.getElementById('metaSectionContent'));
-    });
-    document.getElementById('btnToggleRemapSection').addEventListener('click', function() {
-      toggleCollapse(this, document.getElementById('remapSectionContent'));
-    });
-    document.getElementById('btnToggleAbcSection').addEventListener('click', function() {
-      toggleCollapse(this, document.getElementById('abcSectionContent'));
-    });
-    document.getElementById('btnToggleSummarySection').addEventListener('click', function() {
-      toggleCollapse(this, document.getElementById('summarySectionContent'));
-    });
-    document.getElementById('btnTogglePadsSection').addEventListener('click', function() {
-      toggleCollapse(this, document.getElementById('padsSectionContent'));
-    });
-
-    // ==========================================
-    // GESTIONE MODALE 64 PAD FULLSCREEN
-    // ==========================================
-    const fsModal = document.getElementById('fullscreenPadsModal');
-    function openFullscreenPads() {
-      renderFullscreenAll64Pads();
-      document.getElementById('fsKitBadge').innerText = KIT_LABELS[activeKit] || activeKit;
-      fsModal.classList.remove('hidden');
-      fsModal.classList.add('flex');
-    }
-    function closeFullscreenPads() {
-      fsModal.classList.add('hidden');
-      fsModal.classList.remove('flex');
-    }
-
-    document.getElementById('btnOpenFullscreenPads').addEventListener('click', openFullscreenPads);
-    document.getElementById('btnCloseFullscreenPads').addEventListener('click', closeFullscreenPads);
-    document.getElementById('btnFsPlayPause').addEventListener('click', () => {
-      if (isPlaying) stopAbcPreview();
-      else playAbcPreview();
-    });
-
-    window.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
-
-      if (e.key === 'f' || e.key === 'F') {
-        e.preventDefault();
-        if (fsModal.classList.contains('hidden')) openFullscreenPads();
-        else closeFullscreenPads();
-      } else if (e.key === 'Escape') {
-        if (!fsModal.classList.contains('hidden')) closeFullscreenPads();
-      } else if (e.code === 'Space') {
-        e.preventDefault();
-        if (isPlaying) stopAbcPreview();
-        else playAbcPreview();
-      }
-    });
-
-    // ==========================================
-    // BINDING EVENTI INPUT & EXPORT
-    // ==========================================
     metaTitle.addEventListener('input', (e) => updateAbcHeader('T', e.target.value));
     metaComposer.addEventListener('input', (e) => updateAbcHeader('C', e.target.value));
     metaMeter.addEventListener('input', (e) => updateAbcHeader('M', e.target.value));
@@ -1900,7 +1639,7 @@ K: C
           const abc = parseMidiToAbc(evt.target.result);
           abcEditor.value = abc;
           parseAndAnalyze();
-          showToast(`MIDI "${file.name}" importato!`, "🎹");
+          showToast(`MIDI "${file.name}" importato con successo!`, "🎹");
         } catch (err) {
           alert("Errore caricamento MIDI: " + err.message);
         }
@@ -1959,9 +1698,9 @@ K: C
     document.querySelectorAll('.speed-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.speed-btn').forEach(b => {
-          b.className = 'speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px]';
+          b.className = 'speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] active:scale-95';
         });
-        btn.className = 'speed-btn px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold shadow ring-1 ring-amber-400/50';
+        btn.className = 'speed-btn px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold active:scale-95 shadow ring-1 ring-amber-400/50';
         currentSpeed = parseFloat(btn.dataset.speed);
         parseAndAnalyze();
         showToast(`Velocità: ${currentSpeed}×`, "⚡");
@@ -1987,7 +1726,7 @@ K: C
       const parsed = parseAbcFull(abcEditor.value);
       const bundle = {
         generator: "Korg NTS-1 Suite - Koala Bridge Studio",
-        version: "1.9.0",
+        version: "1.8.0",
         timestamp: new Date().toISOString(),
         metadata: {
           title: parsed.title,
@@ -2027,8 +1766,8 @@ K: C
 
     abcEditor.addEventListener('input', parseAndAnalyze);
     document.getElementById('btnPreview').addEventListener('click', () => {
-      if (isPlaying) stopAbcPreview();
-      else playAbcPreview();
+      playAbcPreview();
+      showToast("Riproduzione avviata", "▶️");
     });
     document.getElementById('btnStop').addEventListener('click', () => {
       stopAbcPreview();

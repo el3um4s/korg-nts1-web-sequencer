@@ -1,532 +1,534 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Korg NTS-1 Modular Suite — Central Hub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; touch-action: manipulation; }
-        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #09090b; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
-        .led-active { box-shadow: 0 0 8px #22c55e, inset 0 0 4px #4ade80; }
-        .led-cyan { box-shadow: 0 0 8px #06b6d4, inset 0 0 4px #22d3ee; }
-        .led-orange { box-shadow: 0 0 8px #f97316, inset 0 0 4px #fb923c; }
-        .app-card { transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
-        .app-card:hover { transform: translateY(-3px); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Korg NTS-1 Modular Web Suite — Hub Centrale</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    button, input, select, a {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    button:active, a:active {
+      transform: scale(0.97);
+    }
+    .focus-ring:focus {
+      outline: none;
+      border-color: #fbbf24 !important;
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.35);
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #09090b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3f3f46;
+    }
+  </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col p-4 md:p-6 select-none overflow-x-hidden">
+<body class="bg-neutral-950 text-neutral-100 min-h-screen font-sans p-4 sm:p-6 select-none relative">
+  <div class="max-w-7xl mx-auto space-y-6">
 
-    <!-- Header & Status Bar -->
-    <header class="max-w-7xl mx-auto w-full mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-zinc-800/80 pb-4">
+    <!-- HEADER CENTRALE CON CONTATORE MODULI E PANIC SWEEP -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-neutral-800 pb-5 gap-4">
+      <div>
         <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-500 shadow-xl">
-                <i class="fa-solid fa-shapes text-2xl"></i>
+          <span class="text-3xl">🎛️</span>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-amber-400">
+                Korg NTS-1 Modular Web Suite
+              </h1>
+              <span class="text-xs font-mono font-bold bg-neutral-800 text-amber-400 border border-neutral-700 px-2 py-0.5 rounded">
+                v1.4.0
+              </span>
             </div>
-            <div>
-                <div class="flex items-center gap-2 flex-wrap">
-                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-zinc-100 uppercase">KORG NTS-1 SUITE</h1>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-orange-400 font-mono-code font-bold border border-zinc-700">HUB v1.3.0</span>
-                </div>
-                <p class="text-xs text-zinc-400">Dashboard di Sistema, Routing Micro-App (8 Moduli), Diagnostica MIDI & Guida Hardware</p>
-            </div>
+            <p class="text-xs sm:text-sm text-neutral-400">
+              Hub di sistema · Architettura decentralizzata a 9 moduli per composizione, campionamento e sintesi hardware
+            </p>
+          </div>
         </div>
+      </div>
 
-        <!-- MIDI Hardware Monitor Badge -->
-        <div class="flex items-center gap-2 flex-wrap justify-end">
-            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium shadow">
-                <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"></span>
-                <span id="statusText" class="text-zinc-300">Inizializzazione MIDI...</span>
-            </div>
-            <button id="panicBtn" class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow active:scale-95" title="Interrompe tutte le note e reimposta i canali MIDI">
-                <i class="fa-solid fa-triangle-exclamation text-red-400"></i> PANIC
-            </button>
-        </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-mono px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-amber-400 font-bold">
+          9 Applicazioni Standalone
+        </span>
+        <button id="btnGlobalPanic" class="px-4 py-2 bg-red-950/60 hover:bg-red-900/80 text-red-200 border border-red-800/80 text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5 active:scale-95" title="Invia CC 120 (All Sound Off), CC 123 (All Notes Off) e rilascia le 128 note MIDI">
+          <span>🛑 Panic Sweep</span>
+        </button>
+      </div>
     </header>
 
-    <!-- Main Grid Content -->
-    <main class="max-w-7xl mx-auto w-full flex flex-col gap-6 flex-grow">
+    <!-- DIAGNOSTICA MIDI GLOBALE (WEB MIDI & WEB AUDIO) -->
+    <section class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
+      <div class="flex items-center justify-between border-b border-neutral-800/80 pb-2.5">
+        <div class="flex items-center gap-2">
+          <span class="text-sm">🔌</span>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-300">Diagnostica Hardware & Uscite MIDI</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="midiStatusDot" class="w-2.5 h-2.5 rounded-full bg-neutral-600"></span>
+          <span id="midiStatusLabel" class="text-xs font-mono text-neutral-400">Inizializzazione MIDI...</span>
+        </div>
+      </div>
 
-        <!-- 1. APP LAUNCHER GRID (8 MICRO-APPS) -->
-        <section class="flex flex-col gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div>
+          <label class="block text-neutral-400 text-[10px] uppercase font-semibold mb-1">Porta Output MIDI</label>
+          <select id="midiOutputSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2 text-amber-300 font-mono focus-ring">
+            <option value="">Nessun output MIDI trovato</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-neutral-400 text-[10px] uppercase font-semibold mb-1">Canale MIDI di Trasmissione</label>
+          <select id="midiChannelSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2 text-neutral-200 font-mono focus-ring">
+            <option value="0">Canale 1 (Default NTS-1)</option>
+            <option value="1">Canale 2</option>
+            <option value="2">Canale 3</option>
+            <option value="3">Canale 4</option>
+            <option value="4">Canale 5</option>
+            <option value="5">Canale 6</option>
+            <option value="6">Canale 7</option>
+            <option value="7">Canale 8</option>
+            <option value="8">Canale 9</option>
+            <option value="9">Canale 10 (Drums)</option>
+            <option value="10">Canale 11</option>
+            <option value="11">Canale 12</option>
+            <option value="12">Canale 13</option>
+            <option value="13">Canale 14</option>
+            <option value="14">Canale 15</option>
+            <option value="15">Canale 16</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-neutral-400 text-[10px] uppercase font-semibold mb-1">Test Sonoro Rapido</label>
+          <div class="flex items-center gap-1.5">
+            <button class="test-note-btn flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-neutral-200 font-mono text-[11px] font-bold" data-note="48">C3</button>
+            <button class="test-note-btn flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-neutral-200 font-mono text-[11px] font-bold" data-note="60">C4</button>
+            <button class="test-note-btn flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-neutral-200 font-mono text-[11px] font-bold" data-note="72">C5</button>
+            <button id="btnTestChord" class="flex-1 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-lg text-amber-300 font-bold text-[11px]">Accordo</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-neutral-400 text-[10px] uppercase font-semibold mb-1">Stato Supporto API Browser</label>
+          <div class="flex items-center gap-2 p-2 bg-neutral-950 border border-neutral-800 rounded-lg text-[11px] font-mono">
+            <span id="badgeApiWebMidi" class="text-neutral-500">MIDI: ?</span>
+            <span class="text-neutral-700">|</span>
+            <span id="badgeApiWebAudio" class="text-neutral-500">Audio: ?</span>
+            <span class="text-neutral-700">|</span>
+            <span id="badgeApiOffline" class="text-neutral-500">Render: ?</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRIGLIA ROUTER DEI 9 MODULI STANDALONE -->
+    <main class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">Applicazioni della Suite</h2>
+        <span class="text-[11px] text-neutral-500 font-mono">Apribili direttamente come Single-Page App autonome</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <!-- MODULO 1: ABC GENERATOR -->
+        <a href="./abc-generator/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
+          <div class="space-y-2">
             <div class="flex items-center justify-between">
-                <h2 class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-rocket text-orange-400"></i> Micro-Web App della Suite (8 Moduli)
-                </h2>
-                <span class="text-[10px] text-zinc-500 font-mono-code">Architettura Modulare a Singola Pagina</span>
+              <span class="text-xl">🎼</span>
+              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.8.1</span>
             </div>
+            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 1: ABC Arranger & Generator</h3>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Motore metrico multilingua (Italiano, Inglese, Toki Pona) per composizione algoritmica, calcolo sillabico e arrangiamento dinamico in formato .abc.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+            <span>./abc-generator/</span>
+            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
+          </div>
+        </a>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                
-                <!-- App 1: ABC Generator -->
-                <a href="./abc-generator/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-orange-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="w-10 h-10 rounded-xl bg-orange-600/20 border border-orange-500/30 flex items-center justify-center text-orange-400 group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-pen-nib text-lg"></i>
-                            </div>
-                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-orange-300 border border-zinc-800">v1.8.1</span>
-                        </div>
-                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-orange-400 transition-colors">1. ABC Generator</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Generatore e arrangiatore modale. Motore metrico multilingua (IT, EN, Toki Pona) e composizione reattiva con testi.
-                        </p>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] text-orange-400/80 font-semibold pt-2 border-t border-zinc-800/80">
-                        <span>Avvia Compositore</span>
-                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </a>
-
-                <!-- App 2: ABC Player & Radio -->
-                <a href="./abc-player/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-purple-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-tower-broadcast text-lg"></i>
-                            </div>
-                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-purple-300 border border-zinc-800">v1.7.2</span>
-                        </div>
-                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-purple-400 transition-colors">2. Player & Radio</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Player file singoli e Radio Generativa continua. 9 oscillatori, progressioni armoniche dinamiche e Master Presets rapidi.
-                        </p>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] text-purple-400/80 font-semibold pt-2 border-t border-zinc-800/80">
-                        <span>Ascolta / Radio</span>
-                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </a>
-
-                <!-- App 3: Playlist Builder -->
-                <a href="./playlist-builder/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-indigo-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-list-check text-lg"></i>
-                            </div>
-                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-indigo-300 border border-zinc-800">v1.1.0</span>
-                        </div>
-                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-indigo-400 transition-colors">3. Playlist Builder</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Assemblatore scalette con calcolo automatico durate, editor dei parametri timbrici NTS-1 per traccia ed export sommario disco.
-                        </p>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] text-indigo-400/80 font-semibold pt-2 border-t border-zinc-800/80">
-                        <span>Crea Scaletta</span>
-                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </a>
-
-                <!-- App 4: Zen Jukebox -->
-                <a href="./jukebox-player/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-compact-disc text-lg"></i>
-                            </div>
-                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-300 border border-zinc-800">v1.8.0</span>
-                        </div>
-                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-emerald-400 transition-colors">4. Zen Jukebox</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Esecutore continuo per sessioni di pittura e studio. Auto-Patch switch, Timer Pomodoro, Pad Matrix e Zen Mode fullscreen.
-                        </p>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] text-emerald-400/80 font-semibold pt-2 border-t border-zinc-800/80">
-                        <span>Avvia Sessione Zen</span>
-                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </a>
-
-                <!-- App 5: Multi-Pad Composer -->
-                <a href="./grid-composer/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="w-10 h-10 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-table-cells text-lg"></i>
-                            </div>
-                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-cyan-300 border border-zinc-800">v1.8.0</span>
-                        </div>
-                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-cyan-400 transition-colors">5. Grid Composer</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Step Composer a Pad sequenziali con note lunghe (Tie), fino a 64 step, template di struttura, randomizer formale ed export MIDI/ABC.
-                        </p>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] text-cyan-400/80 font-semibold pt-2 border-t border-zinc-800/80">
-                        <span>Componi Pad</span>
-                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </a>
-
-                <!-- App 6: Live Step Sequencer -->
-                <a href="./live-sequencer/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-rose-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="w-10 h-10 rounded-xl bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-drum text-lg"></i>
-                            </div>
-                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-rose-300 border border-zinc-800">v1.0.0</span>
-                        </div>
-                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-rose-400 transition-colors">6. Live Sequencer</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Step sequencer orientato alla performance live. Registrazione realtime overdub con metronomo, modalità touch & hold e tastiera QWERTY.
-                        </p>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] text-rose-400/80 font-semibold pt-2 border-t border-zinc-800/80">
-                        <span>Suona Live</span>
-                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </a>
-
-                <!-- App 7: Mobile Linear Sequencer -->
-                <a href="./mobile-linear-sequencer/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="w-10 h-10 rounded-xl bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-mobile-screen-button text-lg"></i>
-                            </div>
-                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800 font-bold">MOBILE XL</span>
-                        </div>
-                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-amber-400 transition-colors">7. Mobile Sequencer</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Nastro elastico verticale a lunghezza variabile per smartphone. Tasti XL quantizzati, cambi timbrici mid-song, sezioni formali, loop e tap tempo.
-                        </p>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] text-amber-400/80 font-semibold pt-2 border-t border-zinc-800/80">
-                        <span>Avvia su Mobile</span>
-                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </a>
-
-                <!-- App 8: Koala Bridge Studio (Nuovo Modulo) -->
-                <a href="./koala-bridge/index.html" class="app-card bg-zinc-900/80 hover:bg-zinc-900 border border-amber-500/30 hover:border-amber-400 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-4 group ring-1 ring-amber-500/20">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 group-hover:scale-105 transition-transform text-xl">
-                                🐨
-                            </div>
-                            <span class="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/40 font-bold">v1.7.0</span>
-                        </div>
-                        <h3 class="text-base font-bold text-zinc-100 group-hover:text-amber-400 transition-colors">8. Koala Bridge</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Bridge per Koala Sampler & NTS-1. Multi-banco 4×4 (A–D), pitch tuning per pad, decompiler MIDI, auto-BPM esatto ed export WAV offline.
-                        </p>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] text-amber-400 font-semibold pt-2 border-t border-zinc-800/80">
-                        <span>Apri Koala Bridge</span>
-                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                </a>
-
+        <!-- MODULO 2: ABC PLAYER -->
+        <a href="./abc-player/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xl">📻</span>
+              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.7.2</span>
             </div>
-        </section>
+            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 2: Player & Generative Radio</h3>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Lettore standalone e radio generativa continua per pittura e studio, variazione armonica modale, visualizer a 8 modalità e Focus Companion Pomodoro.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+            <span>./abc-player/</span>
+            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
+          </div>
+        </a>
 
-        <!-- 2. DIAGNOSTICA MIDI & HARDWARE CONTROL -->
-        <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            
-            <!-- Diagnostica e Routing MIDI -->
-            <div class="lg:col-span-6 bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
-                <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-md bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-plug"></i>
-                        </span>
-                        <h2 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Diagnostica & Routing MIDI</h2>
-                    </div>
-                    <button id="refreshMidiBtn" class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition flex items-center gap-1 active:scale-95">
-                        <i class="fa-solid fa-arrows-rotate text-[9px]"></i> Riscansiona
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="flex flex-col gap-1">
-                        <label for="midiOutputSelect" class="text-[10px] font-semibold text-zinc-400">Porta MIDI Output:</label>
-                        <select id="midiOutputSelect" class="bg-zinc-950 border border-zinc-700 text-orange-300 rounded-lg px-2 py-1.5 text-xs font-medium focus:outline-none focus:border-orange-500 cursor-pointer">
-                            <option value="">Nessuna porta rilevata</option>
-                        </select>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label for="midiChannelSelect" class="text-[10px] font-semibold text-zinc-400">Canale MIDI (Korg default: 1):</label>
-                        <select id="midiChannelSelect"
-                            class="bg-zinc-950 border border-zinc-700 text-zinc-200 rounded-lg px-2 py-1.5 text-xs font-mono-code focus:outline-none focus:border-orange-500 cursor-pointer">
-                            <option value="0" selected>Canale 1 (Default Korg)</option>
-                            <option value="1">Canale 2</option>
-                            <option value="2">Canale 3</option>
-                            <option value="3">Canale 4</option>
-                            <option value="4">Canale 5</option>
-                            <option value="5">Canale 6</option>
-                            <option value="6">Canale 7</option>
-                            <option value="7">Canale 8</option>
-                            <option value="8">Canale 9</option>
-                            <option value="9">Canale 10</option>
-                            <option value="10">Canale 11</option>
-                            <option value="11">Canale 12</option>
-                            <option value="12">Canale 13</option>
-                            <option value="13">Canale 14</option>
-                            <option value="14">Canale 15</option>
-                            <option value="15">Canale 16</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Test Sonoro Hardware -->
-                <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 flex flex-col gap-2">
-                    <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Test Note & Sweep Frequenze</span>
-                    <div class="grid grid-cols-4 gap-1.5 text-xs">
-                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="48">C3 (Basso)</button>
-                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="60">C4 (Medio)</button>
-                        <button class="test-note-btn py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-mono-code font-bold transition" data-note="72">C5 (Alto)</button>
-                        <button id="testChordBtn" class="py-1.5 rounded bg-orange-950/40 hover:bg-orange-900/60 active:bg-orange-800 text-orange-300 border border-orange-700/60 font-mono-code font-bold transition">Accordo C</button>
-                    </div>
-                </div>
-
-                <!-- Stato API Browser -->
-                <div class="grid grid-cols-3 gap-1.5 text-[10px] font-mono-code text-center pt-1">
-                    <div id="checkWebMidi" class="p-1.5 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center gap-1.5 text-zinc-400">
-                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span> Web MIDI
-                    </div>
-                    <div id="checkWebAudio" class="p-1.5 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center gap-1.5 text-zinc-400">
-                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span> Web Audio
-                    </div>
-                    <div id="checkOfflineAudio" class="p-1.5 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center gap-1.5 text-zinc-400">
-                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span> Offline Render
-                    </div>
-                </div>
+        <!-- MODULO 3: PLAYLIST BUILDER -->
+        <a href="./playlist-builder/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xl">📋</span>
+              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.1.0</span>
             </div>
+            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 3: Playlist Builder Studio</h3>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Assemblatore drag-and-drop con caricamento batch di file .abc e .json, calcolo deterministico delle durate e rack hardware NTS-1 per singolo brano.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+            <span>./playlist-builder/</span>
+            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
+          </div>
+        </a>
 
-            <!-- Quick Hardware NTS-1 Cheat Sheet -->
-            <div class="lg:col-span-6 bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
-                <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-md bg-amber-600/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-microchip"></i>
-                        </span>
-                        <h2 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Mappa CC & Oscillatori NTS-1</h2>
-                    </div>
-                    <span class="text-[9px] text-zinc-500 font-mono-code">MIDI CC Standard</span>
-                </div>
-
-                <!-- 9 Motori di Sintesi Sinottica -->
-                <div class="flex flex-col gap-1 text-[11px]">
-                    <span class="text-[10px] text-zinc-400 font-semibold">9 Oscillatori (MIDI CC 53):</span>
-                    <div class="grid grid-cols-3 gap-1 text-[10px] font-mono-code">
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-zinc-300"><strong>0</strong>: SAW (Sawtooth)</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-amber-300"><strong>16</strong>: TRI (Triangle)</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-zinc-300"><strong>32</strong>: SQR (Square)</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-cyan-300"><strong>48</strong>: VPM (FM Nativo)</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-emerald-300"><strong>64</strong>: WAVES (Wavetable)</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-purple-300"><strong>76</strong>: Volca Bass</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-amber-300"><strong>88</strong>: Chords (chord-osc)</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-rose-300"><strong>100</strong>: Proba-B</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800/80 text-indigo-300"><strong>112</strong>: J6 (Roland Juno)</div>
-                    </div>
-                </div>
-
-                <!-- Parametri Hardware CC Rapidi -->
-                <div class="flex flex-col gap-1 text-[11px] pt-1 border-t border-zinc-800">
-                    <span class="text-[10px] text-zinc-400 font-semibold">Parametri Controlli Fisici:</span>
-                    <div class="grid grid-cols-4 gap-1 text-[10px] font-mono-code text-center">
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-zinc-400"><span class="text-zinc-500 block">Shape</span>CC 54</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-zinc-400"><span class="text-zinc-500 block">Alt</span>CC 55</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-cyan-400"><span class="text-zinc-500 block">Cutoff</span>CC 43</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-cyan-400"><span class="text-zinc-500 block">Resonance</span>CC 44</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-emerald-400"><span class="text-zinc-500 block">Attack</span>CC 16</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-emerald-400"><span class="text-zinc-500 block">Release</span>CC 19</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-purple-400"><span class="text-zinc-500 block">Delay Time</span>CC 30</div>
-                        <div class="bg-zinc-950 p-1 rounded border border-zinc-800 text-purple-400"><span class="text-zinc-500 block">Reverb Mix</span>CC 35</div>
-                    </div>
-                </div>
+        <!-- MODULO 4: ZEN JUKEBOX -->
+        <a href="./jukebox-player/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xl">🏮</span>
+              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.8.0</span>
             </div>
+            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 4: Zen Jukebox & Focus</h3>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Esecutore continuo a ciclo infinito per sessioni di pittura e meditazione, riprogrammazione patch hardware live e micro-variazioni probabilistiche Humanize 🎲.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+            <span>./jukebox-player/</span>
+            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
+          </div>
+        </a>
 
-        </section>
+        <!-- MODULO 5: GRID COMPOSER -->
+        <a href="./grid-composer/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xl">🔲</span>
+              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.8.0</span>
+            </div>
+            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 5: Multi-Pad Grid Composer</h3>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Sequenziamento a pad multipli indipendenti da 8 a 64 step, celle a 3 stati tattili (Off, Trig, Tie legati) e playhead scanner sincronizzato.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+            <span>./grid-composer/</span>
+            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
+          </div>
+        </a>
 
+        <!-- MODULO 6: LIVE SEQUENCER -->
+        <a href="./live-sequencer/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xl">⚡</span>
+              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.0.0</span>
+            </div>
+            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 6: Live Step Sequencer</h3>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Superficie di performance touch e mapping tastiera QWERTY, overdub in tempo reale con quantizzazione a sedicesimi e inserimento step-by-step touch & hold.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+            <span>./live-sequencer/</span>
+            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
+          </div>
+        </a>
+
+        <!-- MODULO 7: MOBILE LINEAR SEQUENCER -->
+        <a href="./mobile-linear-sequencer/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xl">📱</span>
+              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.9.0</span>
+            </div>
+            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 7: Mobile Linear Sequencer XL</h3>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Paradigma a nastro elastico verticale (Elastic Tape) per uso con una mano da smartphone, tastiera touch XL quantizzata e scale musicali selezionabili.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+            <span>./mobile-linear-sequencer/</span>
+            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
+          </div>
+        </a>
+
+        <!-- MODULO 8: KOALA BRIDGE -->
+        <a href="./koala-bridge/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xl">🐨</span>
+              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.9.0</span>
+            </div>
+            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 8: Koala Bridge Studio Pro</h3>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Ponte bidirezionale ABC / MIDI / Koala Sampler a 64 pad (Banchi A-D), pitch shifter semitonale per-pad, bank swapper atomico e vista 64-pad fullscreen.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+            <span>./koala-bridge/</span>
+            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
+          </div>
+        </a>
+
+        <!-- MODULO 9: KOALA PLAYLIST (NUOVO MODULO) -->
+        <a href="./koala-playlist/index.html" class="p-4 rounded-xl bg-neutral-900 border border-amber-500/50 hover:border-amber-400 hover:bg-neutral-850 flex flex-col justify-between group transition ring-1 ring-amber-500/20 shadow-lg">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xl">🎶</span>
+              <span class="text-[10px] font-mono bg-amber-950/60 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold">v1.4.0</span>
+            </div>
+            <h3 class="text-base font-bold text-amber-400 group-hover:text-amber-300 transition">Modulo 9: Koala Playlist Studio</h3>
+            <p class="text-xs text-neutral-300 leading-relaxed">
+              Scaletta multi-traccia, stacco configurabile per brano, riproduzione casuale Shuffle, kit tematici (Rock, Punk, House, Piano, Vocal), ZIP generator e master WAV offline.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-amber-400 font-mono font-semibold">
+            <span>./koala-playlist/</span>
+            <span class="group-hover:translate-x-1 transition-transform">Apri ➔</span>
+          </div>
+        </a>
+
+      </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="max-w-7xl mx-auto w-full mt-6 text-center text-xs text-zinc-500 border-t border-zinc-800/80 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>Korg NTS-1 Modular Suite • Single Page Architecture (No Build Tools, No NPM)</p>
-        <span class="font-mono-code text-[11px] text-zinc-400">HUB SYSTEM v1.3.0</span>
+    <!-- CHEAT SHEET SINTESI NTS-1 & MAPPATURA PAD KOALA -->
+    <footer class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 text-xs space-y-3">
+      <div class="flex items-center justify-between border-b border-neutral-800/80 pb-2">
+        <span class="text-neutral-400 font-bold uppercase tracking-wider text-[11px]">Riferimento Rapido Hardware & Sampler</span>
+        <span class="text-[11px] text-neutral-500 font-mono">Korg NTS-1 (CC 53) & Koala (64 Pad)</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-neutral-400">
+        <div class="space-y-1">
+          <span class="text-neutral-200 font-semibold block text-[11px]">Oscillatori Principali Korg NTS-1 (CC 53):</span>
+          <p class="text-[11px] font-mono leading-relaxed">
+            SAW (0) · TRI (16) · SQR (32) · VPM FM (48) · WAVES (64) · Volca Bass (76) · Poly Chords (88) · Proba-B (100) · J6 Juno (112)
+          </p>
+        </div>
+        <div class="space-y-1">
+          <span class="text-neutral-200 font-semibold block text-[11px]">Mappatura MIDI Pad Koala Sampler:</span>
+          <p class="text-[11px] font-mono leading-relaxed">
+            Banco A: MIDI 36–51 (C1–D#2) · Banco B: MIDI 52–67 (E2–G3) · Banco C: MIDI 68–83 (G#3–B4) · Banco D: MIDI 84–99 (C5–D#6)
+          </p>
+        </div>
+      </div>
     </footer>
 
-    <!-- Hub Script Logic -->
-    <script>
-        let midiAccess = null;
-        let selectedOutput = null;
-        let midiChannel = 0;
-        let audioCtx = null;
+  </div>
 
-        // --- WEB AUDIO TEST SYNTH ---
-        function getAudioContext() {
-            if (!audioCtx) {
-                const AudioClass = window.AudioContext || window.webkitAudioContext;
-                if (AudioClass) audioCtx = new AudioClass();
-            }
-            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            return audioCtx;
+  <!-- Toast Notifica Flottante -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-200 pointer-events-none">
+    <div class="bg-neutral-900 border border-amber-500/60 shadow-xl rounded-lg px-4 py-2.5 flex items-center gap-2 text-xs text-amber-200">
+      <span id="toastIcon">✨</span>
+      <span id="toastMessage">Operazione completata</span>
+    </div>
+  </div>
+
+  <script>
+    let midiAccess = null;
+    let selectedMidiOutput = null;
+    let audioCtx = null;
+
+    function showToast(message, icon = "✨") {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastIcon').innerText = icon;
+      document.getElementById('toastMessage').innerText = message;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 2400);
+    }
+
+    function checkApiSupport() {
+      const badgeWebMidi = document.getElementById('badgeApiWebMidi');
+      const badgeWebAudio = document.getElementById('badgeApiWebAudio');
+      const badgeOffline = document.getElementById('badgeApiOffline');
+
+      if (navigator.requestMIDIAccess) {
+        badgeWebMidi.innerText = "MIDI: OK";
+        badgeWebMidi.className = "text-emerald-400 font-bold";
+      } else {
+        badgeWebMidi.innerText = "MIDI: No";
+        badgeWebMidi.className = "text-neutral-500";
+      }
+
+      if (window.AudioContext || window.webkitAudioContext) {
+        badgeWebAudio.innerText = "Audio: OK";
+        badgeWebAudio.className = "text-emerald-400 font-bold";
+      } else {
+        badgeWebAudio.innerText = "Audio: No";
+        badgeWebAudio.className = "text-red-400";
+      }
+
+      if (window.OfflineAudioContext) {
+        badgeOffline.innerText = "Render: OK";
+        badgeOffline.className = "text-emerald-400 font-bold";
+      } else {
+        badgeOffline.innerText = "Render: No";
+        badgeOffline.className = "text-red-400";
+      }
+    }
+
+    function initWebMidi() {
+      const statusDot = document.getElementById('midiStatusDot');
+      const statusLabel = document.getElementById('midiStatusLabel');
+      const outputSelect = document.getElementById('midiOutputSelect');
+
+      if (!navigator.requestMIDIAccess) {
+        statusDot.className = "w-2.5 h-2.5 rounded-full bg-neutral-600";
+        statusLabel.innerText = "Web MIDI non supportato su questo browser";
+        return;
+      }
+
+      navigator.requestMIDIAccess({ sysex: true }).then(access => {
+        midiAccess = access;
+        updateMidiOutputs();
+        midiAccess.onstatechange = updateMidiOutputs;
+      }).catch(err => {
+        statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+        statusLabel.innerText = "Accesso MIDI negato o non disponibile";
+      });
+    }
+
+    function updateMidiOutputs() {
+      const outputSelect = document.getElementById('midiOutputSelect');
+      const statusDot = document.getElementById('midiStatusDot');
+      const statusLabel = document.getElementById('midiStatusLabel');
+
+      if (!midiAccess) return;
+      outputSelect.innerHTML = '';
+
+      const outputs = Array.from(midiAccess.outputs.values());
+
+      if (outputs.length === 0) {
+        outputSelect.innerHTML = '<option value="">Nessun dispositivo MIDI connesso</option>';
+        statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+        statusLabel.innerText = "Dispositivi MIDI non rilevati";
+        selectedMidiOutput = null;
+        return;
+      }
+
+      let autoSelected = null;
+      outputs.forEach((port, idx) => {
+        const opt = document.createElement('option');
+        opt.value = port.id;
+        opt.innerText = port.name || `Output MIDI ${idx + 1}`;
+        outputSelect.appendChild(opt);
+
+        // Autodiscovery intelligente Korg NTS-1
+        const lower = (port.name || '').toLowerCase();
+        if (lower.includes('nts') || lower.includes('korg')) {
+          autoSelected = port.id;
         }
+      });
 
-        function playInternalBeep(midiNote, durationSec = 0.3) {
-            const ctx = getAudioContext();
-            if (!ctx) return;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
-            osc.frequency.setValueAtTime(freq, ctx.currentTime);
-            osc.type = 'sawtooth';
+      if (autoSelected) {
+        outputSelect.value = autoSelected;
+      }
 
-            gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationSec);
+      selectedMidiOutput = midiAccess.outputs.get(outputSelect.value);
+      statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+      statusLabel.innerText = `Connesso: ${selectedMidiOutput.name}`;
+    }
 
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + durationSec + 0.05);
+    document.getElementById('midiOutputSelect').addEventListener('change', (e) => {
+      if (midiAccess) {
+        selectedMidiOutput = midiAccess.outputs.get(e.target.value);
+        if (selectedMidiOutput) {
+          document.getElementById('midiStatusLabel').innerText = `Connesso: ${selectedMidiOutput.name}`;
+          showToast(`Porta MIDI: ${selectedMidiOutput.name}`, "🔌");
         }
+      }
+    });
 
-        // --- MIDI ROUTING & DISCOVERY ---
-        async function initHubMIDI() {
-            const statusIndicator = document.getElementById('statusIndicator');
-            const statusText = document.getElementById('statusText');
-            const outputSelect = document.getElementById('midiOutputSelect');
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
 
-            updateApiCheckBadges();
+    function playLocalTone(midiNote, duration = 0.3) {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
 
-            if (!navigator.requestMIDIAccess) {
-                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 led-cyan';
-                statusText.textContent = 'Web MIDI non supportato dal browser';
-                outputSelect.innerHTML = '<option value="">MIDI non supportato</option>';
-                return;
-            }
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, now);
 
-            try {
-                midiAccess = await navigator.requestMIDIAccess({ sysex: false });
-                midiAccess.onstatechange = () => refreshMidiOutputs();
-                refreshMidiOutputs();
-            } catch (err) {
-                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
-                statusText.textContent = 'Accesso MIDI Negato';
-                outputSelect.innerHTML = '<option value="">Permesso MIDI negato</option>';
-            }
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + duration + 0.02);
+    }
+
+    function sendMidiNote(note, durationMs = 300) {
+      const ch = parseInt(document.getElementById('midiChannelSelect').value, 10);
+      playLocalTone(note, durationMs / 1000);
+
+      if (selectedMidiOutput) {
+        selectedMidiOutput.send([0x90 | ch, note, 0x64]);
+        setTimeout(() => {
+          selectedMidiOutput.send([0x80 | ch, note, 0x00]);
+        }, durationMs);
+      }
+    }
+
+    document.querySelectorAll('.test-note-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const note = parseInt(btn.dataset.note, 10);
+        sendMidiNote(note);
+      });
+    });
+
+    document.getElementById('btnTestChord').addEventListener('click', () => {
+      [60, 64, 67].forEach(n => sendMidiNote(n, 400));
+      showToast("Accordo C Maggiore inviato", "🎵");
+    });
+
+    document.getElementById('btnGlobalPanic').addEventListener('click', () => {
+      if (audioCtx && audioCtx.state !== 'closed') {
+        audioCtx.close().then(() => { audioCtx = null; });
+      }
+
+      if (selectedMidiOutput) {
+        for (let ch = 0; ch < 16; ch++) {
+          selectedMidiOutput.send([0xB0 | ch, 120, 0]); // CC 120 All Sound Off
+          selectedMidiOutput.send([0xB0 | ch, 123, 0]); // CC 123 All Notes Off
+          selectedMidiOutput.send([0xB0 | ch, 64, 0]);  // CC 64 Sustain Off
+          for (let note = 0; note < 128; note++) {
+            selectedMidiOutput.send([0x80 | ch, note, 0]);
+          }
         }
+      }
 
-        function refreshMidiOutputs() {
-            const outputSelect = document.getElementById('midiOutputSelect');
-            const statusIndicator = document.getElementById('statusIndicator');
-            const statusText = document.getElementById('statusText');
+      showToast("Panic Sweep inviato su tutti i 16 canali!", "🛑");
+    });
 
-            if (!midiAccess) return;
-            const outputs = Array.from(midiAccess.outputs.values());
-            outputSelect.innerHTML = '';
-
-            if (outputs.length === 0) {
-                statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 led-orange';
-                statusText.textContent = 'Nessun dispositivo MIDI connesso';
-                outputSelect.innerHTML = '<option value="">Nessun hardware rilevato</option>';
-                selectedOutput = null;
-                return;
-            }
-
-            let korgOutput = outputs.find(o => (o.name || '').toLowerCase().includes('nts') || (o.name || '').toLowerCase().includes('korg'));
-            
-            outputs.forEach(opt => {
-                const el = document.createElement('option');
-                el.value = opt.id;
-                el.textContent = opt.name;
-                if (korgOutput && opt.id === korgOutput.id) el.selected = true;
-                outputSelect.appendChild(el);
-            });
-
-            selectedOutput = korgOutput || outputs[0];
-            statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 led-active';
-            statusText.textContent = `Connesso: ${selectedOutput.name}`;
-        }
-
-        function updateApiCheckBadges() {
-            const elMidi = document.getElementById('checkWebMidi');
-            const elAudio = document.getElementById('checkWebAudio');
-            const elOffline = document.getElementById('checkOfflineAudio');
-
-            if (navigator.requestMIDIAccess) {
-                elMidi.className = 'p-1.5 rounded bg-zinc-950 border border-emerald-900/60 flex items-center justify-center gap-1.5 text-emerald-300 font-bold';
-                elMidi.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 led-active';
-            }
-
-            if (window.AudioContext || window.webkitAudioContext) {
-                elAudio.className = 'p-1.5 rounded bg-zinc-950 border border-emerald-900/60 flex items-center justify-center gap-1.5 text-emerald-300 font-bold';
-                elAudio.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 led-active';
-            }
-
-            if (window.OfflineAudioContext || window.webkitOfflineAudioContext) {
-                elOffline.className = 'p-1.5 rounded bg-zinc-950 border border-emerald-900/60 flex items-center justify-center gap-1.5 text-emerald-300 font-bold';
-                elOffline.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 led-active';
-            }
-        }
-
-        function sendMidiTestNote(midiNote) {
-            playInternalBeep(midiNote, 0.35);
-            if (selectedOutput) {
-                try {
-                    const statusOn = 0x90 | (midiChannel & 0x0F);
-                    const statusOff = 0x80 | (midiChannel & 0x0F);
-                    selectedOutput.send([statusOn, midiNote & 0x7F, 100]);
-                    setTimeout(() => {
-                        selectedOutput.send([statusOff, midiNote & 0x7F, 0]);
-                    }, 350);
-                } catch (e) {}
-            }
-        }
-
-        function panic() {
-            if (selectedOutput) {
-                try {
-                    const statusCC = 0xB0 | (midiChannel & 0x0F);
-                    selectedOutput.send([statusCC, 120, 0]);
-                    selectedOutput.send([statusCC, 123, 0]);
-                    selectedOutput.send([statusCC, 64, 0]);
-                    for (let n = 0; n < 128; n++) {
-                        selectedOutput.send([0x80 | (midiChannel & 0x0F), n, 0]);
-                    }
-                } catch (e) {}
-            }
-        }
-
-        // --- EVENT LISTENERS ---
-        document.getElementById('refreshMidiBtn').addEventListener('click', initHubMIDI);
-        document.getElementById('panicBtn').addEventListener('click', panic);
-
-        document.getElementById('midiOutputSelect').addEventListener('change', (e) => {
-            if (midiAccess) {
-                selectedOutput = midiAccess.outputs.get(e.target.value);
-            }
-        });
-
-        document.getElementById('midiChannelSelect').addEventListener('change', (e) => {
-            midiChannel = parseInt(e.target.value, 10) || 0;
-        });
-
-        document.querySelectorAll('.test-note-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                sendMidiTestNote(parseInt(e.currentTarget.dataset.note, 10));
-            });
-        });
-
-        document.getElementById('testChordBtn').addEventListener('click', () => {
-            [48, 52, 55, 60].forEach((n, idx) => {
-                setTimeout(() => sendMidiTestNote(n), idx * 60);
-            });
-        });
-
-        window.addEventListener('DOMContentLoaded', initHubMIDI);
-    </script>
+    checkApiSupport();
+    initWebMidi();
+  </script>
 </body>
 </html>
