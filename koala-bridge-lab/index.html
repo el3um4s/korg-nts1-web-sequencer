@@ -1,0 +1,2173 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koala Bridge LAB (Experimental & Testbed)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    button, input, select, textarea {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    button:active {
+      transform: scale(0.96);
+    }
+    .focus-ring:focus {
+      outline: none;
+      border-color: #a855f7 !important;
+      box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.35);
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #09090b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3f3f46;
+    }
+    .collapsible-content {
+      transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+      overflow: hidden;
+    }
+    .collapsible-content.collapsed {
+      max-height: 0 !important;
+      opacity: 0;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      margin-top: 0 !important;
+      pointer-events: none;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast-anim {
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen font-sans p-3 sm:p-5 select-none relative">
+  <div class="max-w-7xl mx-auto space-y-4">
+
+    <!-- SEZIONE 1: HEADER SPERIMENTALE & IMPORT/EXPORT -->
+    <header class="bg-neutral-900 border border-purple-500/40 rounded-xl p-3 sm:p-4 transition shadow-lg shadow-purple-950/20">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🧪</span>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-purple-400">
+                Koala Bridge Studio <span class="text-amber-400">LAB</span>
+              </h1>
+              <span class="text-[10px] font-mono font-bold bg-purple-950/80 text-purple-300 border border-purple-500/50 px-2 py-0.5 rounded">
+                EXPERIMENTAL v2.1-LAB
+              </span>
+            </div>
+            <p class="text-xs text-neutral-400">Ambiente di test: Import/Export Standard (v1.9) + Koala Remapper (v2.1) + Notazione Pad</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnToggleHeaderSection" class="p-1.5 text-neutral-400 hover:text-purple-400 bg-neutral-800 hover:bg-neutral-700 rounded text-xs border border-neutral-700 font-semibold" title="Comprimi/Espandi Sezione File">
+            ▲ File & Export
+          </button>
+        </div>
+      </div>
+
+      <div id="headerSectionContent" class="collapsible-content mt-3 pt-3 border-t border-neutral-800 flex flex-wrap items-center justify-between gap-2.5">
+        <!-- Gruppo Import -->
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-purple-500/50 text-xs rounded border border-neutral-700 cursor-pointer font-semibold transition active:scale-95 flex items-center gap-1.5 shadow-sm">
+            <span>📂 Importa ABC / JSON</span>
+            <input type="file" id="fileUniversalInput" accept=".abc,.txt,.json" class="hidden">
+          </label>
+          <label class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 hover:border-purple-500/50 text-xs rounded border border-neutral-700 cursor-pointer font-semibold transition active:scale-95 flex items-center gap-1.5 shadow-sm" title="Importazione Standard MIDI lineare (v1.9)">
+            <span>🎹 Importa MIDI Standard (v1.9)</span>
+            <input type="file" id="fileMidiInput" accept=".mid,.midi" class="hidden">
+          </label>
+          <label class="px-3 py-2 bg-purple-950/50 hover:bg-purple-900/60 text-purple-300 border border-purple-500/50 text-xs rounded cursor-pointer font-bold transition active:scale-95 flex items-center gap-1.5 shadow-sm" title="Importa file MIDI da Koala Sampler con correzione geometrica righe (v2.1)">
+            <span>🐨 Importa MIDI Koala (v2.1)</span>
+            <input type="file" id="fileMidiKoalaInput" accept=".mid,.midi" class="hidden">
+          </label>
+        </div>
+
+        <!-- Gruppo Export -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btnExportAbc" class="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 hover:border-purple-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica partitura ABC">
+            📄 .ABC
+          </button>
+          <button id="btnExportJson" class="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 hover:border-purple-500/50 border border-neutral-700 text-xs rounded font-semibold transition" title="Scarica bundle interoperabile JSON">
+            📦 .JSON
+          </button>
+          <button id="btnExportMidiStandard" class="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 hover:border-neutral-700 border border-neutral-700 text-xs rounded font-semibold transition text-neutral-300" title="Esportazione Standard MIDI lineare 1:1 come v1.9">
+            💾 .MID (Standard v1.9)
+          </button>
+          <button id="btnExportKoalaMidi" class="px-3.5 py-2 bg-purple-950/60 hover:bg-purple-900/70 border border-purple-500/60 text-xs rounded font-bold transition text-purple-300 shadow" title="Esportazione MIDI con griglia invertita per Koala Sampler (v2.1)">
+            🐨 .MID (Koala v2.1)
+          </button>
+          <button id="btnExportMasterWav" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold rounded shadow transition flex items-center gap-1.5 active:scale-95" title="Render offline ultra-rapido WAV">
+            <span>🎧 Scarica .WAV</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- BARRA DI TRASPORTO GLOBALE STICKY -->
+    <div class="sticky top-2 z-40 bg-neutral-900/95 backdrop-blur border border-purple-500/40 rounded-xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xl">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <button id="btnPreview" class="px-4 sm:px-5 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-lg transition flex items-center gap-2 shadow active:scale-95">
+          <span>▶️</span> Play
+        </button>
+        <button id="btnStop" class="px-3 sm:px-4 py-2 sm:py-2.5 bg-neutral-800 hover:bg-neutral-700 text-xs rounded-lg text-neutral-200 transition active:scale-95 border border-neutral-700">
+          ⏹️ Stop
+        </button>
+
+        <div class="h-6 w-px bg-neutral-800 hidden sm:block"></div>
+
+        <!-- Selettore Kit Sonoro -->
+        <div class="flex items-center gap-1.5 bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1 text-xs">
+          <span class="text-neutral-400 text-[10px] font-bold uppercase">Kit Sonoro:</span>
+          <select id="headerKitSelect" class="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-purple-300 font-semibold focus-ring text-xs">
+            <option value="standard">Standard Koala</option>
+            <option value="lofi">Lo-Fi Warm & Chill</option>
+            <option value="piano">Piano & Rhodes</option>
+            <option value="vocal">Vocal & Choirs</option>
+            <option value="synthwave">Synthwave 80s</option>
+            <option value="rock">Rock Classic</option>
+            <option value="punk">Punk Skate</option>
+            <option value="house">House 909</option>
+            <option value="zen">Zen Pittura & Studio</option>
+            <option value="glitch">Glitch & Cyber</option>
+          </select>
+        </div>
+
+        <button id="btnOpenFullscreenPads" class="px-3 py-2 sm:py-2.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 font-bold text-xs rounded-lg transition active:scale-95 flex items-center gap-1.5" title="Visualizza tutti i 64 Pad contemporanei (Tasto F)">
+          <span>🖥️ 64 Pad Fullscreen</span>
+        </button>
+      </div>
+
+      <!-- Playhead & Durata Live -->
+      <div class="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto">
+        <div id="playheadDisplay" class="font-mono text-xs px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-lg text-neutral-400 truncate max-w-[220px]">
+          Pronto.
+        </div>
+        <span id="durationBadge" class="text-xs font-mono px-2.5 py-1.5 rounded-lg bg-purple-950/60 border border-purple-500/40 text-purple-300 font-bold shrink-0">
+          ⏱️ 00:00
+        </span>
+      </div>
+    </div>
+
+    <!-- LAYOUT PRINCIPALE A DUE COLONNE -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+      <!-- COLONNA SINISTRA: METADATI, REMAPPER & EDITOR PARTITURA -->
+      <div class="lg:col-span-6 space-y-4">
+        
+        <!-- Box Metadati & Durata Target Auto-BPM -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-purple-400">Metadati & Durata Esatta</span>
+            <button id="btnToggleMetaSection" class="p-1 text-neutral-400 hover:text-purple-400 bg-neutral-800 rounded text-xs border border-neutral-700">▲</button>
+          </div>
+
+          <div id="metaSectionContent" class="collapsible-content space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <div>
+                <label class="block text-neutral-400 text-[10px] mb-1">TITOLO (T:)</label>
+                <input type="text" id="metaTitle" placeholder="Titolo traccia" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring">
+              </div>
+              <div>
+                <label class="block text-neutral-400 text-[10px] mb-1">AUTORE (C:)</label>
+                <input type="text" id="metaComposer" placeholder="Nome autore" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring">
+              </div>
+              <div>
+                <label class="block text-neutral-400 text-[10px] mb-1">METRO (M:)</label>
+                <input type="text" id="metaMeter" value="4/4" class="w-full bg-neutral-950 border border-neutral-800 rounded p-1.5 text-neutral-200 focus-ring font-mono">
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-neutral-800/80 space-y-2">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-neutral-400 text-[11px]">Modalità:</span>
+                  <select id="durationMode" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-neutral-300 text-xs focus-ring">
+                    <option value="free">Libera (Usa BPM manuale)</option>
+                    <option value="exact">Durata Esatta</option>
+                    <option value="min">Durata Minima (Non meno di)</option>
+                    <option value="max">Durata Massima (Non più di)</option>
+                  </select>
+                </div>
+
+                <div id="targetDurationWrap" class="flex items-center gap-1.5">
+                  <span class="text-neutral-400 text-[11px]">Target:</span>
+                  <input type="number" id="targetSeconds" min="5" max="900" value="60" class="w-16 bg-neutral-950 border border-neutral-800 rounded px-1.5 py-1 text-purple-300 font-mono text-xs focus-ring">
+                  <span class="text-neutral-500 text-[11px]">sec</span>
+                </div>
+              </div>
+
+              <!-- Preset Rapidi Durata -->
+              <div class="flex items-center gap-1 text-[11px]">
+                <span class="text-neutral-500 mr-1">Preset:</span>
+                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="30">30s</button>
+                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="60">60s (1m)</button>
+                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="90">90s</button>
+                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="120">2 min</button>
+                <button class="dur-preset px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" data-sec="180">3 min</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strumento Rimappatura Pad & Sezioni Intere -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-purple-400">🎛️ Rimappa Banchi & Pitch Singolo Pad</span>
+            <button id="btnToggleRemapSection" class="p-1 text-neutral-400 hover:text-purple-400 bg-neutral-800 rounded text-xs border border-neutral-700">▲</button>
+          </div>
+
+          <div id="remapSectionContent" class="collapsible-content space-y-3">
+            <div class="space-y-1.5">
+              <span class="text-[11px] text-neutral-400 font-semibold">Inverti o Sposta Intero Banco (16 note):</span>
+              <div class="flex flex-wrap items-center gap-2 text-xs">
+                <div class="flex items-center gap-1">
+                  <span class="text-neutral-500 text-[10px]">Da:</span>
+                  <select id="remapSourceBank" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-purple-300 font-bold focus-ring">
+                    <option value="A">Banco A (Drums)</option>
+                    <option value="B">Banco B (Bass/Chords)</option>
+                    <option value="C" selected>Banco C (Leads/Bells)</option>
+                    <option value="D">Banco D (Glitch/NTS-1)</option>
+                  </select>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="text-neutral-500 text-[10px]">A:</span>
+                  <select id="remapTargetBank" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-purple-300 font-bold focus-ring">
+                    <option value="B" selected>Banco B (Bass/Chords)</option>
+                    <option value="A">Banco A (Drums)</option>
+                    <option value="C">Banco C (Leads/Bells)</option>
+                    <option value="D">Banco D (Glitch/NTS-1)</option>
+                  </select>
+                </div>
+                <button id="btnSwapBanks" class="px-2.5 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 rounded transition font-semibold active:scale-95">
+                  🔁 Inverti Banco
+                </button>
+                <button id="btnReplaceBank" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded transition font-semibold active:scale-95">
+                  ➔ Sposta a Banco
+                </button>
+              </div>
+            </div>
+
+            <div class="h-px bg-neutral-800/80"></div>
+
+            <div class="space-y-1.5">
+              <span class="text-[11px] text-neutral-400 font-semibold">Rimappa o Trasponi Singolo Pad:</span>
+              <div class="flex flex-wrap items-center gap-2 text-xs">
+                <div class="flex items-center gap-1">
+                  <select id="remapSourceNote" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-purple-300 font-mono focus-ring"></select>
+                </div>
+                <div class="flex items-center gap-1">
+                  <select id="remapTargetNote" class="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-purple-300 font-mono focus-ring"></select>
+                </div>
+                <button id="btnExecuteSwap" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded font-semibold active:scale-95">Inverti</button>
+                <button id="btnExecuteReplace" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded font-semibold active:scale-95">Sposta</button>
+                
+                <div class="flex items-center gap-1 border-l border-neutral-800 pl-2">
+                  <button id="btnPitchDownSemi" class="px-1.5 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-purple-300 border border-neutral-700 rounded text-xs active:scale-95">-1 st</button>
+                  <button id="btnPitchUpSemi" class="px-1.5 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-purple-300 border border-neutral-700 rounded text-xs active:scale-95">+1 st</button>
+                  <button id="btnPitchDownOct" class="px-1.5 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 rounded text-xs active:scale-95">-12</button>
+                  <button id="btnPitchUpOct" class="px-1.5 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 rounded text-xs active:scale-95">+12</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Editor Partitura con Toggle Formato (Note ABC ⇄ Pad Koala A1-D16) -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-purple-400">Editor Partitura</span>
+              <!-- Toggle Formato Editor -->
+              <div class="flex items-center bg-neutral-950 p-0.5 rounded border border-neutral-800 text-[10px] font-mono">
+                <button id="btnModeAbc" class="px-2 py-0.5 rounded bg-purple-600 text-neutral-100 font-bold transition">Note ABC</button>
+                <button id="btnModePads" class="px-2 py-0.5 rounded text-neutral-400 hover:text-neutral-200 transition">Pad Koala</button>
+              </div>
+            </div>
+            <button id="btnToggleAbcSection" class="p-1 text-neutral-400 hover:text-purple-400 bg-neutral-800 rounded text-xs border border-neutral-700">▲</button>
+          </div>
+
+          <div id="abcSectionContent" class="collapsible-content space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 p-2 bg-neutral-950 border border-neutral-800 rounded-lg text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-neutral-400 font-semibold">BPM (Q:):</span>
+                <input type="range" id="bpmSlider" min="40" max="240" value="120" class="w-24 accent-purple-400 cursor-pointer">
+                <span id="bpmValueDisplay" class="font-mono text-purple-300 w-8 font-bold">120</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px]" data-speed="0.75">0.75×</button>
+                <button class="speed-btn px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[11px] font-bold" data-speed="1.0">1.0×</button>
+                <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px]" data-speed="1.25">1.25×</button>
+                <button class="speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px]" data-speed="1.5">1.5×</button>
+              </div>
+            </div>
+
+            <textarea id="abcEditor" rows="10" class="w-full bg-neutral-950 font-mono text-sm p-3 rounded-lg border border-neutral-800 focus-ring leading-relaxed text-purple-200" spellcheck="false"></textarea>
+          </div>
+        </div>
+
+        <!-- Riepilogo Pad Attivi -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-400">Pad Rilevati nel Brano</h2>
+            <div class="flex items-center gap-2">
+              <span id="detectedCount" class="text-xs text-purple-400 font-mono">0 pad attivi</span>
+              <button id="btnToggleSummarySection" class="p-1 text-neutral-400 hover:text-purple-400 bg-neutral-800 rounded text-xs border border-neutral-700">▲</button>
+            </div>
+          </div>
+          <div id="summarySectionContent" class="collapsible-content">
+            <div id="activePadsSummary" class="text-xs font-mono space-y-1 text-neutral-300 max-h-28 overflow-y-auto pr-2 pt-1">
+              Nessuna nota analizzata.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLONNA DESTRA: GRIGLIA 4x4 PAD MONITOR -->
+      <div class="lg:col-span-6 space-y-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-4">
+          
+          <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+            <div class="flex items-center gap-1 bg-neutral-950 p-1 rounded-lg border border-neutral-800">
+              <button data-bank="A" class="bank-btn px-3 py-1.5 rounded text-xs font-bold bg-purple-600 text-neutral-100 transition active:scale-95 shadow">Banco A</button>
+              <button data-bank="B" class="bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco B</button>
+              <button data-bank="C" class="bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco C</button>
+              <button data-bank="D" class="bank-btn px-3 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95">Banco D</button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span id="bankRangeInfo" class="text-[11px] font-mono text-neutral-400 hidden sm:inline">C1 (36) ➔ D#2 (51)</span>
+              <button id="btnTogglePadsSection" class="p-1 text-neutral-400 hover:text-purple-400 bg-neutral-800 rounded text-xs border border-neutral-700 font-semibold" title="Comprimi/Espandi Griglia">▲</button>
+            </div>
+          </div>
+
+          <div id="padsSectionContent" class="collapsible-content space-y-4">
+            <div id="padGrid" class="grid grid-cols-4 gap-2.5"></div>
+
+            <div id="patchInfoBox" class="p-3 bg-neutral-950 border border-neutral-800/80 rounded-lg text-xs space-y-1 text-neutral-400">
+              <div class="flex items-center justify-between text-neutral-300 font-semibold">
+                <span>🎛️ Kit Attivo & Configurazione:</span>
+                <span id="oscLabel" class="text-purple-400 font-mono">Standard Koala</span>
+              </div>
+              <div id="renderStatusText" class="text-[11px]">Tocca un pad per testarlo live e inserirlo nel codice. Usa ▼ e ▲ per regolarne il pitch.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODALE FULLSCREEN: TUTTI I 64 PAD CONTEMPORANEI (BANCHI A, B, C, D) -->
+  <div id="fullscreenPadsModal" class="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-md p-4 sm:p-6 hidden flex-col justify-between overflow-y-auto">
+    
+    <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🐨</span>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg sm:text-xl font-bold text-purple-400">Koala 64-Pad Visualizer LAB Fullscreen</h2>
+            <span id="fsKitBadge" class="text-xs bg-purple-500/20 border border-purple-500/40 text-purple-300 px-2 py-0.5 rounded font-mono font-bold">Standard</span>
+          </div>
+          <p id="fsNowPlayingText" class="text-xs text-neutral-400">Monitor multi-banco sincronizzato</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="btnFsPlayPause" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold rounded-lg transition active:scale-95">
+          ▶️ Play
+        </button>
+        <button id="btnCloseFullscreenPads" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs rounded-lg transition font-semibold">
+          Chiudi ✕ (ESC)
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 flex-1">
+      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-purple-400">BANCO A (Drums)</span>
+          <span class="text-[10px] font-mono text-neutral-500">A1–A16</span>
+        </div>
+        <div id="fsBankA" class="grid grid-cols-4 gap-1.5 flex-1"></div>
+      </div>
+
+      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-purple-400">BANCO B (Bass & Chords)</span>
+          <span class="text-[10px] font-mono text-neutral-500">B1–B16</span>
+        </div>
+        <div id="fsBankB" class="grid grid-cols-4 gap-1.5 flex-1"></div>
+      </div>
+
+      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-purple-400">BANCO C (Leads & Bells)</span>
+          <span class="text-[10px] font-mono text-neutral-500">C1–C16</span>
+        </div>
+        <div id="fsBankC" class="grid grid-cols-4 gap-1.5 flex-1"></div>
+      </div>
+
+      <div class="bg-neutral-900 border border-neutral-800/80 rounded-xl p-3 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-purple-400">BANCO D (Glitch & High)</span>
+          <span class="text-[10px] font-mono text-neutral-500">D1–D16</span>
+        </div>
+        <div id="fsBankD" class="grid grid-cols-4 gap-1.5 flex-1"></div>
+      </div>
+    </div>
+
+    <div class="pt-3 border-t border-neutral-800 mt-4 flex items-center justify-between text-xs text-neutral-400 font-mono">
+      <span id="fsTimeDisplay">Visuale 64 Pad attiva</span>
+      <span class="text-[11px] text-neutral-500">Premi 'F' o 'ESC' per commutare la vista a tutto schermo. Clicca sui pad per testarli live.</span>
+    </div>
+  </div>
+
+  <!-- Toast Notifica Flottante -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-200 pointer-events-none">
+    <div class="bg-neutral-900 border border-purple-500/60 shadow-xl rounded-lg px-4 py-2.5 flex items-center gap-2 text-xs text-purple-200">
+      <span id="toastIcon">✨</span>
+      <span id="toastMessage">Operazione completata</span>
+    </div>
+  </div>
+
+  <script>
+    const KIT_LABELS = {
+      'standard': 'Standard Koala',
+      'lofi': 'Lo-Fi Warm & Chill',
+      'piano': 'Piano & Rhodes',
+      'vocal': 'Vocal & Choirs',
+      'synthwave': 'Synthwave 80s',
+      'rock': 'Rock Classic',
+      'punk': 'Punk Skate',
+      'house': 'House 909',
+      'zen': 'Zen Pittura & Studio',
+      'glitch': 'Glitch & Cyber'
+    };
+
+    const PAD_BANKS = {
+      'A': [
+        { pad: 1,  midi: 36, abc: "C,,",  name: "Kick Sub",       synth: "kick" },
+        { pad: 2,  midi: 37, abc: "^C,,", name: "Rimshot",        synth: "rim" },
+        { pad: 3,  midi: 38, abc: "D,,",  name: "Snare Drum",     synth: "snare" },
+        { pad: 4,  midi: 39, abc: "^D,,", name: "Clap Hand",      synth: "clap" },
+        { pad: 5,  midi: 40, abc: "E,,",  name: "Snare Crisp",    synth: "snare_crisp" },
+        { pad: 6,  midi: 41, abc: "F,,",  name: "Low Tom",        synth: "tom_low" },
+        { pad: 7,  midi: 42, abc: "^F,,", name: "Closed Hat",     synth: "hat_closed" },
+        { pad: 8,  midi: 43, abc: "G,,",  name: "Mid Tom",        synth: "tom_mid" },
+        { pad: 9,  midi: 44, abc: "^G,,", name: "Pedal Hat",      synth: "hat_pedal" },
+        { pad: 10, midi: 45, abc: "A,,",  name: "High Tom",       synth: "tom_high" },
+        { pad: 11, midi: 46, abc: "^A,,", name: "Open Hat",       synth: "hat_open" },
+        { pad: 12, midi: 47, abc: "B,,",  name: "Crash Cymbal",   synth: "crash" },
+        { pad: 13, midi: 48, abc: "C,",   name: "Chop 1 (C3)",    synth: "chop" },
+        { pad: 14, midi: 49, abc: "^C,",  name: "Chop 2 (C#3)",   synth: "chop" },
+        { pad: 15, midi: 50, abc: "D,",   name: "Chop 3 (D3)",    synth: "chop" },
+        { pad: 16, midi: 51, abc: "^D,",  name: "NTS-1 FX Loop",  synth: "lead" }
+      ],
+      'B': [
+        { pad: 1,  midi: 52, abc: "E,",   name: "Bass E",         synth: "bass" },
+        { pad: 2,  midi: 53, abc: "F,",   name: "Bass F",         synth: "bass" },
+        { pad: 3,  midi: 54, abc: "^F,",  name: "Bass F#",        synth: "bass" },
+        { pad: 4,  midi: 55, abc: "G,",   name: "Bass G",         synth: "bass" },
+        { pad: 5,  midi: 56, abc: "^G,",  name: "Bass G#",        synth: "bass" },
+        { pad: 6,  midi: 57, abc: "A,",   name: "Bass Hit A",     synth: "bass" },
+        { pad: 7,  midi: 58, abc: "^A,",  name: "Synth Bass A#",  synth: "bass" },
+        { pad: 8,  midi: 59, abc: "B,",   name: "Synth Bass B",   synth: "bass" },
+        { pad: 9,  midi: 60, abc: "C",    name: "Chord C",        synth: "chord" },
+        { pad: 10, midi: 61, abc: "^C",   name: "Chord C#",       synth: "chord" },
+        { pad: 11, midi: 62, abc: "D",    name: "Chord D",        synth: "chord" },
+        { pad: 12, midi: 63, abc: "^D",   name: "Chord D#",       synth: "chord" },
+        { pad: 13, midi: 64, abc: "E",    name: "Note E4",        synth: "lead" },
+        { pad: 14, midi: 65, abc: "F",    name: "Note F4",        synth: "lead" },
+        { pad: 15, midi: 66, abc: "^F",   name: "Note F#4",       synth: "lead" },
+        { pad: 16, midi: 67, abc: "G",    name: "Note G4",        synth: "lead" }
+      ],
+      'C': [
+        { pad: 1,  midi: 68, abc: "^G",   name: "Note G#4",       synth: "lead" },
+        { pad: 2,  midi: 69, abc: "A",    name: "Note A4",        synth: "lead" },
+        { pad: 3,  midi: 70, abc: "^A",   name: "Note A#4",       synth: "lead" },
+        { pad: 4,  midi: 71, abc: "B",    name: "Note B4",        synth: "lead" },
+        { pad: 5,  midi: 72, abc: "c",    name: "Lead C5",        synth: "lead" },
+        { pad: 6,  midi: 73, abc: "^c",   name: "Lead C#5",       synth: "lead" },
+        { pad: 7,  midi: 74, abc: "d",    name: "Lead D5",        synth: "lead" },
+        { pad: 8,  midi: 75, abc: "^d",   name: "Lead D#5",       synth: "lead" },
+        { pad: 9,  midi: 76, abc: "e",    name: "Bell E5",        synth: "bell" },
+        { pad: 10, midi: 77, abc: "f",    name: "Bell F5",        synth: "bell" },
+        { pad: 11, midi: 78, abc: "^f",   name: "Bell F#5",       synth: "bell" },
+        { pad: 12, midi: 79, abc: "g",    name: "Bell G5",        synth: "bell" },
+        { pad: 13, midi: 80, abc: "^g",   name: "Bell G#5",       synth: "bell" },
+        { pad: 14, midi: 81, abc: "a",    name: "Bell A5",        synth: "bell" },
+        { pad: 15, midi: 82, abc: "^a",   name: "Bell A#5",       synth: "bell" },
+        { pad: 16, midi: 83, abc: "b",    name: "Bell B5",        synth: "bell" }
+      ],
+      'D': [
+        { pad: 1,  midi: 84, abc: "c'",   name: "Lead C6",        synth: "bell" },
+        { pad: 2,  midi: 85, abc: "^c'",  name: "Lead C#6",       synth: "bell" },
+        { pad: 3,  midi: 86, abc: "d'",   name: "Lead D6",        synth: "bell" },
+        { pad: 4,  midi: 87, abc: "^d'",  name: "Lead D#6",       synth: "bell" },
+        { pad: 5,  midi: 88, abc: "e'",   name: "VPM Spark 1",    synth: "lead" },
+        { pad: 6,  midi: 89, abc: "f'",   name: "VPM Spark 2",    synth: "lead" },
+        { pad: 7,  midi: 90, abc: "^f'",  name: "VPM Spark 3",    synth: "lead" },
+        { pad: 8,  midi: 91, abc: "g'",   name: "High G6",        synth: "bell" },
+        { pad: 9,  midi: 92, abc: "^g'",  name: "High G#6",       synth: "bell" },
+        { pad: 10, midi: 93, abc: "a'",   name: "Sweep Rise",     synth: "bell" },
+        { pad: 11, midi: 94, abc: "^a'",  name: "Laser Drop",     synth: "kick" },
+        { pad: 12, midi: 95, abc: "b'",   name: "Reverse FX",     synth: "hat_open" },
+        { pad: 13, midi: 96, abc: "c''",  name: "Top Ping 1",     synth: "bell" },
+        { pad: 14, midi: 97, abc: "^c''", name: "Top Ping 2",     synth: "bell" },
+        { pad: 15, midi: 98, abc: "d''",  name: "Top Ping 3",     synth: "bell" },
+        { pad: 16, midi: 99, abc: "^d''", name: "Glitch Peak",    synth: "snare" }
+      ]
+    };
+
+    /* =========================================================================
+       MATRICE DI RIMAPPATURA GEOMETRICA PER KOALA SAMPLER (LAYOUT MPC)
+       ========================================================================= */
+    const KOALA_PAD_TO_MIDI = {
+      'A': [48, 49, 50, 51,  44, 45, 46, 47,  40, 41, 42, 43,  36, 37, 38, 39],
+      'B': [64, 65, 66, 67,  60, 61, 62, 63,  56, 57, 58, 59,  52, 53, 54, 55],
+      'C': [80, 81, 82, 83,  76, 77, 78, 79,  72, 73, 74, 75,  68, 69, 70, 71],
+      'D': [96, 97, 98, 99,  92, 93, 94, 95,  88, 89, 90, 91,  84, 85, 86, 87]
+    };
+
+    function remapMidiForKoala(originalMidi) {
+      for (const b of ['A', 'B', 'C', 'D']) {
+        const idx = PAD_BANKS[b].findIndex(p => p.midi === originalMidi);
+        if (idx !== -1) {
+          return KOALA_PAD_TO_MIDI[b][idx];
+        }
+      }
+      return originalMidi;
+    }
+
+    function remapMidiFromKoala(koalaMidi) {
+      for (const b of ['A', 'B', 'C', 'D']) {
+        const idx = KOALA_PAD_TO_MIDI[b].indexOf(koalaMidi);
+        if (idx !== -1) {
+          return PAD_BANKS[b][idx].midi;
+        }
+      }
+      return koalaMidi;
+    }
+
+    let activeBank = 'A';
+    let activeKit = 'standard';
+    let editorMode = 'abc'; // 'abc' oppure 'pads'
+    let baseBpm = 120;
+    let currentSpeed = 1.0;
+    let isAutoUpdatingBpm = false;
+
+    const abcEditor = document.getElementById('abcEditor');
+    const padGrid = document.getElementById('padGrid');
+    const activePadsSummary = document.getElementById('activePadsSummary');
+    const detectedCount = document.getElementById('detectedCount');
+    const playheadDisplay = document.getElementById('playheadDisplay');
+    const bankRangeInfo = document.getElementById('bankRangeInfo');
+    const durationBadge = document.getElementById('durationBadge');
+    const oscLabel = document.getElementById('oscLabel');
+    const bpmSlider = document.getElementById('bpmSlider');
+    const bpmValueDisplay = document.getElementById('bpmValueDisplay');
+    const headerKitSelect = document.getElementById('headerKitSelect');
+
+    const metaTitle = document.getElementById('metaTitle');
+    const metaComposer = document.getElementById('metaComposer');
+    const metaMeter = document.getElementById('metaMeter');
+    const durationMode = document.getElementById('durationMode');
+    const targetSeconds = document.getElementById('targetSeconds');
+    const remapSourceNote = document.getElementById('remapSourceNote');
+    const remapTargetNote = document.getElementById('remapTargetNote');
+    const remapSourceBank = document.getElementById('remapSourceBank');
+    const remapTargetBank = document.getElementById('remapTargetBank');
+
+    function showToast(message, icon = "✨") {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastIcon').innerText = icon;
+      document.getElementById('toastMessage').innerText = message;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 2500);
+    }
+
+    const DEFAULT_ABC = `X: 1
+T: Koala Beat LAB
+C: 
+M: 4/4
+L: 1/16
+Q: 120
+K: C
+%kit: standard
+% BANCO A (Drums) + BANCO B (Bass)
+[C,, ^F,, E,]2 ^F,,2 [D,, ^F,,]2 ^F,,2 [C,, ^F,, G,]2 [C,, ^F,,]2 [D,, ^F,,]2 ^F,,2 |
+[C,, ^F,, E,]2 ^F,,2 [D,, ^F,, C]2 [C, ^F,,]2 [C,, ^F,,]2 ^F,,2 [D,, ^F,, e]2 [^D, ^F,,]2 |]`;
+
+    function populateRemapSelectors() {
+      remapSourceNote.innerHTML = '';
+      remapTargetNote.innerHTML = '';
+      ['A', 'B', 'C', 'D'].forEach(bank => {
+        PAD_BANKS[bank].forEach(item => {
+          const opt1 = document.createElement('option');
+          opt1.value = item.abc;
+          opt1.innerText = `${bank}${item.pad}: ${item.abc} (${item.name})`;
+          remapSourceNote.appendChild(opt1);
+
+          const opt2 = document.createElement('option');
+          opt2.value = item.abc;
+          opt2.innerText = `${bank}${item.pad}: ${item.abc} (${item.name})`;
+          remapTargetNote.appendChild(opt2);
+        });
+      });
+      remapTargetNote.selectedIndex = 2;
+    }
+
+    /* =========================================================================
+       CONVERSIONE BIDIREZIONALE: NOTE ABC <-> PAD TOKEN (A1-D16)
+       ========================================================================= */
+    const ABC_TO_PAD_TOKEN = {};
+    const PAD_TOKEN_TO_ABC = {};
+
+    ['A', 'B', 'C', 'D'].forEach(b => {
+      PAD_BANKS[b].forEach(p => {
+        const token = `${b}${p.pad}`;
+        ABC_TO_PAD_TOKEN[p.abc] = token;
+        PAD_TOKEN_TO_ABC[token] = p.abc;
+      });
+    });
+
+    function convertAbcToPadNotation(text) {
+      const lines = text.split('\n');
+      return lines.map(line => {
+        const tr = line.trim();
+        if (tr.startsWith('%') || tr.startsWith('X:') || tr.startsWith('T:') || 
+            tr.startsWith('C:') || tr.startsWith('M:') || tr.startsWith('L:') || 
+            tr.startsWith('Q:') || tr.startsWith('K:')) return line;
+
+        const tokenRegex = /(\[[^\]]+\](?:[\d\/]+)?-?|(?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*(?:[\d\/]+)?-?|z(?:[\d\/]+)?-?)/g;
+        return line.replace(tokenRegex, tok => {
+          if (tok.startsWith('z')) return tok;
+          if (tok.startsWith('[')) {
+            return tok.replace(/(?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*/g, n => ABC_TO_PAD_TOKEN[n] || n);
+          }
+          const m = tok.match(/^((?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*)(.*)$/);
+          if (m) {
+            const padTok = ABC_TO_PAD_TOKEN[m[1]] || m[1];
+            return padTok + (m[2] || '');
+          }
+          return tok;
+        });
+      }).join('\n');
+    }
+
+    function convertPadNotationToAbc(text) {
+      const lines = text.split('\n');
+      return lines.map(line => {
+        const tr = line.trim();
+        if (tr.startsWith('%') || tr.startsWith('X:') || tr.startsWith('T:') || 
+            tr.startsWith('C:') || tr.startsWith('M:') || tr.startsWith('L:') || 
+            tr.startsWith('Q:') || tr.startsWith('K:')) return line;
+
+        const padRegex = /(\[[^\]]+\](?:[\d\/]+)?-?|[ABCD](?:1[0-6]|[1-9])(?:[\d\/]+)?-?|(?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*(?:[\d\/]+)?-?|z(?:[\d\/]+)?-?)/g;
+        return line.replace(padRegex, tok => {
+          if (tok.startsWith('z')) return tok;
+          if (tok.startsWith('[')) {
+            return tok.replace(/[ABCD](?:1[0-6]|[1-9])/g, p => PAD_TOKEN_TO_ABC[p] || p);
+          }
+          const m = tok.match(/^([ABCD](?:1[0-6]|[1-9]))(.*)$/);
+          if (m) {
+            const abcNote = PAD_TOKEN_TO_ABC[m[1]] || m[1];
+            return abcNote + (m[2] || '');
+          }
+          return tok;
+        });
+      }).join('\n');
+    }
+
+    document.getElementById('btnModeAbc').addEventListener('click', () => {
+      if (editorMode === 'abc') return;
+      abcEditor.value = convertPadNotationToAbc(abcEditor.value);
+      editorMode = 'abc';
+      document.getElementById('btnModeAbc').className = 'px-2 py-0.5 rounded bg-purple-600 text-neutral-100 font-bold transition';
+      document.getElementById('btnModePads').className = 'px-2 py-0.5 rounded text-neutral-400 hover:text-neutral-200 transition';
+      showToast("Visualizzazione: Note ABC tradizionali");
+    });
+
+    document.getElementById('btnModePads').addEventListener('click', () => {
+      if (editorMode === 'pads') return;
+      abcEditor.value = convertAbcToPadNotation(convertPadNotationToAbc(abcEditor.value));
+      editorMode = 'pads';
+      document.getElementById('btnModePads').className = 'px-2 py-0.5 rounded bg-purple-600 text-neutral-100 font-bold transition';
+      document.getElementById('btnModeAbc').className = 'px-2 py-0.5 rounded text-neutral-400 hover:text-neutral-200 transition';
+      showToast("Visualizzazione: Sintassi Pad Koala (A1-D16)");
+    });
+
+    function getPureAbcScore() {
+      return convertPadNotationToAbc(abcEditor.value);
+    }
+
+    function renderPads() {
+      padGrid.innerHTML = '';
+      const pads = PAD_BANKS[activeBank];
+      const ranges = {
+        'A': 'C1 (36) ➔ D#2 (51)',
+        'B': 'E2 (52) ➔ G3 (67)',
+        'C': 'G#3 (68) ➔ B4 (83)',
+        'D': 'C5 (84) ➔ D#6 (99)'
+      };
+      bankRangeInfo.innerText = ranges[activeBank];
+
+      pads.forEach(item => {
+        const wrap = document.createElement('div');
+        wrap.id = `pad-card-${item.midi}`;
+        wrap.className = `p-2 rounded-xl border flex flex-col justify-between h-24 transition duration-150 cursor-pointer select-none
+          bg-neutral-900 border-neutral-800 hover:border-purple-400 hover:bg-neutral-850 active:scale-95`;
+
+        wrap.innerHTML = `
+          <div class="flex items-center justify-between w-full">
+            <span class="text-[10px] font-bold text-purple-400">${activeBank}${item.pad}</span>
+            <div class="flex items-center gap-1">
+              <span class="text-[10px] font-mono text-neutral-500">${item.abc}</span>
+              <button class="wav-btn text-[9px] bg-neutral-800 hover:bg-neutral-700 px-1 py-0.5 rounded text-neutral-300 font-sans border border-neutral-700" title="Scarica WAV">WAV</button>
+            </div>
+          </div>
+          
+          <div class="my-auto pointer-events-none">
+            <div class="text-xs font-semibold text-neutral-200 truncate">${item.name}</div>
+            <div class="text-[10px] text-neutral-500 font-mono">MIDI ${item.midi}</div>
+          </div>
+
+          <div class="flex items-center justify-between pt-1 border-t border-neutral-800/80">
+            <span class="text-[9px] text-neutral-500 uppercase tracking-tighter">Pitch</span>
+            <div class="flex items-center gap-1">
+              <button class="pitch-down-btn px-1.5 py-0.2 bg-neutral-800 hover:bg-purple-500/20 hover:text-purple-300 rounded text-[10px] text-neutral-300 border border-neutral-700" title="Abbassa di 1 semitono">▼</button>
+              <button class="pitch-up-btn px-1.5 py-0.2 bg-neutral-800 hover:bg-purple-500/20 hover:text-purple-300 rounded text-[10px] text-neutral-300 border border-neutral-700" title="Alza di 1 semitono">▲</button>
+            </div>
+          </div>
+        `;
+
+        wrap.addEventListener('click', (e) => {
+          if (e.target.closest('.wav-btn') || e.target.closest('.pitch-down-btn') || e.target.closest('.pitch-up-btn')) return;
+          const tokenToInsert = (editorMode === 'pads') ? `${activeBank}${item.pad} ` : `${item.abc} `;
+          insertNoteAtCursor(tokenToInsert);
+          playSyntheticSound(item.synth, item.midi, 0.2, null, null, null, activeKit);
+          flashPad(item.midi);
+          parseAndAnalyze();
+        });
+
+        wrap.querySelector('.wav-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          exportPadSampleWav(item);
+        });
+
+        wrap.querySelector('.pitch-down-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          transposeSingleNoteInAbc(item.abc, -1);
+        });
+
+        wrap.querySelector('.pitch-up-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          transposeSingleNoteInAbc(item.abc, 1);
+        });
+
+        padGrid.appendChild(wrap);
+      });
+    }
+
+    function renderFullscreenAll64Pads() {
+      const bankMaps = {
+        'A': document.getElementById('fsBankA'),
+        'B': document.getElementById('fsBankB'),
+        'C': document.getElementById('fsBankC'),
+        'D': document.getElementById('fsBankD')
+      };
+
+      ['A', 'B', 'C', 'D'].forEach(bank => {
+        const cont = bankMaps[bank];
+        cont.innerHTML = '';
+        PAD_BANKS[bank].forEach(item => {
+          const btn = document.createElement('div');
+          btn.id = `fs-pad-${item.midi}`;
+          btn.className = `p-2 rounded-lg border border-neutral-800 bg-neutral-950 hover:border-purple-400 hover:bg-neutral-900 active:scale-95 transition flex flex-col justify-between cursor-pointer select-none h-16 sm:h-20`;
+
+          btn.innerHTML = `
+            <div class="flex justify-between items-center text-[10px] font-mono text-neutral-500">
+              <span class="text-purple-400 font-bold">${bank}${item.pad}</span>
+              <span>${item.abc}</span>
+            </div>
+            <div class="text-[11px] font-semibold text-neutral-300 truncate pointer-events-none">${item.name}</div>
+            <div class="text-[9px] font-mono text-neutral-600 pointer-events-none">MIDI ${item.midi}</div>
+          `;
+
+          btn.addEventListener('pointerdown', () => {
+            playSyntheticSound(item.synth, item.midi, 0.25, null, null, null, activeKit);
+            flashPad(item.midi);
+          });
+
+          cont.appendChild(btn);
+        });
+      });
+    }
+
+    function flashPad(midi) {
+      const el = document.getElementById(`pad-card-${midi}`);
+      if (el) {
+        el.classList.add('ring-2', 'ring-purple-400', 'bg-purple-500/40', 'border-purple-400');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-purple-400', 'bg-purple-500/40', 'border-purple-400'), 150);
+      }
+      const fsEl = document.getElementById(`fs-pad-${midi}`);
+      if (fsEl) {
+        fsEl.classList.add('ring-2', 'ring-purple-400', 'bg-purple-500/50', 'border-purple-400');
+        setTimeout(() => fsEl.classList.remove('ring-2', 'ring-purple-400', 'bg-purple-500/50', 'border-purple-400'), 150);
+      }
+    }
+
+    function insertNoteAtCursor(text) {
+      const start = abcEditor.selectionStart;
+      const end = abcEditor.selectionEnd;
+      abcEditor.value = abcEditor.value.substring(0, start) + text + abcEditor.value.substring(end);
+      abcEditor.selectionStart = abcEditor.selectionEnd = start + text.length;
+      abcEditor.focus();
+    }
+
+    document.querySelectorAll('.bank-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.bank-btn').forEach(b => {
+          b.className = 'bank-btn px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition active:scale-95';
+        });
+        btn.className = 'bank-btn px-3.5 py-1.5 rounded text-xs font-bold bg-purple-600 text-neutral-100 transition active:scale-95 shadow ring-1 ring-purple-400';
+        activeBank = btn.dataset.bank;
+        renderPads();
+        parseAndAnalyze();
+        showToast(`Attivato Banco ${activeBank}`, "🎛️");
+      });
+    });
+
+    headerKitSelect.addEventListener('change', (e) => {
+      activeKit = e.target.value;
+      updateAbcKitComment(activeKit);
+      parseAndAnalyze();
+      document.getElementById('fsKitBadge').innerText = KIT_LABELS[activeKit] || activeKit;
+      showToast(`Kit Sonoro impostato: ${KIT_LABELS[activeKit]}`, "🎨");
+    });
+
+    function updateAbcKitComment(kit) {
+      let abc = getPureAbcScore();
+      if (/%kit:\s*\w+/i.test(abc)) {
+        abc = abc.replace(/%kit:\s*\w+/i, `%kit: ${kit}`);
+      } else {
+        abc = `%kit: ${kit}\n` + abc;
+      }
+      abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(abc) : abc;
+    }
+
+    function abcNoteToMidi(token) {
+      const baseMap = { 'C': 60, 'D': 62, 'E': 64, 'F': 65, 'G': 67, 'A': 69, 'B': 71,
+                        'c': 72, 'd': 74, 'e': 76, 'f': 77, 'g': 79, 'a': 81, 'b': 83 };
+      let accidental = 0;
+      let clean = token.replace(/[\d\/=]/g, '').replace(/-/g, '');
+
+      if (clean.includes('^^')) { accidental = 2; clean = clean.replace('^^', ''); }
+      else if (clean.includes('^')) { accidental = 1; clean = clean.replace('^', ''); }
+      else if (clean.includes('__')) { accidental = -2; clean = clean.replace('__', ''); }
+      else if (clean.includes('_')) { accidental = -1; clean = clean.replace('_', ''); }
+
+      let letter = clean.charAt(0);
+      if (!baseMap[letter]) return null;
+
+      let midi = baseMap[letter] + accidental;
+      const commas = (clean.match(/,/g) || []).length;
+      const apostrophes = (clean.match(/'/g) || []).length;
+      midi -= commas * 12;
+      midi += apostrophes * 12;
+      return midi;
+    }
+
+    function midiNumberToAbc(midi) {
+      const pad = findPadByMidi(midi);
+      if (pad) return pad.abc;
+      const noteNames = ["C", "^C", "D", "^D", "E", "F", "^F", "G", "^G", "A", "^A", "B"];
+      const octave = Math.floor(midi / 12) - 1;
+      const noteIdx = midi % 12;
+      let name = noteNames[noteIdx];
+      if (octave >= 5) name = name.toLowerCase() + "'".repeat(octave - 5);
+      else if (octave === 4) name = name.toLowerCase();
+      else name = name + ",".repeat(Math.max(0, 3 - octave));
+      return name;
+    }
+
+    function findPadByMidi(midi) {
+      for (let b of ['A', 'B', 'C', 'D']) {
+        const found = PAD_BANKS[b].find(p => p.midi === midi);
+        if (found) return { ...found, bank: b };
+      }
+      return null;
+    }
+
+    function transposeSingleNoteInAbc(sourceAbcNote, semitones) {
+      const curMidi = abcNoteToMidi(sourceAbcNote);
+      if (curMidi === null) return;
+      const targetMidi = Math.max(0, Math.min(127, curMidi + semitones));
+      const targetAbcNote = midiNumberToAbc(targetMidi);
+      
+      const map = { [sourceAbcNote]: targetAbcNote };
+      const pure = getPureAbcScore();
+      const updated = applyNoteMappingToAbc(pure, map);
+      abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(updated) : updated;
+      parseAndAnalyze();
+      
+      const sign = semitones > 0 ? `+${semitones}` : `${semitones}`;
+      showToast(`Tono ${sourceAbcNote} trasposto a ${targetAbcNote} (${sign} st)`, "🎵");
+    }
+
+    document.getElementById('btnPitchDownSemi').addEventListener('click', () => transposeSingleNoteInAbc(remapSourceNote.value, -1));
+    document.getElementById('btnPitchUpSemi').addEventListener('click', () => transposeSingleNoteInAbc(remapSourceNote.value, 1));
+    document.getElementById('btnPitchDownOct').addEventListener('click', () => transposeSingleNoteInAbc(remapSourceNote.value, -12));
+    document.getElementById('btnPitchUpOct').addEventListener('click', () => transposeSingleNoteInAbc(remapSourceNote.value, 12));
+
+    function applyNoteMappingToAbc(abcText, mappingDict) {
+      const lines = abcText.split('\n');
+      const processedLines = lines.map(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('%') || trimmed.startsWith('X:') || trimmed.startsWith('T:') || 
+            trimmed.startsWith('C:') || trimmed.startsWith('M:') || trimmed.startsWith('L:') || 
+            trimmed.startsWith('Q:') || trimmed.startsWith('K:')) return line;
+
+        const tokenRegex = /(\[[^\]]+\](?:[\d\/]+)?-?|(?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*(?:[\d\/]+)?-?|z(?:[\d\/]+)?-?)/g;
+
+        return line.replace(tokenRegex, (token) => {
+          if (token.startsWith('z')) return token;
+          if (token.startsWith('[')) {
+            return token.replace(/(?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*/g, (n) => mappingDict[n] !== undefined ? mappingDict[n] : n);
+          }
+          const match = token.match(/^((?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*)(.*)$/);
+          if (match) {
+            const pitch = match[1];
+            const suffix = match[2] || '';
+            const newPitch = mappingDict[pitch] !== undefined ? mappingDict[pitch] : pitch;
+            return newPitch + suffix;
+          }
+          return token;
+        });
+      });
+
+      return processedLines.join('\n');
+    }
+
+    document.getElementById('btnSwapBanks').addEventListener('click', () => {
+      const bSrc = remapSourceBank.value;
+      const bTgt = remapTargetBank.value;
+      if (bSrc === bTgt) {
+        showToast("Seleziona due banchi diversi!", "⚠️");
+        return;
+      }
+      const padsSrc = PAD_BANKS[bSrc];
+      const padsTgt = PAD_BANKS[bTgt];
+      const map = {};
+      padsSrc.forEach((p, idx) => {
+        map[p.abc] = padsTgt[idx].abc;
+        map[padsTgt[idx].abc] = p.abc;
+      });
+
+      const pure = getPureAbcScore();
+      const updated = applyNoteMappingToAbc(pure, map);
+      abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(updated) : updated;
+      parseAndAnalyze();
+      showToast(`Invertito Banco ${bSrc} 🔁 Banco ${bTgt}`, "🔄");
+    });
+
+    document.getElementById('btnReplaceBank').addEventListener('click', () => {
+      const bSrc = remapSourceBank.value;
+      const bTgt = remapTargetBank.value;
+      if (bSrc === bTgt) {
+        showToast("Seleziona due banchi diversi!", "⚠️");
+        return;
+      }
+      const padsSrc = PAD_BANKS[bSrc];
+      const padsTgt = PAD_BANKS[bTgt];
+      const map = {};
+      padsSrc.forEach((p, idx) => map[p.abc] = padsTgt[idx].abc);
+
+      const pure = getPureAbcScore();
+      const updated = applyNoteMappingToAbc(pure, map);
+      abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(updated) : updated;
+      parseAndAnalyze();
+      showToast(`Spostato Banco ${bSrc} ➔ Banco ${bTgt}`, "➡️");
+    });
+
+    document.getElementById('btnExecuteSwap').addEventListener('click', () => {
+      const src = remapSourceNote.value;
+      const tgt = remapTargetNote.value;
+      if (src === tgt) return;
+      const map = { [src]: tgt, [tgt]: src };
+      const pure = getPureAbcScore();
+      const updated = applyNoteMappingToAbc(pure, map);
+      abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(updated) : updated;
+      parseAndAnalyze();
+      showToast(`Invertiti pad ${src} 🔁 ${tgt}`, "🔄");
+    });
+
+    document.getElementById('btnExecuteReplace').addEventListener('click', () => {
+      const src = remapSourceNote.value;
+      const tgt = remapTargetNote.value;
+      if (src === tgt) return;
+      const map = { [src]: tgt };
+      const pure = getPureAbcScore();
+      const updated = applyNoteMappingToAbc(pure, map);
+      abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(updated) : updated;
+      parseAndAnalyze();
+      showToast(`Spostate note da ${src} ➔ ${tgt}`, "➡️");
+    });
+
+    function updateAbcBpmHeader(newBpm) {
+      let abc = getPureAbcScore();
+      if (/Q:\s*(?:[^=\d\n]*=)?\s*\d+/i.test(abc)) {
+        abc = abc.replace(/Q:\s*([^=\d\n]*=)?\s*\d+/i, (match, prefix) => prefix ? `Q:${prefix}${newBpm}` : `Q: ${newBpm}`);
+      } else {
+        abc = `Q: ${newBpm}\n` + abc;
+      }
+      abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(abc) : abc;
+    }
+
+    function updateAbcHeader(tag, value) {
+      let abc = getPureAbcScore();
+      const regex = new RegExp(`^${tag}:.*$`, 'm');
+      if (regex.test(abc)) {
+        abc = abc.replace(regex, `${tag}: ${value}`);
+      } else {
+        abc = `${tag}: ${value}\n` + abc;
+      }
+      abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(abc) : abc;
+      parseAndAnalyze();
+    }
+
+    function parseAbcFull(rawInput) {
+      const abc = convertPadNotationToAbc(rawInput);
+      let bpm = 120;
+      let unitLength = 0.125;
+
+      const tMatch = abc.match(/^T:\s*(.*)$/m);
+      const cMatch = abc.match(/^C:\s*(.*)$/m);
+      const mMatch = abc.match(/^M:\s*(.*)$/m);
+      const kitMatch = abc.match(/%kit:\s*(\w+)/i);
+
+      const title = tMatch ? tMatch[1].trim() : "Senza Titolo";
+      const composer = cMatch ? cMatch[1].trim() : "";
+      const meter = mMatch ? mMatch[1].trim() : "4/4";
+
+      if (kitMatch && KIT_LABELS[kitMatch[1].toLowerCase()]) {
+        activeKit = kitMatch[1].toLowerCase();
+        headerKitSelect.value = activeKit;
+      }
+
+      const qMatch = abc.match(/Q:\s*(?:[^=\d\n]*=)?\s*(\d+)/i);
+      if (qMatch) bpm = parseInt(qMatch[1], 10);
+      baseBpm = bpm;
+
+      const lMatch = abc.match(/L:\s*(\d+)\/(\d+)/i);
+      if (lMatch) unitLength = parseInt(lMatch[1], 10) / parseInt(lMatch[2], 10);
+
+      let beatsPerBar = 4;
+      if (mMatch) {
+        const parts = meter.split('/');
+        if (parts.length === 2) beatsPerBar = parseInt(parts[0], 10);
+      }
+
+      const ccMatch = abc.match(/%%MIDI\s+control\s+53\s+(\d+)/i);
+      let oscCC = ccMatch ? parseInt(ccMatch[1], 10) : null;
+
+      const events = [];
+      const lines = abc.split('\n');
+      let scoreText = '';
+
+      for (let l of lines) {
+        l = l.trim();
+        if (l.startsWith('%') || l.startsWith('X:') || l.startsWith('T:') || l.startsWith('C:') ||
+            l.startsWith('M:') || l.startsWith('L:') || l.startsWith('Q:') || l.startsWith('K:')) continue;
+        scoreText += ' ' + l;
+      }
+
+      const tokenRegex = /(\[[^\]]+\](?:[\d\/]+)?-?|(?:\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*(?:[\d\/]+)?-?|z(?:[\d\/]+)?)/g;
+      const tokens = scoreText.match(tokenRegex) || [];
+
+      let totalQuarterBeats = 0;
+
+      tokens.forEach(tok => {
+        let mult = 1;
+        const numMatch = tok.match(/(\d+)(?:\/(\d+))?$/);
+        const fracMatch = tok.match(/\/(\d+)?$/);
+
+        if (numMatch) {
+          const num = parseInt(numMatch[1], 10);
+          const den = numMatch[2] ? parseInt(numMatch[2], 10) : 1;
+          mult = num / den;
+        } else if (fracMatch) {
+          mult = fracMatch[1] ? 1 / parseInt(fracMatch[1], 10) : 0.5;
+        }
+
+        const durationInQuarters = mult * (unitLength / 0.25);
+        totalQuarterBeats += durationInQuarters;
+
+        if (tok.startsWith('z')) {
+          events.push({ type: 'rest', quarters: durationInQuarters, raw: tok });
+        } else if (tok.startsWith('[')) {
+          const notesInside = tok.replace(/[\[\]\d\/-]/g, '').match(/(\^{1,2}|_{1,2}|={1})?[A-Ga-g][,']*/g) || [];
+          const midis = notesInside.map(abcNoteToMidi).filter(m => m !== null);
+          if (midis.length > 0) {
+            events.push({ type: 'chord', midis: midis, quarters: durationInQuarters, raw: tok });
+          }
+        } else {
+          const cleanNote = tok.replace(/[\d\/-]/g, '');
+          const m = abcNoteToMidi(cleanNote);
+          if (m !== null) {
+            events.push({ type: 'note', midi: m, quarters: durationInQuarters, raw: tok });
+          }
+        }
+      });
+
+      const mode = durationMode.value;
+      const targetSec = parseFloat(targetSeconds.value) || 60;
+
+      if (mode !== 'free' && totalQuarterBeats > 0 && !isAutoUpdatingBpm) {
+        let idealBpm = Math.round((totalQuarterBeats / targetSec) * 60);
+
+        if (mode === 'min') {
+          if (bpm > idealBpm) bpm = idealBpm;
+        } else if (mode === 'max') {
+          if (bpm < idealBpm) bpm = idealBpm;
+        } else if (mode === 'exact') {
+          bpm = idealBpm;
+        }
+
+        bpm = Math.max(30, Math.min(300, bpm));
+
+        if (bpm !== baseBpm) {
+          isAutoUpdatingBpm = true;
+          baseBpm = bpm;
+          updateAbcBpmHeader(bpm);
+          isAutoUpdatingBpm = false;
+        }
+      }
+
+      const effectiveBpm = Math.round(bpm * currentSpeed);
+      const totalSeconds = (totalQuarterBeats / effectiveBpm) * 60;
+      const totalBars = (totalQuarterBeats / beatsPerBar).toFixed(1);
+
+      return {
+        title, composer, meter,
+        bpm: effectiveBpm, originalBpm: baseBpm, unitLength,
+        events, totalSeconds, totalBars, oscCC, totalQuarterBeats
+      };
+    }
+
+    function parseAndAnalyze() {
+      const parsed = parseAbcFull(abcEditor.value);
+      
+      if (document.activeElement !== metaTitle) metaTitle.value = parsed.title;
+      if (document.activeElement !== metaComposer) metaComposer.value = parsed.composer;
+      if (document.activeElement !== metaMeter) metaMeter.value = parsed.meter;
+
+      bpmSlider.value = parsed.originalBpm;
+      bpmValueDisplay.innerText = parsed.originalBpm;
+
+      const mins = Math.floor(parsed.totalSeconds / 60);
+      const secs = Math.floor(parsed.totalSeconds % 60);
+      const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      
+      durationBadge.innerText = `⏱️ ${timeStr} (${parsed.totalBars} misure @ ${parsed.bpm} BPM)`;
+      oscLabel.innerText = `${KIT_LABELS[activeKit] || activeKit}${parsed.oscCC !== null ? ' | CC53=' + parsed.oscCC : ''}`;
+
+      const foundMidi = new Set();
+      parsed.events.forEach(ev => {
+        if (ev.type === 'note') foundMidi.add(ev.midi);
+        if (ev.type === 'chord') ev.midis.forEach(m => foundMidi.add(m));
+      });
+
+      PAD_BANKS[activeBank].forEach(item => {
+        const el = document.getElementById(`pad-card-${item.midi}`);
+        if (!el) return;
+        if (foundMidi.has(item.midi)) {
+          el.classList.add('border-purple-500/80', 'bg-purple-950/20');
+        } else {
+          el.classList.remove('border-purple-500/80', 'bg-purple-950/20');
+        }
+      });
+
+      detectedCount.innerText = `${foundMidi.size} pad totali`;
+
+      if (foundMidi.size === 0) {
+        activePadsSummary.innerHTML = `<span class="text-neutral-500">Nessuna nota compatibile trovata.</span>`;
+        return;
+      }
+
+      let html = '';
+      Array.from(foundMidi).sort((a,b) => a - b).forEach(midi => {
+        const padInfo = findPadByMidi(midi);
+        if (padInfo) {
+          html += `<div class="flex items-center justify-between border-b border-neutral-800/80 py-0.5">
+            <span class="text-purple-400 font-bold">Banco ${padInfo.bank} - Pad #${padInfo.pad} (${padInfo.bank}${padInfo.pad} / ${padInfo.abc}):</span>
+            <span class="text-neutral-200">${padInfo.name}</span>
+            <span class="text-[10px] text-neutral-500">MIDI ${padInfo.midi}</span>
+          </div>`;
+        }
+      });
+      activePadsSummary.innerHTML = html;
+    }
+
+    /* =========================================================================
+       DSP AUDIO ENGINE MULTI-KIT
+       ========================================================================= */
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function createWhiteNoiseBuffer(ctx, duration) {
+      const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      return buffer;
+    }
+
+    function playSyntheticSound(type, midi, duration, targetCtx = null, destNode = null, startTime = null, kit = 'standard') {
+      const ctx = targetCtx || getAudioContext();
+      const now = (startTime !== null) ? startTime : ctx.currentTime;
+      const out = destNode || ctx.destination;
+      const freq = 440 * Math.pow(2, (midi - 69) / 12);
+
+      if (type === 'kick') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        let startFreq = 140, endFreq = 38, decay = 0.3;
+
+        if (kit === 'lofi') { startFreq = 100; endFreq = 42; decay = 0.38; }
+        else if (kit === 'piano') { startFreq = 95; endFreq = 45; decay = 0.28; }
+        else if (kit === 'vocal') { startFreq = 80; endFreq = 40; decay = 0.32; }
+        else if (kit === 'synthwave') { startFreq = 160; endFreq = 32; decay = 0.28; }
+        else if (kit === 'rock') { startFreq = 130; endFreq = 44; decay = 0.24; }
+        else if (kit === 'punk') { startFreq = 150; endFreq = 50; decay = 0.16; }
+        else if (kit === 'house') { startFreq = 110; endFreq = 35; decay = 0.35; }
+        else if (kit === 'zen') { startFreq = 85; endFreq = 48; decay = 0.45; }
+        else if (kit === 'glitch') { startFreq = 240; endFreq = 20; decay = 0.12; }
+
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.08);
+        gain.gain.setValueAtTime(1.0, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + decay);
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + decay + 0.02);
+
+      } else if (type === 'snare' || type === 'snare_crisp' || type === 'rim' || type === 'clap') {
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        let oscType = 'triangle', snareFreq = 190, noiseFilterType = 'highpass', noiseCutoff = 1200, noiseDur = 0.2;
+
+        if (kit === 'piano') { oscType = 'sine'; snareFreq = 150; noiseFilterType = 'bandpass'; noiseCutoff = 1000; noiseDur = 0.15; }
+        else if (kit === 'vocal') { oscType = 'triangle'; snareFreq = 220; noiseFilterType = 'bandpass'; noiseCutoff = 2400; noiseDur = 0.12; }
+        else if (kit === 'rock') { snareFreq = 210; noiseCutoff = 1500; noiseDur = 0.25; }
+        else if (kit === 'punk') { oscType = 'sawtooth'; snareFreq = 240; noiseCutoff = 2200; noiseDur = 0.14; }
+        else if (kit === 'house') { oscType = 'sine'; snareFreq = 160; noiseFilterType = 'bandpass'; noiseCutoff = 1800; noiseDur = 0.18; }
+        else if (kit === 'lofi') { snareFreq = 140; noiseFilterType = 'bandpass'; noiseCutoff = 850; }
+
+        osc.type = oscType;
+        osc.frequency.setValueAtTime(snareFreq, now);
+        oscGain.gain.setValueAtTime(0.45, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.connect(oscGain);
+        oscGain.connect(out);
+        osc.start(now);
+        osc.stop(now + 0.1);
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = createWhiteNoiseBuffer(ctx, noiseDur);
+        const filter = ctx.createBiquadFilter();
+        filter.type = noiseFilterType;
+        filter.frequency.setValueAtTime(noiseCutoff, now);
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.65, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseDur);
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(out);
+        noise.start(now);
+
+      } else if (type === 'hat_closed' || type === 'hat_pedal' || type === 'hat_open' || type === 'crash') {
+        const isLong = (type === 'hat_open' || type === 'crash');
+        let dur = isLong ? ((type === 'crash') ? 0.7 : 0.35) : 0.08;
+        if (kit === 'punk' && !isLong) dur = 0.05;
+        if (kit === 'piano' && !isLong) dur = 0.06;
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = createWhiteNoiseBuffer(ctx, dur);
+        const filter = ctx.createBiquadFilter();
+        filter.type = (kit === 'lofi' || kit === 'piano') ? 'lowpass' : 'highpass';
+        filter.frequency.setValueAtTime((kit === 'house') ? 6000 : 7000, now);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(out);
+        noise.start(now);
+
+      } else if (type === 'bass') {
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+
+        if (kit === 'piano') {
+          osc.type = 'triangle';
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(320, now);
+          gain.gain.setValueAtTime(0.85, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.4));
+        } else if (kit === 'vocal') {
+          osc.type = 'sine';
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(220, now);
+          filter.Q.value = 3.0;
+          gain.gain.setValueAtTime(0.8, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.35));
+        } else if (kit === 'rock') {
+          osc.type = 'sawtooth';
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(800, now);
+          filter.Q.value = 3.0;
+          gain.gain.setValueAtTime(0.7, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.22));
+        } else if (kit === 'punk') {
+          osc.type = 'sawtooth';
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(700, now);
+          filter.Q.value = 4.0;
+          gain.gain.setValueAtTime(0.75, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.2));
+        } else if (kit === 'house') {
+          osc.type = 'triangle';
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(320, now);
+          gain.gain.setValueAtTime(0.8, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.25));
+        } else if (kit === 'zen') {
+          osc.type = 'sine';
+          filter.frequency.setValueAtTime(300, now);
+          gain.gain.setValueAtTime(0.7, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.22));
+        } else if (kit === 'synthwave') {
+          osc.type = 'sawtooth';
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(650, now);
+          filter.Q.value = 4.0;
+          gain.gain.setValueAtTime(0.7, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.22));
+        } else {
+          osc.type = 'sawtooth';
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(450, now);
+          gain.gain.setValueAtTime(0.7, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.22));
+        }
+
+        osc.frequency.setValueAtTime(freq, now);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + Math.max(duration, 0.45));
+
+      } else if (type === 'chord') {
+        if (kit === 'piano') {
+          [0, 4, 7].forEach((semi, idx) => {
+            const oscP = ctx.createOscillator();
+            const gainP = ctx.createGain();
+            const pFreq = freq * Math.pow(2, semi / 12);
+            oscP.type = (idx === 0) ? 'triangle' : 'sine';
+            oscP.frequency.setValueAtTime(pFreq, now);
+            gainP.gain.setValueAtTime(0.28, now);
+            gainP.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.6));
+            oscP.connect(gainP);
+            gainP.connect(out);
+            oscP.start(now);
+            oscP.stop(now + Math.max(duration, 0.65));
+          });
+          return;
+        }
+
+        if (kit === 'vocal') {
+          [0, 4, 7].forEach(semi => {
+            const oscV = ctx.createOscillator();
+            const formFilter = ctx.createBiquadFilter();
+            const gainV = ctx.createGain();
+            oscV.type = 'sawtooth';
+            oscV.frequency.setValueAtTime(freq * Math.pow(2, semi / 12), now);
+            formFilter.type = 'bandpass';
+            formFilter.frequency.setValueAtTime(950, now);
+            formFilter.Q.value = 5.0;
+            gainV.gain.setValueAtTime(0.001, now);
+            gainV.gain.linearRampToValueAtTime(0.22, now + 0.08);
+            gainV.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.5));
+            oscV.connect(formFilter);
+            formFilter.connect(gainV);
+            gainV.connect(out);
+            oscV.start(now);
+            oscV.stop(now + Math.max(duration, 0.55));
+          });
+          return;
+        }
+
+        let chordIntervals = [0, 4, 7];
+        if (kit === 'lofi') chordIntervals = [0, 3, 7];
+        if (kit === 'rock' || kit === 'punk') chordIntervals = [0, 7, 12];
+
+        chordIntervals.forEach(semi => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = (kit === 'rock' || kit === 'punk') ? 'sawtooth' : ((kit === 'zen') ? 'sine' : 'triangle');
+          osc.frequency.setValueAtTime(freq * Math.pow(2, semi / 12), now);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.35));
+          osc.connect(gain);
+          gain.connect(out);
+          osc.start(now);
+          osc.stop(now + Math.max(duration, 0.38));
+        });
+
+      } else if (type === 'bell' || type === 'lead') {
+        if (kit === 'piano') {
+          const oscPiano = ctx.createOscillator();
+          const gainPiano = ctx.createGain();
+          oscPiano.type = 'sine';
+          oscPiano.frequency.setValueAtTime(freq, now);
+          gainPiano.gain.setValueAtTime(0.5, now);
+          gainPiano.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+          oscPiano.connect(gainPiano);
+          gainPiano.connect(out);
+          oscPiano.start(now);
+          oscPiano.stop(now + 0.58);
+          return;
+        }
+
+        if (kit === 'vocal') {
+          const oscVox = ctx.createOscillator();
+          const fVox = ctx.createBiquadFilter();
+          const gainVox = ctx.createGain();
+          oscVox.type = 'sawtooth';
+          oscVox.frequency.setValueAtTime(freq, now);
+          fVox.type = 'bandpass';
+          fVox.frequency.setValueAtTime(1400, now);
+          fVox.Q.value = 6.0;
+          gainVox.gain.setValueAtTime(0.001, now);
+          gainVox.gain.linearRampToValueAtTime(0.35, now + 0.05);
+          gainVox.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+          oscVox.connect(fVox);
+          fVox.connect(gainVox);
+          gainVox.connect(out);
+          oscVox.start(now);
+          oscVox.stop(now + 0.5);
+          return;
+        }
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = (kit === 'glitch') ? 'square' : 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        const decay = (kit === 'zen') ? 0.8 : 0.42;
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + decay);
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + decay + 0.05);
+
+      } else {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = (midi >= 60) ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(duration, 0.2));
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(now);
+        osc.stop(now + Math.max(duration, 0.22));
+      }
+    }
+
+    function exportPadSampleWav(padItem) {
+      const sampleRate = 44100;
+      const duration = 0.5;
+      const offlineCtx = new OfflineAudioContext(1, Math.ceil(sampleRate * duration), sampleRate);
+
+      playSyntheticSound(padItem.synth, padItem.midi, 0.35, offlineCtx, offlineCtx.destination, 0, activeKit);
+
+      offlineCtx.startRendering().then(renderedBuffer => {
+        const blob = fastBufferToWavBlob(renderedBuffer);
+        downloadBlob(blob, `Koala_B${activeBank}_P${padItem.pad}_${padItem.name.replace(/\s+/g, '_')}_${activeKit}.wav`);
+        showToast(`Campione WAV Pad #${padItem.pad} scaricato!`, "💾");
+      });
+    }
+
+    function exportMasterSongWav() {
+      const parsed = parseAbcFull(abcEditor.value);
+      if (parsed.events.length === 0) return;
+
+      const renderStatusText = document.getElementById('renderStatusText');
+      renderStatusText.innerText = "⏳ Render WAV in corso...";
+
+      const sampleRate = 44100;
+      const totalSec = Math.max(0.5, parsed.totalSeconds + 0.8);
+      const totalFrames = Math.ceil(sampleRate * totalSec);
+      
+      const offlineCtx = new OfflineAudioContext(2, totalFrames, sampleRate);
+      const secondsPerQuarter = 60 / parsed.bpm;
+      let timelineSec = 0;
+
+      parsed.events.forEach(ev => {
+        const stepSec = ev.quarters * secondsPerQuarter;
+        if (ev.type === 'note') {
+          const padInfo = findPadByMidi(ev.midi);
+          playSyntheticSound(padInfo ? padInfo.synth : 'lead', ev.midi, stepSec, offlineCtx, offlineCtx.destination, timelineSec, activeKit);
+        } else if (ev.type === 'chord') {
+          ev.midis.forEach(m => {
+            const padInfo = findPadByMidi(m);
+            playSyntheticSound(padInfo ? padInfo.synth : 'lead', m, stepSec, offlineCtx, offlineCtx.destination, timelineSec, activeKit);
+          });
+        }
+        timelineSec += stepSec;
+      });
+
+      offlineCtx.startRendering().then(renderedBuffer => {
+        const blob = fastBufferToWavBlob(renderedBuffer);
+        downloadBlob(blob, `${slugify(parsed.title)}_master_${activeKit}.wav`);
+        renderStatusText.innerText = "✅ Render completato!";
+        showToast("Brano Master WAV scaricato!", "🎧");
+        setTimeout(() => {
+          renderStatusText.innerText = "Tocca un pad per testarlo live e inserirlo nel codice. Usa ▼ e ▲ per regolarne il pitch.";
+        }, 3000);
+      }).catch(err => {
+        alert("Errore rendering WAV: " + err.message);
+        renderStatusText.innerText = "Errore durante il rendering.";
+      });
+    }
+
+    function fastBufferToWavBlob(buffer) {
+      const numChannels = buffer.numberOfChannels;
+      const sampleRate = buffer.sampleRate;
+      const format = 1;
+      const bitDepth = 16;
+      
+      const numFrames = buffer.length;
+      const bytesPerSample = bitDepth / 8;
+      const blockAlign = numChannels * bytesPerSample;
+      const dataSize = numFrames * blockAlign;
+      const headerSize = 44;
+      const totalSize = headerSize + dataSize;
+      
+      const arrayBuffer = new ArrayBuffer(totalSize);
+      const view = new DataView(arrayBuffer);
+      
+      view.setUint32(0, 0x52494646, false);
+      view.setUint32(4, totalSize - 8, true);
+      view.setUint32(8, 0x57415645, false);
+      view.setUint32(12, 0x666d7420, false);
+      view.setUint32(16, 16, true);
+      view.setUint16(20, format, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * blockAlign, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitDepth, true);
+      view.setUint32(36, 0x64617461, false);
+      view.setUint32(40, dataSize, true);
+
+      const channelData = [];
+      for (let ch = 0; ch < numChannels; ch++) {
+        channelData.push(buffer.getChannelData(ch));
+      }
+
+      let offset = 44;
+      for (let i = 0; i < numFrames; i++) {
+        for (let ch = 0; ch < numChannels; ch++) {
+          let s = channelData[ch][i];
+          s = s < -1 ? -1 : (s > 1 ? 1 : s);
+          const sample16 = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          view.setInt16(offset, sample16 | 0, true);
+          offset += 2;
+        }
+      }
+
+      return new Blob([arrayBuffer], { type: 'audio/wav' });
+    }
+
+    /* =========================================================================
+       RIPRODUZIONE ANTEPRIMA & TRASPORTO
+       ========================================================================= */
+    let playbackTimer = null;
+    let isPlaying = false;
+
+    function playAbcPreview() {
+      stopAbcPreview();
+      const parsed = parseAbcFull(abcEditor.value);
+      if (parsed.events.length === 0) return;
+
+      isPlaying = true;
+      document.getElementById('btnPreview').innerHTML = `<span>⏹️</span> Ferma`;
+      document.getElementById('btnPreview').className = `px-4 sm:px-5 py-2 sm:py-2.5 bg-purple-600 hover:bg-purple-500 text-neutral-100 font-bold text-xs rounded-lg transition flex items-center gap-2 shadow active:scale-95`;
+      document.getElementById('btnFsPlayPause').innerText = "⏹️ Stop";
+
+      const secondsPerQuarter = 60 / parsed.bpm;
+      let currentIdx = 0;
+
+      function step() {
+        if (!isPlaying || currentIdx >= parsed.events.length) {
+          stopAbcPreview();
+          playheadDisplay.innerText = "Fine riproduzione.";
+          document.getElementById('fsNowPlayingText').innerText = "Fine riproduzione.";
+          return;
+        }
+
+        const ev = parsed.events[currentIdx];
+        const stepSec = ev.quarters * secondsPerQuarter;
+
+        if (ev.type === 'note') {
+          const padInfo = findPadByMidi(ev.midi);
+          const txt = `Pad: ${padInfo ? padInfo.bank + padInfo.pad : 'MIDI ' + ev.midi} (${ev.raw})`;
+          playheadDisplay.innerText = txt;
+          document.getElementById('fsNowPlayingText').innerText = txt;
+          playSyntheticSound(padInfo ? padInfo.synth : 'lead', ev.midi, stepSec, null, null, null, activeKit);
+          flashPad(ev.midi);
+        } else if (ev.type === 'chord') {
+          const txt = `Accordo: ${ev.raw}`;
+          playheadDisplay.innerText = txt;
+          document.getElementById('fsNowPlayingText').innerText = txt;
+          ev.midis.forEach(m => {
+            const padInfo = findPadByMidi(m);
+            playSyntheticSound(padInfo ? padInfo.synth : 'lead', m, stepSec, null, null, null, activeKit);
+            flashPad(m);
+          });
+        } else if (ev.type === 'rest') {
+          playheadDisplay.innerText = "Pausa z";
+          document.getElementById('fsNowPlayingText').innerText = "Pausa z";
+        }
+
+        currentIdx++;
+        playbackTimer = setTimeout(step, stepSec * 1000);
+      }
+
+      step();
+    }
+
+    function stopAbcPreview() {
+      isPlaying = false;
+      if (playbackTimer) {
+        clearTimeout(playbackTimer);
+        playbackTimer = null;
+      }
+      document.getElementById('btnPreview').innerHTML = `<span>▶️</span> Play`;
+      document.getElementById('btnPreview').className = `px-4 sm:px-5 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-lg transition flex items-center gap-2 shadow active:scale-95`;
+      document.getElementById('btnFsPlayPause').innerText = "▶️ Play";
+      playheadDisplay.innerText = "Fermo.";
+      document.getElementById('fsNowPlayingText').innerText = "Fermo.";
+    }
+
+    /* =========================================================================
+       PARSER & DECOMPILER MIDI (STANDARD & KOALA)
+       ========================================================================= */
+    function parseMidiToAbc(arrayBuffer, isKoalaOptimized = false) {
+      const data = new DataView(arrayBuffer);
+      let offset = 0;
+
+      const mthd = String.fromCharCode(data.getUint8(0), data.getUint8(1), data.getUint8(2), data.getUint8(3));
+      if (mthd !== 'MThd') throw new Error("Header MIDI 'MThd' mancante");
+
+      const format = data.getUint16(8);
+      const trackCount = data.getUint16(10);
+      const division = data.getUint16(12);
+
+      offset = 14;
+      const allEvents = [];
+      let detectedBpm = 120;
+      let trackTitle = isKoalaOptimized ? "Koala Pattern LAB" : "MIDI Imported";
+
+      for (let t = 0; t < trackCount; t++) {
+        if (offset >= data.byteLength) break;
+        const chunkId = String.fromCharCode(data.getUint8(offset), data.getUint8(offset+1), data.getUint8(offset+2), data.getUint8(offset+3));
+        const chunkLen = data.getUint32(offset + 4);
+        offset += 8;
+
+        if (chunkId !== 'MTrk') {
+          offset += chunkLen;
+          continue;
+        }
+
+        const trackEnd = offset + chunkLen;
+        let currentTime = 0;
+        let runningStatus = 0;
+
+        while (offset < trackEnd) {
+          let dt = 0, b = 0;
+          do {
+            b = data.getUint8(offset++);
+            dt = (dt << 7) | (b & 0x7F);
+          } while (b & 0x80);
+          currentTime += dt;
+
+          let status = data.getUint8(offset);
+          if (status >= 0x80) {
+            offset++;
+            runningStatus = status;
+          } else {
+            status = runningStatus;
+          }
+
+          const type = status & 0xF0;
+
+          if (type === 0x90) {
+            const note = data.getUint8(offset++);
+            const vel = data.getUint8(offset++);
+            if (vel > 0) {
+              allEvents.push({ time: currentTime, type: 'noteOn', note: note });
+            } else {
+              allEvents.push({ time: currentTime, type: 'noteOff', note: note });
+            }
+          } else if (type === 0x80) {
+            const note = data.getUint8(offset++);
+            offset++;
+            allEvents.push({ time: currentTime, type: 'noteOff', note: note });
+          } else if (status === 0xFF) {
+            const metaType = data.getUint8(offset++);
+            let metaLen = 0;
+            do {
+              b = data.getUint8(offset++);
+              metaLen = (metaLen << 7) | (b & 0x7F);
+            } while (b & 0x80);
+
+            if (metaType === 0x51 && metaLen === 3) {
+              const mpqn = (data.getUint8(offset) << 16) | (data.getUint8(offset+1) << 8) | data.getUint8(offset+2);
+              detectedBpm = Math.round(60000000 / mpqn);
+            } else if (metaType === 0x03 && metaLen > 0) {
+              let str = '';
+              for (let i = 0; i < metaLen; i++) str += String.fromCharCode(data.getUint8(offset + i));
+              trackTitle = str.trim();
+            }
+            offset += metaLen;
+          } else if (type === 0xA0 || type === 0xB0 || type === 0xE0) {
+            offset += 2;
+          } else if (type === 0xC0 || type === 0xD0) {
+            offset += 1;
+          } else if (status === 0xF0 || status === 0xF7) {
+            let sysexLen = 0;
+            do {
+              b = data.getUint8(offset++);
+              sysexLen = (sysexLen << 7) | (b & 0x7F);
+            } while (b & 0x80);
+            offset += sysexLen;
+          }
+        }
+      }
+
+      allEvents.sort((a, b) => a.time - b.time);
+      if (allEvents.length === 0) throw new Error("Nessuna nota trovata nel file MIDI.");
+
+      const ticksPer16th = division / 4;
+      let generatedAbc = `X: 1\nT: ${trackTitle}\nC: \nM: 4/4\nL: 1/16\nQ: ${detectedBpm}\nK: C\n%kit: ${activeKit}\n`;
+      let lastTime = 0;
+      let barSteps = 0;
+
+      allEvents.forEach(ev => {
+        if (ev.type === 'noteOn') {
+          const deltaTicks = ev.time - lastTime;
+          const restSteps = Math.round(deltaTicks / ticksPer16th);
+          if (restSteps > 0) {
+            generatedAbc += `z${restSteps > 1 ? restSteps : ''} `;
+            barSteps += restSteps;
+            if (barSteps >= 16) {
+              generatedAbc += "| ";
+              barSteps = barSteps % 16;
+            }
+          }
+
+          // Se Koala, applica la rimappatura inversa da Koala verso note interne
+          const internalNote = isKoalaOptimized ? remapMidiFromKoala(ev.note) : ev.note;
+          const padInfo = findPadByMidi(internalNote);
+          let noteToken = "";
+
+          if (isKoalaOptimized && padInfo) {
+            noteToken = `${padInfo.bank}${padInfo.pad}`;
+          } else {
+            noteToken = midiNumberToAbc(internalNote);
+          }
+
+          generatedAbc += `${noteToken}2 `;
+          barSteps += 2;
+          if (barSteps >= 16) {
+            generatedAbc += "| ";
+            barSteps = barSteps % 16;
+          }
+          lastTime = ev.time;
+        }
+      });
+
+      generatedAbc += "|]";
+      return generatedAbc;
+    }
+
+    function writeVLQ(value) {
+      let buffer = [];
+      let val = value;
+      buffer.push(val & 0x7F);
+      while ((val >>= 7) > 0) {
+        buffer.push((val & 0x7F) | 0x80);
+      }
+      return buffer.reverse();
+    }
+
+    function buildMidiBinary(bpm, events, title, isKoalaOptimized = false) {
+      const division = 480;
+      let trackBytes = [];
+
+      const microseconds = Math.round(60000000 / bpm);
+      trackBytes.push(0x00, 0xFF, 0x51, 0x03, (microseconds >> 16) & 0xFF, (microseconds >> 8) & 0xFF, microseconds & 0xFF);
+
+      const trackName = title || (isKoalaOptimized ? "Koala Track" : "Standard Track");
+      trackBytes.push(0x00, 0xFF, 0x03, trackName.length, ...trackName.split('').map(c => c.charCodeAt(0)));
+
+      const velByte = 0x64;
+      let pendingDelta = 0;
+
+      events.forEach(ev => {
+        const stepTicks = Math.round(ev.quarters * division);
+        if (ev.type === 'rest') {
+          pendingDelta += stepTicks;
+        } else if (ev.type === 'note') {
+          // Se Koala: rimappa nota geometricamente; se Standard: invia nota 1:1
+          const targetNote = isKoalaOptimized ? remapMidiForKoala(ev.midi) : ev.midi;
+          trackBytes.push(...writeVLQ(pendingDelta), 0x90, targetNote, velByte);
+          trackBytes.push(...writeVLQ(stepTicks), 0x80, targetNote, 0x00);
+          pendingDelta = 0;
+        } else if (ev.type === 'chord') {
+          ev.midis.forEach((m, idx) => {
+            const dt = (idx === 0) ? pendingDelta : 0;
+            const targetNote = isKoalaOptimized ? remapMidiForKoala(m) : m;
+            trackBytes.push(...writeVLQ(dt), 0x90, targetNote, velByte);
+          });
+          ev.midis.forEach((m, idx) => {
+            const dt = (idx === 0) ? stepTicks : 0;
+            const targetNote = isKoalaOptimized ? remapMidiForKoala(m) : m;
+            trackBytes.push(...writeVLQ(dt), 0x80, targetNote, 0x00);
+          });
+          pendingDelta = 0;
+        }
+      });
+
+      trackBytes.push(...writeVLQ(pendingDelta), 0xFF, 0x2F, 0x00);
+
+      const header = [0x4D, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x01, (division >> 8) & 0xFF, division & 0xFF];
+      const trackLen = trackBytes.length;
+      const trackHeader = [0x4D, 0x54, 0x72, 0x6B, (trackLen >> 24) & 0xFF, (trackLen >> 16) & 0xFF, (trackLen >> 8) & 0xFF, trackLen & 0xFF];
+
+      return new Uint8Array([...header, ...trackHeader, ...trackBytes]);
+    }
+
+    // ==========================================
+    // SEZIONI COLLASSABILI
+    // ==========================================
+    function toggleCollapse(btn, element) {
+      const isCollapsed = element.classList.contains('collapsed');
+      if (isCollapsed) {
+        element.classList.remove('collapsed');
+        btn.innerText = '▲';
+      } else {
+        element.classList.add('collapsed');
+        btn.innerText = '▼';
+      }
+    }
+
+    document.getElementById('btnToggleHeaderSection').addEventListener('click', function() {
+      const el = document.getElementById('headerSectionContent');
+      const isCollapsed = el.classList.contains('collapsed');
+      if (isCollapsed) {
+        el.classList.remove('collapsed');
+        this.innerText = '▲ File & Export';
+      } else {
+        el.classList.add('collapsed');
+        this.innerText = '▼ File & Export';
+      }
+    });
+
+    document.getElementById('btnToggleMetaSection').addEventListener('click', function() {
+      toggleCollapse(this, document.getElementById('metaSectionContent'));
+    });
+    document.getElementById('btnToggleRemapSection').addEventListener('click', function() {
+      toggleCollapse(this, document.getElementById('remapSectionContent'));
+    });
+    document.getElementById('btnToggleAbcSection').addEventListener('click', function() {
+      toggleCollapse(this, document.getElementById('abcSectionContent'));
+    });
+    document.getElementById('btnToggleSummarySection').addEventListener('click', function() {
+      toggleCollapse(this, document.getElementById('summarySectionContent'));
+    });
+    document.getElementById('btnTogglePadsSection').addEventListener('click', function() {
+      toggleCollapse(this, document.getElementById('padsSectionContent'));
+    });
+
+    // ==========================================
+    // FULLSCREEN MODAL CONTROLS
+    // ==========================================
+    const fsModal = document.getElementById('fullscreenPadsModal');
+    function openFullscreenPads() {
+      renderFullscreenAll64Pads();
+      document.getElementById('fsKitBadge').innerText = KIT_LABELS[activeKit] || activeKit;
+      fsModal.classList.remove('hidden');
+      fsModal.classList.add('flex');
+    }
+    function closeFullscreenPads() {
+      fsModal.classList.add('hidden');
+      fsModal.classList.remove('flex');
+    }
+
+    document.getElementById('btnOpenFullscreenPads').addEventListener('click', openFullscreenPads);
+    document.getElementById('btnCloseFullscreenPads').addEventListener('click', closeFullscreenPads);
+    document.getElementById('btnFsPlayPause').addEventListener('click', () => {
+      if (isPlaying) stopAbcPreview();
+      else playAbcPreview();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        if (fsModal.classList.contains('hidden')) openFullscreenPads();
+        else closeFullscreenPads();
+      } else if (e.key === 'Escape') {
+        if (!fsModal.classList.contains('hidden')) closeFullscreenPads();
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        if (isPlaying) stopAbcPreview();
+        else playAbcPreview();
+      }
+    });
+
+    // ==========================================
+    // BINDING EVENTI INPUT & EXPORT
+    // ==========================================
+    metaTitle.addEventListener('input', (e) => updateAbcHeader('T', e.target.value));
+    metaComposer.addEventListener('input', (e) => updateAbcHeader('C', e.target.value));
+    metaMeter.addEventListener('input', (e) => updateAbcHeader('M', e.target.value));
+
+    durationMode.addEventListener('change', () => {
+      parseAndAnalyze();
+      showToast(`Modalità durata: ${durationMode.options[durationMode.selectedIndex].text}`);
+    });
+    targetSeconds.addEventListener('input', parseAndAnalyze);
+
+    document.querySelectorAll('.dur-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        durationMode.value = 'exact';
+        targetSeconds.value = btn.dataset.sec;
+        parseAndAnalyze();
+        showToast(`Target impostato a ${btn.dataset.sec}s`, "⏱️");
+      });
+    });
+
+    // 1. Import Standard MIDI lineare (v1.9)
+    document.getElementById('fileMidiInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const abc = parseMidiToAbc(evt.target.result, false);
+          abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(abc) : abc;
+          parseAndAnalyze();
+          showToast(`Standard MIDI "${file.name}" importato (v1.9)!`, "🎹");
+        } catch (err) {
+          alert("Errore caricamento MIDI: " + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // 2. Import Koala MIDI dedicato (v2.1)
+    document.getElementById('fileMidiKoalaInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const abc = parseMidiToAbc(evt.target.result, true);
+          abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(abc) : abc;
+          parseAndAnalyze();
+          showToast(`MIDI Koala Sampler "${file.name}" decodificato con griglia corretta!`, "🐨");
+        } catch (err) {
+          alert("Errore caricamento MIDI Koala: " + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // 3. Import Universale ABC / JSON
+    document.getElementById('fileUniversalInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const content = evt.target.result;
+        if (file.name.endsWith('.json')) {
+          try {
+            const json = JSON.parse(content);
+            if (json.kit && KIT_LABELS[json.kit.toLowerCase()]) {
+              activeKit = json.kit.toLowerCase();
+              headerKitSelect.value = activeKit;
+            }
+            let code = json.abcCode || (json.tracks && json.tracks[0] ? json.tracks[0].abcCode : null);
+            if (!code) {
+              alert("Il JSON non contiene codice 'abcCode' valido.");
+              return;
+            }
+            abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(code) : code;
+            parseAndAnalyze();
+            showToast(`JSON "${file.name}" caricato!`, "📦");
+          } catch (err) {
+            alert("Errore lettura JSON: " + err.message);
+          }
+        } else {
+          abcEditor.value = (editorMode === 'pads') ? convertAbcToPadNotation(content) : content;
+          parseAndAnalyze();
+          showToast(`File ABC caricato!`, "📄");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    bpmSlider.addEventListener('input', (e) => {
+      durationMode.value = 'free';
+      const val = parseInt(e.target.value, 10);
+      bpmValueDisplay.innerText = val;
+      updateAbcBpmHeader(val);
+      parseAndAnalyze();
+    });
+
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.speed-btn').forEach(b => {
+          b.className = 'speed-btn px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px]';
+        });
+        btn.className = 'speed-btn px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[11px] font-bold shadow ring-1 ring-purple-400/50';
+        currentSpeed = parseFloat(btn.dataset.speed);
+        parseAndAnalyze();
+        showToast(`Velocità: ${currentSpeed}×`, "⚡");
+      });
+    });
+
+    // Export 1: Standard MIDI lineare 1:1 come v1.9
+    document.getElementById('btnExportMidiStandard').addEventListener('click', () => {
+      const parsed = parseAbcFull(abcEditor.value);
+      const bytes = buildMidiBinary(parsed.bpm, parsed.events, parsed.title, false);
+      const blob = new Blob([bytes], { type: 'audio/midi' });
+      downloadBlob(blob, `${slugify(parsed.title)}_standard_v1.9.mid`);
+      showToast("Standard MIDI (v1.9) scaricato!", "💾");
+    });
+
+    // Export 2: Koala MIDI dedicato (v2.1)
+    document.getElementById('btnExportKoalaMidi').addEventListener('click', () => {
+      const parsed = parseAbcFull(abcEditor.value);
+      const bytes = buildMidiBinary(parsed.bpm, parsed.events, parsed.title, true);
+      const blob = new Blob([bytes], { type: 'audio/midi' });
+      downloadBlob(blob, `${slugify(parsed.title)}_koala_v2.1.mid`);
+      showToast("File MIDI ottimizzato per Koala scaricato!", "🐨");
+    });
+
+    // Export ABC
+    document.getElementById('btnExportAbc').addEventListener('click', () => {
+      const parsed = parseAbcFull(abcEditor.value);
+      const pure = getPureAbcScore();
+      const blob = new Blob([pure], { type: 'text/plain;charset=utf-8' });
+      downloadBlob(blob, `${slugify(parsed.title)}.abc`);
+      showToast("Partitura .ABC scaricata!", "📄");
+    });
+
+    // Export JSON
+    document.getElementById('btnExportJson').addEventListener('click', () => {
+      const parsed = parseAbcFull(abcEditor.value);
+      const bundle = {
+        generator: "Korg NTS-1 Suite - Koala Bridge Studio LAB",
+        version: "2.1.0-LAB",
+        timestamp: new Date().toISOString(),
+        metadata: {
+          title: parsed.title,
+          composer: parsed.composer,
+          meter: parsed.meter,
+          totalBars: parsed.totalBars,
+          durationSeconds: Math.round(parsed.totalSeconds)
+        },
+        bpm: parsed.bpm,
+        kit: activeKit,
+        mainOsc: parsed.oscCC ? String(parsed.oscCC) : "0",
+        abcCode: getPureAbcScore()
+      };
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `${slugify(parsed.title)}_lab.json`);
+      showToast("Bundle .JSON scaricato!", "📦");
+    });
+
+    // Export Master WAV
+    document.getElementById('btnExportMasterWav').addEventListener('click', exportMasterSongWav);
+
+    function slugify(text) {
+      return (text || 'brano')
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '_')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    abcEditor.addEventListener('input', parseAndAnalyze);
+    document.getElementById('btnPreview').addEventListener('click', () => {
+      if (isPlaying) stopAbcPreview();
+      else playAbcPreview();
+    });
+    document.getElementById('btnStop').addEventListener('click', () => {
+      stopAbcPreview();
+      showToast("Riproduzione fermata", "⏹️");
+    });
+
+    // Inizializzazione
+    populateRemapSelectors();
+    abcEditor.value = DEFAULT_ABC;
+    renderPads();
+    parseAndAnalyze();
+  </script>
+</body>
+</html>
