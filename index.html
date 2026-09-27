@@ -1,551 +1,799 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Korg NTS-1 Modular Web Suite — Hub Centrale</title>
+  <!-- Tailwind CSS via CDN (zero build tools) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    button, input, select, a {
-      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    button:active, a:active {
-      transform: scale(0.97);
-    }
-    .focus-ring:focus {
-      outline: none;
-      border-color: #fbbf24 !important;
-      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.35);
-    }
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #09090b;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #27272a;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #3f3f46;
-    }
-  </style>
-</head>
-<body class="bg-neutral-950 text-neutral-100 min-h-screen font-sans p-4 sm:p-6 select-none relative">
-  <div class="max-w-7xl mx-auto space-y-6">
-
-    <!-- HEADER CENTRALE CON CONTATORE MODULI E PANIC SWEEP -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-neutral-800 pb-5 gap-4">
-      <div>
-        <div class="flex items-center gap-3">
-          <span class="text-3xl">🎛️</span>
-          <div>
-            <div class="flex items-center gap-2">
-              <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-amber-400">
-                Korg NTS-1 Modular Web Suite
-              </h1>
-              <span class="text-xs font-mono font-bold bg-neutral-800 text-amber-400 border border-neutral-700 px-2 py-0.5 rounded">
-                v1.5.0
-              </span>
-            </div>
-            <p class="text-xs sm:text-sm text-neutral-400">
-              Hub di sistema · Architettura decentralizzata a 10 moduli per composizione, campionamento e sintesi hardware
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-mono px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-amber-400 font-bold">
-          9 App Stabili + 1 Lab Sperimentale
-        </span>
-        <button id="btnGlobalPanic" class="px-4 py-2 bg-red-950/60 hover:bg-red-900/80 text-red-200 border border-red-800/80 text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5 active:scale-95" title="Invia CC 120 (All Sound Off), CC 123 (All Notes Off) e rilascia le 128 note MIDI">
-          <span>🛑 Panic Sweep</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- DIAGNOSTICA MIDI GLOBALE (WEB MIDI & WEB AUDIO) -->
-    <section class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
-      <div class="flex items-center justify-between border-b border-neutral-800/80 pb-2.5">
-        <div class="flex items-center gap-2">
-          <span class="text-sm">🔌</span>
-          <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-300">Diagnostica Hardware & Uscite MIDI</h2>
-        </div>
-        <div class="flex items-center gap-2">
-          <span id="midiStatusDot" class="w-2.5 h-2.5 rounded-full bg-neutral-600"></span>
-          <span id="midiStatusLabel" class="text-xs font-mono text-neutral-400">Inizializzazione MIDI...</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        <div>
-          <label class="block text-neutral-400 text-[10px] uppercase font-semibold mb-1">Porta Output MIDI</label>
-          <select id="midiOutputSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2 text-amber-300 font-mono focus-ring">
-            <option value="">Nessun output MIDI trovato</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-neutral-400 text-[10px] uppercase font-semibold mb-1">Canale MIDI di Trasmissione</label>
-          <select id="midiChannelSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2 text-neutral-200 font-mono focus-ring">
-            <option value="0">Canale 1 (Default NTS-1)</option>
-            <option value="1">Canale 2</option>
-            <option value="2">Canale 3</option>
-            <option value="3">Canale 4</option>
-            <option value="4">Canale 5</option>
-            <option value="5">Canale 6</option>
-            <option value="6">Canale 7</option>
-            <option value="7">Canale 8</option>
-            <option value="8">Canale 9</option>
-            <option value="9">Canale 10 (Drums)</option>
-            <option value="10">Canale 11</option>
-            <option value="11">Canale 12</option>
-            <option value="12">Canale 13</option>
-            <option value="13">Canale 14</option>
-            <option value="14">Canale 15</option>
-            <option value="15">Canale 16</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-neutral-400 text-[10px] uppercase font-semibold mb-1">Test Sonoro Rapido</label>
-          <div class="flex items-center gap-1.5">
-            <button class="test-note-btn flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-neutral-200 font-mono text-[11px] font-bold" data-note="48">C3</button>
-            <button class="test-note-btn flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-neutral-200 font-mono text-[11px] font-bold" data-note="60">C4</button>
-            <button class="test-note-btn flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-neutral-200 font-mono text-[11px] font-bold" data-note="72">C5</button>
-            <button id="btnTestChord" class="flex-1 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-lg text-amber-300 font-bold text-[11px]">Accordo</button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-neutral-400 text-[10px] uppercase font-semibold mb-1">Stato Supporto API Browser</label>
-          <div class="flex items-center gap-2 p-2 bg-neutral-950 border border-neutral-800 rounded-lg text-[11px] font-mono">
-            <span id="badgeApiWebMidi" class="text-neutral-500">MIDI: ?</span>
-            <span class="text-neutral-700">|</span>
-            <span id="badgeApiWebAudio" class="text-neutral-500">Audio: ?</span>
-            <span class="text-neutral-700">|</span>
-            <span id="badgeApiOffline" class="text-neutral-500">Render: ?</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- GRIGLIA ROUTER DELLE APPLICAZIONI DELLA SUITE -->
-    <main class="space-y-3">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">Applicazioni della Suite</h2>
-        <span class="text-[11px] text-neutral-500 font-mono">Single-Page Application autonome senza dipendenze né build tools</span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
-        <!-- MODULO 1: ABC GENERATOR -->
-        <a href="./abc-generator/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">🎼</span>
-              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.8.1</span>
-            </div>
-            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 1: ABC Arranger & Generator</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed">
-              Motore metrico multilingua (Italiano, Inglese, Toki Pona) per composizione algoritmica, calcolo sillabico e arrangiamento dinamico in formato .abc.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
-            <span>./abc-generator/</span>
-            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-        <!-- MODULO 2: ABC PLAYER -->
-        <a href="./abc-player/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">📻</span>
-              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.7.2</span>
-            </div>
-            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 2: Player & Generative Radio</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed">
-              Lettore standalone e radio generativa continua per pittura e studio, variazione armonica modale, visualizer a 8 modalità e Focus Companion Pomodoro.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
-            <span>./abc-player/</span>
-            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-        <!-- MODULO 3: PLAYLIST BUILDER -->
-        <a href="./playlist-builder/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">📋</span>
-              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.1.0</span>
-            </div>
-            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 3: Playlist Builder Studio</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed">
-              Assemblatore drag-and-drop con caricamento batch di file .abc e .json, calcolo deterministico delle durate e rack hardware NTS-1 per singolo brano.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
-            <span>./playlist-builder/</span>
-            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-        <!-- MODULO 4: ZEN JUKEBOX -->
-        <a href="./jukebox-player/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">🏮</span>
-              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.8.0</span>
-            </div>
-            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 4: Zen Jukebox & Focus</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed">
-              Esecutore continuo a ciclo infinito per sessioni di pittura e meditazione, riprogrammazione patch hardware live e micro-variazioni probabilistiche Humanize 🎲.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
-            <span>./jukebox-player/</span>
-            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-        <!-- MODULO 5: GRID COMPOSER -->
-        <a href="./grid-composer/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">🔲</span>
-              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.8.0</span>
-            </div>
-            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 5: Multi-Pad Grid Composer</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed">
-              Sequenziamento a pad multipli indipendenti da 8 a 64 step, celle a 3 stati tattili (Off, Trig, Tie legati) e playhead scanner sincronizzato.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
-            <span>./grid-composer/</span>
-            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-        <!-- MODULO 6: LIVE SEQUENCER -->
-        <a href="./live-sequencer/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">⚡</span>
-              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.0.0</span>
-            </div>
-            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 6: Live Step Sequencer</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed">
-              Superficie di performance touch e mapping tastiera QWERTY, overdub in tempo reale con quantizzazione a sedicesimi e inserimento step-by-step touch & hold.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
-            <span>./live-sequencer/</span>
-            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-        <!-- MODULO 7: MOBILE LINEAR SEQUENCER -->
-        <a href="./mobile-linear-sequencer/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">📱</span>
-              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.9.0</span>
-            </div>
-            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 7: Mobile Linear Sequencer XL</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed">
-              Paradigma a nastro elastico verticale (Elastic Tape) per uso con una mano da smartphone, tastiera touch XL quantizzata e scale musicali selezionabili.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
-            <span>./mobile-linear-sequencer/</span>
-            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-        <!-- MODULO 8: KOALA BRIDGE (STABILE) -->
-        <a href="./koala-bridge/index.html" class="p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 hover:bg-neutral-850 flex flex-col justify-between group transition">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">🐨</span>
-              <span class="text-[10px] font-mono bg-neutral-950 text-neutral-400 border border-neutral-800 px-1.5 py-0.5 rounded">v1.9.0</span>
-            </div>
-            <h3 class="text-base font-bold text-neutral-100 group-hover:text-amber-300 transition">Modulo 8: Koala Bridge Studio Pro</h3>
-            <p class="text-xs text-neutral-400 leading-relaxed">
-              Ponte bidirezionale ABC / MIDI / Koala Sampler a 64 pad (Banchi A-D), pitch shifter semitonale, 10 kit sonori, sezioni collassabili e vista fullscreen.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
-            <span>./koala-bridge/</span>
-            <span class="text-amber-400 group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-        <!-- MODULO 9: KOALA PLAYLIST -->
-        <a href="./koala-playlist/index.html" class="p-4 rounded-xl bg-neutral-900 border border-amber-500/50 hover:border-amber-400 hover:bg-neutral-850 flex flex-col justify-between group transition ring-1 ring-amber-500/20 shadow-lg">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">🎶</span>
-              <span class="text-[10px] font-mono bg-amber-950/60 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold">v1.4.0</span>
-            </div>
-            <h3 class="text-base font-bold text-amber-400 group-hover:text-amber-300 transition">Modulo 9: Koala Playlist Studio</h3>
-            <p class="text-xs text-neutral-300 leading-relaxed">
-              Scaletta multi-traccia, stacco configurabile per brano (1s default), riproduzione Shuffle, kit tematici per traccia, compattatore ZIP nativo e master WAV.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-amber-400 font-mono font-semibold">
-            <span>./koala-playlist/</span>
-            <span class="group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-        <!-- MODULO SPERIMENTALE: KOALA BRIDGE LAB -->
-        <a href="./koala-bridge-lab/index.html" class="p-4 rounded-xl bg-neutral-900 border border-purple-500/50 hover:border-purple-400 hover:bg-neutral-850 flex flex-col justify-between group transition ring-1 ring-purple-500/20 shadow-lg shadow-purple-950/10">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xl">🧪</span>
-              <span class="text-[10px] font-mono bg-purple-950/70 text-purple-300 border border-purple-500/40 px-1.5 py-0.5 rounded font-bold">LAB v2.1</span>
-            </div>
-            <h3 class="text-base font-bold text-purple-300 group-hover:text-purple-200 transition">Koala Bridge LAB (Testbed)</h3>
-            <p class="text-xs text-neutral-300 leading-relaxed">
-              Laboratorio sperimentale: doppio motore MIDI (Standard v1.9 + Koala Remapper v2.1) e scrittura partiture tramite token pad (A1-D16) alternativi ad ABC.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-purple-400 font-mono font-semibold">
-            <span>./koala-bridge-lab/</span>
-            <span class="group-hover:translate-x-1 transition-transform">Apri ➔</span>
-          </div>
-        </a>
-
-      </div>
-    </main>
-
-    <!-- CHEAT SHEET SINTESI NTS-1 & MAPPATURA PAD KOALA -->
-    <footer class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 text-xs space-y-3">
-      <div class="flex items-center justify-between border-b border-neutral-800/80 pb-2">
-        <span class="text-neutral-400 font-bold uppercase tracking-wider text-[11px]">Riferimento Rapido Hardware & Sampler</span>
-        <span class="text-[11px] text-neutral-500 font-mono">Korg NTS-1 (CC 53) & Koala (64 Pad)</span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-neutral-400">
-        <div class="space-y-1">
-          <span class="text-neutral-200 font-semibold block text-[11px]">Oscillatori Principali Korg NTS-1 (CC 53):</span>
-          <p class="text-[11px] font-mono leading-relaxed">
-            SAW (0) · TRI (16) · SQR (32) · VPM FM (48) · WAVES (64) · Volca Bass (76) · Poly Chords (88) · Proba-B (100) · J6 Juno (112)
-          </p>
-        </div>
-        <div class="space-y-1">
-          <span class="text-neutral-200 font-semibold block text-[11px]">Mappatura MIDI Pad Koala Sampler:</span>
-          <p class="text-[11px] font-mono leading-relaxed">
-            Banco A: MIDI 36–51 (C1–D#2) · Banco B: MIDI 52–67 (E2–G3) · Banco C: MIDI 68–83 (G#3–B4) · Banco D: MIDI 84–99 (C5–D#6)
-          </p>
-        </div>
-      </div>
-    </footer>
-
-  </div>
-
-  <!-- Toast Notifica Flottante -->
-  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-200 pointer-events-none">
-    <div class="bg-neutral-900 border border-amber-500/60 shadow-xl rounded-lg px-4 py-2.5 flex items-center gap-2 text-xs text-amber-200">
-      <span id="toastIcon">✨</span>
-      <span id="toastMessage">Operazione completata</span>
-    </div>
-  </div>
-
   <script>
-    let midiAccess = null;
-    let selectedMidiOutput = null;
-    let audioCtx = null;
-
-    function showToast(message, icon = "✨") {
-      const toast = document.getElementById('toastNotification');
-      document.getElementById('toastIcon').innerText = icon;
-      document.getElementById('toastMessage').innerText = message;
-      toast.classList.remove('translate-y-24', 'opacity-0');
-      toast.classList.add('translate-y-0', 'opacity-100');
-      setTimeout(() => {
-        toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('translate-y-24', 'opacity-0');
-      }, 2400);
-    }
-
-    function checkApiSupport() {
-      const badgeWebMidi = document.getElementById('badgeApiWebMidi');
-      const badgeWebAudio = document.getElementById('badgeApiWebAudio');
-      const badgeOffline = document.getElementById('badgeApiOffline');
-
-      if (navigator.requestMIDIAccess) {
-        badgeWebMidi.innerText = "MIDI: OK";
-        badgeWebMidi.className = "text-emerald-400 font-bold";
-      } else {
-        badgeWebMidi.innerText = "MIDI: No";
-        badgeWebMidi.className = "text-neutral-500";
-      }
-
-      if (window.AudioContext || window.webkitAudioContext) {
-        badgeWebAudio.innerText = "Audio: OK";
-        badgeWebAudio.className = "text-emerald-400 font-bold";
-      } else {
-        badgeWebAudio.innerText = "Audio: No";
-        badgeWebAudio.className = "text-red-400";
-      }
-
-      if (window.OfflineAudioContext) {
-        badgeOffline.innerText = "Render: OK";
-        badgeOffline.className = "text-emerald-400 font-bold";
-      } else {
-        badgeOffline.innerText = "Render: No";
-        badgeOffline.className = "text-red-400";
-      }
-    }
-
-    function initWebMidi() {
-      const statusDot = document.getElementById('midiStatusDot');
-      const statusLabel = document.getElementById('midiStatusLabel');
-      const outputSelect = document.getElementById('midiOutputSelect');
-
-      if (!navigator.requestMIDIAccess) {
-        statusDot.className = "w-2.5 h-2.5 rounded-full bg-neutral-600";
-        statusLabel.innerText = "Web MIDI non supportato su questo browser";
-        return;
-      }
-
-      navigator.requestMIDIAccess({ sysex: true }).then(access => {
-        midiAccess = access;
-        updateMidiOutputs();
-        midiAccess.onstatechange = updateMidiOutputs;
-      }).catch(err => {
-        statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
-        statusLabel.innerText = "Accesso MIDI negato o non disponibile";
-      });
-    }
-
-    function updateMidiOutputs() {
-      const outputSelect = document.getElementById('midiOutputSelect');
-      const statusDot = document.getElementById('midiStatusDot');
-      const statusLabel = document.getElementById('midiStatusLabel');
-
-      if (!midiAccess) return;
-      outputSelect.innerHTML = '';
-
-      const outputs = Array.from(midiAccess.outputs.values());
-
-      if (outputs.length === 0) {
-        outputSelect.innerHTML = '<option value="">Nessun dispositivo MIDI connesso</option>';
-        statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
-        statusLabel.innerText = "Dispositivi MIDI non rilevati";
-        selectedMidiOutput = null;
-        return;
-      }
-
-      let autoSelected = null;
-      outputs.forEach((port, idx) => {
-        const opt = document.createElement('option');
-        opt.value = port.id;
-        opt.innerText = port.name || `Output MIDI ${idx + 1}`;
-        outputSelect.appendChild(opt);
-
-        const lower = (port.name || '').toLowerCase();
-        if (lower.includes('nts') || lower.includes('korg')) {
-          autoSelected = port.id;
-        }
-      });
-
-      if (autoSelected) {
-        outputSelect.value = autoSelected;
-      }
-
-      selectedMidiOutput = midiAccess.outputs.get(outputSelect.value);
-      statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
-      statusLabel.innerText = `Connesso: ${selectedMidiOutput.name}`;
-    }
-
-    document.getElementById('midiOutputSelect').addEventListener('change', (e) => {
-      if (midiAccess) {
-        selectedMidiOutput = midiAccess.outputs.get(e.target.value);
-        if (selectedMidiOutput) {
-          document.getElementById('midiStatusLabel').innerText = `Connesso: ${selectedMidiOutput.name}`;
-          showToast(`Porta MIDI: ${selectedMidiOutput.name}`, "🔌");
-        }
-      }
-    });
-
-    function getAudioContext() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      return audioCtx;
-    }
-
-    function playLocalTone(midiNote, duration = 0.3) {
-      const ctx = getAudioContext();
-      const now = ctx.currentTime;
-      const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(freq, now);
-
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + duration + 0.02);
-    }
-
-    function sendMidiNote(note, durationMs = 300) {
-      const ch = parseInt(document.getElementById('midiChannelSelect').value, 10);
-      playLocalTone(note, durationMs / 1000);
-
-      if (selectedMidiOutput) {
-        selectedMidiOutput.send([0x90 | ch, note, 0x64]);
-        setTimeout(() => {
-          selectedMidiOutput.send([0x80 | ch, note, 0x00]);
-        }, durationMs);
-      }
-    }
-
-    document.querySelectorAll('.test-note-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const note = parseInt(btn.dataset.note, 10);
-        sendMidiNote(note);
-      });
-    });
-
-    document.getElementById('btnTestChord').addEventListener('click', () => {
-      [60, 64, 67].forEach(n => sendMidiNote(n, 400));
-      showToast("Accordo C Maggiore inviato", "🎵");
-    });
-
-    document.getElementById('btnGlobalPanic').addEventListener('click', () => {
-      if (audioCtx && audioCtx.state !== 'closed') {
-        audioCtx.close().then(() => { audioCtx = null; });
-      }
-
-      if (selectedMidiOutput) {
-        for (let ch = 0; ch < 16; ch++) {
-          selectedMidiOutput.send([0xB0 | ch, 120, 0]); // CC 120 All Sound Off
-          selectedMidiOutput.send([0xB0 | ch, 123, 0]); // CC 123 All Notes Off
-          selectedMidiOutput.send([0xB0 | ch, 64, 0]);  // CC 64 Sustain Off
-          for (let note = 0; note < 128; note++) {
-            selectedMidiOutput.send([0x80 | ch, note, 0]);
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#f97316',
+              amber: '#f59e0b',
+              dark: '#0a0a0a',
+              card: '#121212',
+              border: '#262626'
+            }
           }
         }
       }
+    }
+  </script>
+  <style>
+    .drag-over-card {
+      outline: 2px dashed #f59e0b;
+      outline-offset: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #262626;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-brand-dark text-neutral-200 min-h-screen font-sans antialiased custom-scroll pb-16">
 
-      showToast("Panic Sweep inviato su tutti i 16 canali!", "🛑");
+  <!-- ========================================== -->
+  <!-- HEADER & MONITOR DIAGNOSTICA MIDI/AUDIO    -->
+  <!-- ========================================== -->
+  <header class="border-b border-brand-border bg-brand-card/90 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div class="flex items-center space-x-3 w-full md:w-auto">
+        <span class="text-2xl select-none">🎛️</span>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-neutral-100 flex items-center gap-2">
+            Korg NTS-1 Modular Web Suite
+            <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              v9.0.0
+            </span>
+          </h1>
+          <p class="text-xs text-neutral-400">Ambiente modulare per composizione algoritmica, ABC & MIDI</p>
+        </div>
+      </div>
+
+      <!-- Barra di controllo rapido (MIDI / Audio / Panic) -->
+      <div class="flex items-center justify-between w-full md:w-auto gap-2">
+        <div class="flex items-center gap-1.5 bg-neutral-900 border border-brand-border px-2.5 py-1.5 rounded-lg text-xs flex-1 md:flex-initial overflow-hidden">
+          <span id="midi-status-dot" class="w-2.5 h-2.5 rounded-full bg-neutral-600 flex-shrink-0"></span>
+          <select id="midi-out-select" class="bg-transparent text-neutral-200 text-xs outline-none w-full truncate">
+            <option value="">Nessun dispositivo</option>
+          </select>
+        </div>
+
+        <button id="btn-test-tone" class="min-h-[40px] px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-600 text-neutral-200 text-xs rounded-lg border border-neutral-700 transition flex items-center gap-1">
+          🔊 <span class="hidden sm:inline">Test</span>
+        </button>
+
+        <button id="btn-panic" class="min-h-[40px] px-3.5 py-1.5 bg-red-950/80 hover:bg-red-900 active:bg-red-800 text-red-200 text-xs font-semibold rounded-lg border border-red-800 transition" title="Panic MIDI">
+          🚨 Panic
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+
+    <!-- ========================================== -->
+    <!-- CONTROLLI DASHBOARD                        -->
+    <!-- ========================================== -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 border-b border-brand-border pb-4">
+      <div>
+        <h2 class="text-lg sm:text-xl font-bold text-neutral-100">Moduli & Applicazioni</h2>
+        <p class="text-xs text-neutral-400 mt-0.5">
+          Tocca una card per aprirla. Usa <span class="text-amber-400 font-bold">▲/▼</span> o trascina con <span class="text-neutral-300 font-mono">⋮⋮</span> per ordinare.
+        </p>
+      </div>
+      <div>
+        <button id="btn-reset-layout" class="text-xs text-neutral-400 hover:text-amber-400 transition underline underline-offset-4 py-1">
+          Ripristina layout iniziale
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- GRIGLIA APPLICAZIONI                      -->
+    <!-- ========================================== -->
+    <div id="apps-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <!-- MODULO 1 -->
+      <article class="app-card group relative bg-brand-card border border-brand-border hover:border-neutral-600 active:border-amber-500 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-sm" draggable="true" data-app-id="abc-generator" data-url="abc-generator/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-neutral-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <!-- Tasti Touch Step Riordino -->
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-sky-950/60 text-sky-400 border border-sky-800/80">
+              Early Beta
+            </span>
+
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-neutral-500">#01</span>
+            <h3 class="text-base sm:text-lg font-bold text-neutral-100 group-hover:text-amber-400 transition">ABC Generator Studio</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Arrangiatore algoritmico con analisi sillabica per Italiano, Inglese e Toki Pona. Esportazione in .abc, .mid, .wav e .json.
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-neutral-500 text-[11px]">abc-generator/</span>
+          <span class="font-semibold text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+      <!-- MODULO 2 -->
+      <article class="app-card group relative bg-brand-card border border-brand-border hover:border-neutral-600 active:border-amber-500 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-sm" draggable="true" data-app-id="abc-player" data-url="abc-player/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-neutral-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-sky-950/60 text-sky-400 border border-sky-800/80">
+              Early Beta
+            </span>
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-neutral-500">#02</span>
+            <h3 class="text-base sm:text-lg font-bold text-neutral-100 group-hover:text-amber-400 transition">ABC Player & Radio</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Player per brani singoli e radio generativa continua con 8 visualizer reattivi, Timer Pomodoro e campana tibetana.
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-neutral-500 text-[11px]">abc-player/</span>
+          <span class="font-semibold text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+      <!-- MODULO 3 -->
+      <article class="app-card group relative bg-brand-card border border-brand-border hover:border-neutral-600 active:border-amber-500 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-sm" draggable="true" data-app-id="playlist-builder" data-url="playlist-builder/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-neutral-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-sky-950/60 text-sky-400 border border-sky-800/80">
+              Early Beta
+            </span>
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-neutral-500">#03</span>
+            <h3 class="text-base sm:text-lg font-bold text-neutral-100 group-hover:text-amber-400 transition">Playlist Builder Studio</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Assemblatore scalette con calcolo deterministico della durata al secondo e patch hardware NTS-1 configurabili per ogni traccia.
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-neutral-500 text-[11px]">playlist-builder/</span>
+          <span class="font-semibold text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+      <!-- MODULO 4 -->
+      <article class="app-card group relative bg-brand-card border border-brand-border hover:border-neutral-600 active:border-amber-500 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-sm" draggable="true" data-app-id="jukebox-player" data-url="jukebox-player/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-neutral-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-sky-950/60 text-sky-400 border border-sky-800/80">
+              Early Beta
+            </span>
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-neutral-500">#04</span>
+            <h3 class="text-base sm:text-lg font-bold text-neutral-100 group-hover:text-amber-400 transition">Zen Jukebox Player</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Player a ciclo continuo con cambi timbrici istantanei via MIDI CC, Dado Humanize 🎲 e Zen Mode fullscreen per pittura e focus.
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-neutral-500 text-[11px]">jukebox-player/</span>
+          <span class="font-semibold text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+      <!-- MODULO 5 -->
+      <article class="app-card group relative bg-brand-card border border-brand-border hover:border-neutral-600 active:border-amber-500 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-sm" draggable="true" data-app-id="grid-composer" data-url="grid-composer/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-neutral-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-sky-950/60 text-sky-400 border border-sky-800/80">
+              Early Beta
+            </span>
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-neutral-500">#05</span>
+            <h3 class="text-base sm:text-lg font-bold text-neutral-100 group-hover:text-amber-400 transition">Multi-Pad Grid Composer</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Matrice ritmico-melodica a blocchi (8-64 step) con celle tattili a 3 stati (Off, Trig, Tie) e scansione visiva del playhead.
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-neutral-500 text-[11px]">grid-composer/</span>
+          <span class="font-semibold text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+      <!-- MODULO 6 -->
+      <article class="app-card group relative bg-brand-card border border-brand-border hover:border-neutral-600 active:border-amber-500 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-sm" draggable="true" data-app-id="live-sequencer" data-url="live-sequencer/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-neutral-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-sky-950/60 text-sky-400 border border-sky-800/80">
+              Early Beta
+            </span>
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-neutral-500">#06</span>
+            <h3 class="text-base sm:text-lg font-bold text-neutral-100 group-hover:text-amber-400 transition">Live Step Sequencer</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Superficie tattile per performance live, mappatura tastiera del computer, overdub continuo a 16esimi e step touch & hold.
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-neutral-500 text-[11px]">live-sequencer/</span>
+          <span class="font-semibold text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+      <!-- MODULO 7 -->
+      <article class="app-card group relative bg-brand-card border border-brand-border hover:border-neutral-600 active:border-amber-500 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-sm" draggable="true" data-app-id="mobile-linear-sequencer" data-url="mobile-linear-sequencer/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-neutral-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-sky-950/60 text-sky-400 border border-sky-800/80">
+              Early Beta
+            </span>
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-neutral-500">#07</span>
+            <h3 class="text-base sm:text-lg font-bold text-neutral-100 group-hover:text-amber-400 transition">Mobile Linear Sequencer XL</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Timeline verticale elastica ottimizzata per smartphone a una mano con tastiera quantizzata a scale (Zen, Pentatonica, Blues).
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-neutral-500 text-[11px]">mobile-linear-sequencer/</span>
+          <span class="font-semibold text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+      <!-- MODULO 8 -->
+      <article class="app-card group relative bg-brand-card border border-brand-border hover:border-neutral-600 active:border-amber-500 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-sm" draggable="true" data-app-id="koala-bridge" data-url="koala-bridge/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-neutral-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-sky-950/60 text-sky-400 border border-sky-800/80">
+              Early Beta
+            </span>
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-neutral-500">#08</span>
+            <h3 class="text-base sm:text-lg font-bold text-neutral-100 group-hover:text-amber-400 transition">Koala Sampler & ABC Bridge</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Decompilatore MIDI e ponte ABC per Koala Sampler con 10 kit sonori nativi, Pitch Shifter atomico su pad e visualizer 64 pad.
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-neutral-500 text-[11px]">koala-bridge/</span>
+          <span class="font-semibold text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+      <!-- MODULO 9 -->
+      <article class="app-card group relative bg-brand-card border border-brand-border hover:border-neutral-600 active:border-amber-500 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-sm" draggable="true" data-app-id="koala-playlist" data-url="koala-playlist/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-neutral-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-sky-950/60 text-sky-400 border border-sky-800/80">
+              Early Beta
+            </span>
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-neutral-500">#09</span>
+            <h3 class="text-base sm:text-lg font-bold text-neutral-100 group-hover:text-amber-400 transition">Koala Playlist Studio</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Scalette multi-traccia con stacco indipendente tra brani, esportazione ZIP dei campioni per Koala e rendering master WAV offline.
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-neutral-500 text-[11px]">koala-playlist/</span>
+          <span class="font-semibold text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+      <!-- MODULO 10 (LAB SPERIMENTALE) -->
+      <article class="app-card group relative bg-brand-card border border-purple-900/60 hover:border-purple-600 active:border-purple-400 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.05)]" draggable="true" data-app-id="koala-bridge-lab" data-url="koala-bridge-lab/index.html">
+        <div>
+          <div class="flex items-center justify-between gap-1 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="drag-handle hidden sm:inline-block cursor-grab active:cursor-grabbing text-neutral-500 hover:text-purple-300 text-base px-1 select-none" title="Trascina">⋮⋮</span>
+              <button class="btn-move-up min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta prima">▲</button>
+              <button class="btn-move-down min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 active:bg-neutral-800 text-xs" title="Sposta dopo">▼</button>
+            </div>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-1 rounded bg-purple-950/70 text-purple-300 border border-purple-800">
+              Sperimentale / Alpha
+            </span>
+            <button class="btn-hide min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-neutral-900/60 hover:bg-neutral-800 active:bg-red-950 text-neutral-400 hover:text-red-400 transition" title="Nascondi modulo">✕</button>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-mono text-purple-400">#10</span>
+            <h3 class="text-base sm:text-lg font-bold text-purple-100 group-hover:text-purple-300 transition">Koala Bridge LAB</h3>
+          </div>
+          <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
+            Sandbox per test: motore MIDI standard vs rimappatura MPC geometrica per Koala ed editor a sintassi ibrida ABC/Pad A1-D16.
+          </p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-xs">
+          <span class="font-mono text-purple-400 text-[11px]">koala-bridge-lab/</span>
+          <span class="font-semibold text-purple-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">Apri <span>→</span></span>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CASSETTO STRUMENTI NASCOSTI               -->
+    <!-- ========================================== -->
+    <details id="hidden-apps-section" class="mt-8 bg-neutral-900/70 border border-brand-border rounded-xl p-4 hidden">
+      <summary class="cursor-pointer text-xs font-semibold tracking-wide text-neutral-300 hover:text-neutral-100 select-none flex items-center gap-2 py-1">
+        <span>📦</span>
+        <span>Strumenti nascosti (<span id="hidden-count">0</span>)</span>
+        <span class="text-[11px] text-neutral-500 font-normal ml-auto">Tocca per mostrare</span>
+      </summary>
+      <div id="hidden-apps-list" class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <!-- Renderizzato via JavaScript -->
+      </div>
+    </details>
+
+    <!-- ======================================================= -->
+    <!-- GUIDA: MAPPATURA MIDI PAD KOALA & CONSIGLI STRUMENTI    -->
+    <!-- ======================================================= -->
+    <section class="mt-14 pt-8 border-t border-brand-border">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-neutral-100 flex items-center gap-2">
+            <span>🎹</span> Mappatura MIDI 64 Pad per Koala & Consigli Timbrici
+          </h2>
+          <p class="text-xs text-neutral-400 mt-1">
+            Schema e consigli pratici per comporre in ABC rispettando i 4 banchi timbrici tipici.
+          </p>
+        </div>
+        <span class="text-[11px] font-mono text-neutral-500 bg-neutral-900 border border-brand-border px-2.5 py-1 rounded w-fit">
+          M:4/4 | L:1/16
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+        <!-- BANCO A -->
+        <div class="bg-brand-card border border-brand-border rounded-xl p-4 sm:p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold font-mono text-amber-400 uppercase tracking-wider">Banco A — Ritmo & Chops</span>
+              <span class="text-[10px] font-mono text-neutral-500 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800">MIDI 36 – 51</span>
+            </div>
+            <p class="text-xs text-neutral-300 font-medium mb-3">
+              💡 Consigli: Fondamenta ritmiche, percussioni e groove.
+            </p>
+            <div class="bg-neutral-950 p-3 rounded-lg border border-neutral-800 text-[11px] font-mono text-neutral-300 space-y-1.5 leading-relaxed">
+              <div><span class="text-amber-400 font-bold">C,, (36):</span> Kick Sub / Cassa principale</div>
+              <div><span class="text-amber-400 font-bold">^C,, (37) – ^D,, (39):</span> Rimshot, Snare, Clap</div>
+              <div><span class="text-amber-400 font-bold">E,, (40) – A,, (45):</span> Snare secco, Tom bassi/medi/alti</div>
+              <div><span class="text-amber-400 font-bold">^F,, (42) – B,, (47):</span> Hat chiuso/aperto, Crash</div>
+              <div><span class="text-amber-400 font-bold">C, (48) – ^D, (51):</span> Chops vocali o campioni one-shot</div>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-brand-border text-[11px] text-neutral-400">
+            <strong class="text-neutral-300">Suggerimento:</strong> unisci cassa e hat con <code class="text-amber-400">[C,, ^F,,]2</code>.
+          </div>
+        </div>
+
+        <!-- BANCO B -->
+        <div class="bg-brand-card border border-brand-border rounded-xl p-4 sm:p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold font-mono text-blue-400 uppercase tracking-wider">Banco B — Bassi & Accordi</span>
+              <span class="text-[10px] font-mono text-neutral-500 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800">MIDI 52 – 67</span>
+            </div>
+            <p class="text-xs text-neutral-300 font-medium mb-3">
+              💡 Consigli: Linee di basso, synth bass, accordi, Rhodes e tappeti armonici.
+            </p>
+            <div class="bg-neutral-950 p-3 rounded-lg border border-neutral-800 text-[11px] font-mono text-neutral-300 space-y-1.5 leading-relaxed">
+              <div><span class="text-blue-400 font-bold">E, (52) – B, (59):</span> Linee di basso melodiche (808, Upright, Synth)</div>
+              <div><span class="text-blue-400 font-bold">C (60):</span> Accordo Triade fondamentale</div>
+              <div><span class="text-blue-400 font-bold">^C (61) – ^D (63):</span> Variazioni armoniche / Power chords</div>
+              <div><span class="text-blue-400 font-bold">E (64) – G (67):</span> Archi o synth d'atmosfera nel registro medio</div>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-brand-border text-[11px] text-neutral-400">
+            <strong class="text-neutral-300">Suggerimento:</strong> per dare spinta ritmica raddoppia il basso sul kick (<code class="text-blue-400">[C,, E,]4</code>).
+          </div>
+        </div>
+
+        <!-- BANCO C -->
+        <div class="bg-brand-card border border-brand-border rounded-xl p-4 sm:p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold font-mono text-emerald-400 uppercase tracking-wider">Banco C — Lead, Solisti & Campane</span>
+              <span class="text-[10px] font-mono text-neutral-500 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800">MIDI 68 – 83</span>
+            </div>
+            <p class="text-xs text-neutral-300 font-medium mb-3">
+              💡 Consigli: Melodie portanti, arpeggi, strumenti a fiato, chitarre e campane.
+            </p>
+            <div class="bg-neutral-950 p-3 rounded-lg border border-neutral-800 text-[11px] font-mono text-neutral-300 space-y-1.5 leading-relaxed">
+              <div><span class="text-emerald-400 font-bold">^G (68) – c (72):</span> Lead caldi e strumenti melodici principali</div>
+              <div><span class="text-emerald-400 font-bold">^c (73) – g (79):</span> Assoli, arpeggi veloci e risonanze acute</div>
+              <div><span class="text-emerald-400 font-bold">^g (80) – b (83):</span> Campane tibetane, carillon e staccati</div>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-brand-border text-[11px] text-neutral-400">
+            <strong class="text-neutral-300">Suggerimento:</strong> inserisci pause (<code class="text-emerald-400">z2</code>) per far respirare il tema principale.
+          </div>
+        </div>
+
+        <!-- BANCO D -->
+        <div class="bg-brand-card border border-brand-border rounded-xl p-4 sm:p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold font-mono text-purple-400 uppercase tracking-wider">Banco D — Glitch & Effetti</span>
+              <span class="text-[10px] font-mono text-neutral-500 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800">MIDI 84 – 99</span>
+            </div>
+            <p class="text-xs text-neutral-300 font-medium mb-3">
+              💡 Consigli: Transienti, rumore di vinile/nastro, laser sweep ed effetti speciali.
+            </p>
+            <div class="bg-neutral-950 p-3 rounded-lg border border-neutral-800 text-[11px] font-mono text-neutral-300 space-y-1.5 leading-relaxed">
+              <div><span class="text-purple-400 font-bold">c' (84) – e' (88):</span> Click metallici, aliasing, burst percussivi</div>
+              <div><span class="text-purple-400 font-bold">f' (89) – b' (95):</span> Fruscii di nastro, micro-ritmi e texture</div>
+              <div><span class="text-purple-400 font-bold">c'' (96) – ^d'' (99):</span> Sweep di filtro, risonanze estreme e sweep FX</div>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-brand-border text-[11px] text-neutral-400">
+            <strong class="text-neutral-300">Suggerimento:</strong> posiziona i tocchi del banco D sui sedicesimi deboli a fine misura per arricchire il pattern.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT: LOGICA MOBILE-FIRST & HUB      -->
+  <!-- ========================================== -->
+  <script>
+    // --- 1. GESTIONE STATO & DASHBOARD ---
+    const STORAGE_KEY = 'korg_nts1_hub_dashboard_config_v9';
+    const grid = document.getElementById('apps-grid');
+    const hiddenSection = document.getElementById('hidden-apps-section');
+    const hiddenList = document.getElementById('hidden-apps-list');
+    const hiddenCount = document.getElementById('hidden-count');
+    const btnReset = document.getElementById('btn-reset-layout');
+
+    let draggedCard = null;
+
+    function getSavedConfig() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : { order: [], hidden: [] };
+      } catch (err) {
+        return { order: [], hidden: [] };
+      }
+    }
+
+    function saveCurrentState() {
+      const visibleCards = Array.from(grid.querySelectorAll('.app-card'));
+      const order = visibleCards.map(c => c.dataset.appId);
+      const hidden = Array.from(hiddenList.querySelectorAll('[data-restore-id]')).map(b => b.dataset.restoreId);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ order, hidden }));
+    }
+
+    function renderHiddenItem(id, title, originalCard) {
+      const item = document.createElement('div');
+      item.className = 'flex items-center justify-between bg-neutral-950 p-2.5 rounded-lg border border-neutral-800 text-xs';
+      item.innerHTML = `
+        <span class="text-neutral-300 truncate mr-2 font-medium">${title}</span>
+        <button data-restore-id="${id}" class="min-h-[36px] px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:text-amber-300 active:bg-amber-500/20 font-semibold rounded transition whitespace-nowrap">
+          Ripristina
+        </button>
+      `;
+
+      item.querySelector('button').addEventListener('click', (e) => {
+        e.stopPropagation();
+        grid.appendChild(originalCard);
+        item.remove();
+        updateHiddenCounter();
+        saveCurrentState();
+      });
+
+      hiddenList.appendChild(item);
+    }
+
+    function updateHiddenCounter() {
+      const count = hiddenList.children.length;
+      hiddenCount.textContent = count;
+      hiddenSection.classList.toggle('hidden', count === 0);
+    }
+
+    function applySavedState() {
+      const config = getSavedConfig();
+      const allCards = Array.from(grid.querySelectorAll('.app-card'));
+      const cardMap = new Map(allCards.map(c => [c.dataset.appId, c]));
+
+      hiddenList.innerHTML = '';
+
+      if (Array.isArray(config.hidden)) {
+        config.hidden.forEach(id => {
+          const card = cardMap.get(id);
+          if (card) {
+            card.remove();
+            const title = card.querySelector('h3')?.textContent || id;
+            renderHiddenItem(id, title, card);
+          }
+        });
+      }
+
+      if (Array.isArray(config.order)) {
+        config.order.forEach(id => {
+          const card = cardMap.get(id);
+          if (card && grid.contains(card)) {
+            grid.appendChild(card);
+          }
+        });
+      }
+
+      updateHiddenCounter();
+    }
+
+    // --- 2. GESTIONE INTERAZIONI CARD (MOBILE & DESKTOP) ---
+    // Clic / Tap sulla card per aprire il modulo
+    grid.addEventListener('click', (e) => {
+      // Se si tocca un controllo interno (▲, ▼, ✕), non apriamo l'applicazione
+      if (e.target.closest('button') || e.target.closest('.drag-handle')) {
+        return;
+      }
+      const card = e.target.closest('.app-card');
+      if (card && card.dataset.url) {
+        window.location.href = card.dataset.url;
+      }
     });
 
-    checkApiSupport();
-    initWebMidi();
+    // Spostamento manuale verso l'alto (▲)
+    grid.addEventListener('click', (e) => {
+      const btnUp = e.target.closest('.btn-move-up');
+      if (!btnUp) return;
+      e.stopPropagation();
+      const card = btnUp.closest('.app-card');
+      const prev = card.previousElementSibling;
+      if (prev) {
+        grid.insertBefore(card, prev);
+        saveCurrentState();
+      }
+    });
+
+    // Spostamento manuale verso il basso (▼)
+    grid.addEventListener('click', (e) => {
+      const btnDown = e.target.closest('.btn-move-down');
+      if (!btnDown) return;
+      e.stopPropagation();
+      const card = btnDown.closest('.app-card');
+      const next = card.nextElementSibling;
+      if (next) {
+        grid.insertBefore(next, card);
+        saveCurrentState();
+      }
+    });
+
+    // Tasto "Nascondi" (✕)
+    grid.addEventListener('click', (e) => {
+      const btnHide = e.target.closest('.btn-hide');
+      if (!btnHide) return;
+      e.stopPropagation();
+
+      const card = btnHide.closest('.app-card');
+      const id = card.dataset.appId;
+      const title = card.querySelector('h3')?.textContent || id;
+
+      card.remove();
+      renderHiddenItem(id, title, card);
+      updateHiddenCounter();
+      saveCurrentState();
+    });
+
+    // Drag & Drop con Mouse per Desktop
+    grid.addEventListener('dragstart', (e) => {
+      const card = e.target.closest('.app-card');
+      if (!card) return;
+      draggedCard = card;
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('opacity-40');
+    });
+
+    grid.addEventListener('dragend', (e) => {
+      const card = e.target.closest('.app-card');
+      if (card) card.classList.remove('opacity-40');
+      document.querySelectorAll('.app-card').forEach(c => c.classList.remove('drag-over-card'));
+      draggedCard = null;
+      saveCurrentState();
+    });
+
+    grid.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+
+      const targetCard = e.target.closest('.app-card');
+      if (!targetCard || targetCard === draggedCard) return;
+
+      const rect = targetCard.getBoundingClientRect();
+      const next = (e.clientX - rect.left) / (rect.right - rect.left) > 0.5 ||
+                   (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+
+      grid.insertBefore(draggedCard, next ? targetCard.nextSibling : targetCard);
+    });
+
+    btnReset.addEventListener('click', () => {
+      if (confirm('Vuoi ripristinare la posizione e la visibilità iniziale di tutte le applicazioni?')) {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+      }
+    });
+
+    // --- 3. CONTROLLO MIDI & AUDIO ---
+    let midiAccess = null;
+    let selectedMidiOut = null;
+    const midiDot = document.getElementById('midi-status-dot');
+    const midiSelect = document.getElementById('midi-out-select');
+
+    if (navigator.requestMIDIAccess) {
+      navigator.requestMIDIAccess({ sysex: false })
+        .then(access => {
+          midiAccess = access;
+          midiDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] flex-shrink-0';
+          updateMidiOutputs();
+          midiAccess.onstatechange = updateMidiOutputs;
+        })
+        .catch(() => {
+          midiDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0';
+        });
+    } else {
+      midiDot.className = 'w-2.5 h-2.5 rounded-full bg-neutral-600 flex-shrink-0';
+    }
+
+    function updateMidiOutputs() {
+      if (!midiAccess) return;
+      const outputs = Array.from(midiAccess.outputs.values());
+      midiSelect.innerHTML = '<option value="">Nessun dispositivo</option>';
+
+      let defaultTarget = null;
+      outputs.forEach(out => {
+        const opt = document.createElement('option');
+        opt.value = out.id;
+        opt.textContent = out.name;
+        midiSelect.appendChild(opt);
+
+        if (out.name.toLowerCase().includes('nts') || out.name.toLowerCase().includes('korg')) {
+          defaultTarget = out;
+        }
+      });
+
+      if (defaultTarget) {
+        midiSelect.value = defaultTarget.id;
+        selectedMidiOut = defaultTarget;
+      } else if (outputs.length > 0) {
+        selectedMidiOut = outputs[0];
+        midiSelect.value = outputs[0].id;
+      }
+    }
+
+    midiSelect.addEventListener('change', () => {
+      if (!midiAccess) return;
+      selectedMidiOut = midiAccess.outputs.get(midiSelect.value) || null;
+    });
+
+    // Panic Globale
+    document.getElementById('btn-panic').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!selectedMidiOut) {
+        alert('Nessun dispositivo MIDI attivo.');
+        return;
+      }
+      selectedMidiOut.send([0xB0, 120, 0]); // CC 120 All Sound Off
+      selectedMidiOut.send([0xB0, 123, 0]); // CC 123 All Notes Off
+      selectedMidiOut.send([0xB0, 64, 0]);  // CC 64 Sustain Off
+      for (let note = 0; note < 128; note++) {
+        selectedMidiOut.send([0x80, note, 0]);
+      }
+    });
+
+    // Test Audio
+    let audioCtx = null;
+    document.getElementById('btn-test-tone').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.6);
+
+      if (selectedMidiOut) {
+        selectedMidiOut.send([0x90, 69, 100]); // A4 On
+        setTimeout(() => selectedMidiOut.send([0x80, 69, 0]), 500); // A4 Off
+      }
+    });
+
+    // Inizializzazione al caricamento
+    document.addEventListener('DOMContentLoaded', applySavedState);
   </script>
 </body>
 </html>
